@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Meta SEO Basiques -->
+    <title>Quentin Beaud | Concepteur Développeur Java à Annecy</title>
+    <meta name="description" content="Portfolio de Quentin Beaud, Concepteur Développeur Java et créateur de contenu basé à Annecy. Découvrez mon parcours, mes compétences (Java, Spring, JS) et mes projets créatifs.">
+    <meta name="keywords" content="Développeur, Java, Spring, JavaScript, Annecy, Portfolio, Créateur de contenu, Quentin Beaud">
+    <meta name="author" content="Quentin Beaud">
+    
+    <!-- Open Graph (Pour Facebook / LinkedIn / Discord) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.quentinbeaud.com/">
+    <meta property="og:title" content="Quentin Beaud | Développeur Java & Créateur">
+    <meta property="og:description" content="Portfolio de Quentin Beaud, Concepteur Développeur Java et créateur de contenu basé à Annecy.">
+    <meta property="og:image" content="https://www.quentinbeaud.com/assets/og-image.jpg">
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Quentin Beaud | Développeur Java & Créateur">
+    <meta name="twitter:description" content="Découvrez le portfolio de Quentin Beaud, développeur Java basé à Annecy.">
+    <meta name="twitter:image" content="https://www.quentinbeaud.com/assets/twitter-image.jpg">
+
+    <!-- JSON-LD SEO Local & Personne (Structuration Schema.org) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Person",
+          "name": "Quentin Beaud",
+          "jobTitle": "Concepteur Développeur Java",
+          "url": "https://www.quentinbeaud.com",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Annecy",
+            "addressRegion": "Auvergne-Rhône-Alpes",
+            "addressCountry": "FR"
+          },
+          "sameAs": [
+            "https://github.com/Edsaje",
+            "https://www.youtube.com/@Hibouxe",
+            "https://www.linkedin.com/in/quentin-beaud/"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "url": "https://www.quentinbeaud.com",
+          "name": "Portfolio de Quentin Beaud",
+          "author": {
+            "@type": "Person",
+            "name": "Quentin Beaud"
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- Typographie (Google Fonts) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Cinzel pour les titres (élégant, mystique), Outfit pour le corps du texte (moderne, lisible) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Animation d'arrière-plan (Lucioles) -->
+    <div class="fireflies" id="fireflies-container"></div>
+
+    <!-- Navigation -->
+    <header class="glass-nav">
+        <div class="logo">QB.</div>
+        <div class="menu-toggle" id="menu-toggle" aria-label="Ouvrir le menu">☰</div>
+        <nav id="nav-menu">
+            <ul>
+                <li><a href="#hero">Accueil</a></li>
+                <li><a href="#skills">Compétences</a></li>
+                <li><a href="#passions">Passions</a></li>
+                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Section Hero (Accueil) -->
+        <section id="hero" class="hero-section">
+            <div class="hero-content">
+                <h1 class="fade-in">Quentin Beaud</h1>
+                <h2 class="slide-up delay-1">Concepteur Développeur Java & Créateur de Contenu</h2>
+                <p class="catchphrase slide-up delay-2">Entre la logique implacable du code et la magie de la création visuelle.</p>
+                <div class="hero-buttons slide-up delay-3">
+                    <a href="assets/CV_Quentin_Beaud.pdf" class="btn btn-primary" download>Télécharger mon CV</a>
+                    <a href="#contact" class="btn btn-secondary">Me contacter</a>
+                </div>
+            </div>
+            <!-- Forme organique pour sublimer le design d'arrière-plan -->
+            <div class="organic-shape"></div>
+        </section>
+
+        <!-- Section Compétences & CV -->
+        <section id="skills" class="skills-section">
+            <h2 class="section-title">Parcours & Compétences</h2>
+            <div class="skills-grid">
+                <article class="skill-card glass">
+                    <div class="skill-icon">☕</div>
+                    <h3>Développement Java</h3>
+                    <p>Conception d'architectures robustes, POO avancée, maîtrise de l'écosystème Java pour des applications métiers performantes.</p>
+                </article>
+                <article class="skill-card glass">
+                    <div class="skill-icon">🍃</div>
+                    <h3>Spring Framework</h3>
+                    <p>Création d'APIs REST fluides, Spring Boot, Spring Security, gestion de données complexes, et microservices.</p>
+                </article>
+                <article class="skill-card glass">
+                    <div class="skill-icon">⚡</div>
+                    <h3>JavaScript & UX/UI</h3>
+                    <p>Développement d'interfaces interactives en Vanilla JS, intégration HTML5/CSS3 (Mobile-first) avec une sensibilité forte au design premium.</p>
+                </article>
+            </div>
+            
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass">
+                        <h3>Futur Concepteur Développeur Java</h3>
+                        <p>Formation approfondie sur les architectures logicielles et l'écosystème Java/Spring (Conception, Tests, Déploiement).</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content glass">
+                        <h3>Créateur de Contenu & Vidéaste</h3>
+                        <p>Analyse narrative, montage professionnel et création de communautés engagées autour du jeu vidéo.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mise en avant des repos GitHub -->
+            <div class="github-showcase">
+                <h3 class="subsection-title">Mes Projets sur GitHub</h3>
+                <div class="repo-grid">
+                    <!-- Repo 1 -->
+                    <a href="https://github.com/Edsaje/TON_REPO_1" target="_blank" rel="noopener noreferrer" class="repo-card glass">
+                        <div class="repo-header">
+                            <span class="repo-icon">📁</span>
+                            <h4>Projet Spring Boot</h4>
+                        </div>
+                        <p>API RESTful complète avec sécurité JWT et gestion de base de données.</p>
+                        <div class="repo-tags">
+                            <span class="tag">Java</span>
+                            <span class="tag">Spring Boot</span>
+                        </div>
+                    </a>
+                    
+                    <!-- Repo 2 -->
+                    <a href="https://github.com/Edsaje/TON_REPO_2" target="_blank" rel="noopener noreferrer" class="repo-card glass">
+                        <div class="repo-header">
+                            <span class="repo-icon">📁</span>
+                            <h4>Application Frontend</h4>
+                        </div>
+                        <p>Interface utilisateur dynamique 100% Vanilla JS sans framework externe.</p>
+                        <div class="repo-tags">
+                            <span class="tag">JavaScript</span>
+                            <span class="tag">CSS3</span>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="github-cta">
+                    <a href="https://github.com/Edsaje" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-github">
+                        <span class="icon-github">💻</span> Explorer tout mon profil GitHub
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Passions & Travail -->
+        <section id="passions" class="passions-section">
+            <h2 class="section-title">L'Œil du Hibou (Créations)</h2>
+            <p class="section-subtitle">Mon univers s'étend au-delà du code. L'analyse de lore et le montage vidéo font partie intégrante de mon ADN.</p>
+            
+            <div class="portfolio-grid">
+                <!-- Vidéo Shadow of the Colossus -->
+                <article class="portfolio-card glass">
+                    <div class="video-container">
+                        <!-- ex: si l'URL est youtube.com/watch?v=123456, l'ID est 123456 -->
+                        <iframe width="100%" height="200" src="https://www.youtube.com/embed/v=Clr-pThQtF0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                    <div class="card-content">
+                        <h3>Shadow of the Colossus</h3>
+                        <p>L'Histoire de Shadow of the Colossus : exploration narrative, gigantisme et mélancolie.</p>
+                    </div>
+                </article>
+                
+                <!-- Vidéo Dark Souls -->
+                <article class="portfolio-card glass">
+                    <div class="video-container">
+                        <iframe width="100%" height="200" src="https://www.youtube.com/embed/f3S1_5z5g-M" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                    <div class="card-content">
+                        <h3>Dark Souls</h3>
+                        <p>L'Histoire du Mort-Vivant Élu : décryptage du lore cryptique et du level design légendaire.</p>
+                    </div>
+                </article>
+                
+                <!-- Vidéo Dragon Quest 1 -->
+                <article class="portfolio-card glass">
+                    <div class="video-container">
+                        <iframe width="100%" height="200" src="https://www.youtube.com/embed/nfMuqDiQRz8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                    <div class="card-content">
+                        <h3>Dragon Quest 1</h3>
+                        <p>L'Histoire de Dragon Quest : retour aux origines du JRPG et analyse de l'héritage de la saga.</p>
+                    </div>
+                </article>
+            </div>
+
+            <div class="social-links">
+                <a href="https://github.com/Edsaje" target="_blank" rel="noopener noreferrer" class="btn btn-social">Mon GitHub (Edsaje)</a>
+                <a href="https://www.youtube.com/@Hibouxe" target="_blank" rel="noopener noreferrer" class="btn btn-social btn-youtube">Ma Chaîne YouTube (Hibouxe)</a>
+            </div>
+        </section>
+
+        <!-- Section FAQ -->
+        <section id="faq" class="faq-section">
+            <h2 class="section-title">Foire Aux Questions</h2>
+            <div class="accordion">
+                <div class="accordion-item glass">
+                    <button class="accordion-header">Pourquoi recruter un profil "hybride" (Développeur & Créateur) ? <span class="icon">+</span></button>
+                    <div class="accordion-content">
+                        <p>Le montage vidéo forge une attention maniaque aux détails et au rythme. Cette sensibilité à l'expérience utilisateur (UX) se reflète dans mon code : je ne crée pas seulement des fonctionnalités, je m'assure qu'elles soient agréables et fluides pour l'utilisateur final.</p>
+                    </div>
+                </div>
+                <div class="accordion-item glass">
+                    <button class="accordion-header">Quelles sont vos technos de prédilection ? <span class="icon">+</span></button>
+                    <div class="accordion-content">
+                        <p>Je me spécialise en <strong>Java</strong> et <strong>Spring</strong> pour concevoir des architectures back-end robustes. Côté front-end, ma maîtrise du <strong>JavaScript Vanilla</strong>, du HTML et du CSS me permet de m'adapter rapidement à n'importe quel framework (Angular, React, etc.) sans en être dépendant.</p>
+                    </div>
+                </div>
+                <div class="accordion-item glass">
+                    <button class="accordion-header">Êtes-vous disponible sur Annecy ? <span class="icon">+</span></button>
+                    <div class="accordion-content">
+                        <p>Oui, je suis basé sur Annecy. Je suis ouvert aux opportunités en présentiel ou en format hybride dans la région, ou même en full-remote selon les conditions du projet.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Contact -->
+        <section id="contact" class="contact-section">
+            <h2 class="section-title">Contact</h2>
+            <div class="contact-container glass">
+                <div class="contact-info">
+                    <h3>Discutons de votre projet</h3>
+                    <p>Basé à <strong>Annecy (74000)</strong></p>
+                    <p>Que ce soit pour une opportunité de développement Java ou un projet de création de contenu, mon expertise est à votre disposition.</p>
+                </div>
+                <!-- Formulaire avec intégration Formspree -->
+                <form id="contact-form" class="contact-form" action="https://formspree.io/f/xgogkgdb" method="POST" novalidate>
+                    <div class="input-group">
+                        <label for="name">Nom / Entreprise</label>
+                        <input type="text" id="name" name="name" required placeholder="Votre nom">
+                    </div>
+                    <div class="input-group">
+                        <label for="email">Email professionnel</label>
+                        <input type="email" id="email" name="email" required placeholder="nom@entreprise.com">
+                    </div>
+                    <div class="input-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" rows="5" required placeholder="Comment puis-je vous aider ?"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Envoyer le message</button>
+                    <p id="form-status" class="form-status"></p>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>&copy; 2026 Quentin Beaud. Conçu avec passion (et 100% Vanilla).</p>
+        
+        <!-- Easter Egg: Hidden Owl -->
+        <!-- L'architecture pour l'audio et l'animation est prête dans script.js -->
+        <div id="hidden-owl" class="easter-egg-owl" title="Hoot!" aria-label="Easter Egg Hibou">🦉</div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
