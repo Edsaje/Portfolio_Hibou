@@ -4,83 +4,108 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- Meta SEO Basiques -->
-    <title>Quentin Beaud | Concepteur Développeur Java à Annecy</title>
-    <meta name="description" content="Portfolio de Quentin Beaud, Concepteur Développeur Java et créateur de contenu basé à Annecy. Découvrez mon parcours, mes compétences (Java, Spring, JS) et mes projets créatifs.">
-    <meta name="keywords" content="Développeur, Java, Spring, JavaScript, Annecy, Portfolio, Créateur de contenu, Quentin Beaud">
+    <!-- Meta SEO & Indexation Avancée -->
+    <title>Quentin Beaud | Développeur Fullstack Java & Créateur (Hibouxe / Edsaje)</title>
+    <meta name="description" content="Portfolio de Quentin Beaud (alias Hibouxe / Edsaje), développeur Fullstack Java / C# (Spring Boot, SQL, Docker, Godot, Vanilla JS) et créateur. Basé à Annecy.">
+    <meta name="keywords" content="Quentin Beaud, Hibouxe, Edsaje, Développeur Fullstack, Java, Spring Boot, Docker, SQL, C#, Godot, JavaScript Vanilla, Annecy, Portfolio Dev">
     <meta name="author" content="Quentin Beaud">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="language" content="French">
+    <link rel="canonical" href="https://www.quentinbeaud.com/">
     
-    <!-- Open Graph (Pour Facebook / LinkedIn / Discord) -->
-    <meta property="og:type" content="website">
+    <!-- Open Graph -->
+    <meta property="og:locale" content="fr_FR">
+    <meta property="og:type" content="profile">
     <meta property="og:url" content="https://www.quentinbeaud.com/">
-    <meta property="og:title" content="Quentin Beaud | Développeur Java & Créateur">
-    <meta property="og:description" content="Portfolio de Quentin Beaud, Concepteur Développeur Java et créateur de contenu basé à Annecy.">
-    <meta property="og:image" content="https://www.quentinbeaud.com/assets/og-image.jpg">
+    <meta property="og:site_name" content="Portfolio Quentin Beaud">
+    <meta property="og:title" content="Quentin Beaud | Développeur Fullstack & Créateur">
+    <meta property="og:description" content="Projets de développement Fullstack Java / C#, jeux sous Godot, Vanilla JS et créations vidéo.">
+    <meta property="og:image" content="https://www.quentinbeaud.com/assets/logo-hibouxe.png">
+    <meta property="profile:first_name" content="Quentin">
+    <meta property="profile:last_name" content="Beaud">
+    <meta property="profile:username" content="Edsaje">
 
     <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Quentin Beaud | Développeur Java & Créateur">
-    <meta name="twitter:description" content="Découvrez le portfolio de Quentin Beaud, développeur Java basé à Annecy.">
-    <meta name="twitter:image" content="https://www.quentinbeaud.com/assets/twitter-image.jpg">
+    <meta name="twitter:title" content="Quentin Beaud (Edsaje / Hibouxe) | Développeur Fullstack">
+    <meta name="twitter:description" content="Portfolio et réalisations logicielles de Quentin Beaud. Écosystème Java, C# / Godot, Web Vanilla.">
+    <meta name="twitter:image" content="https://www.quentinbeaud.com/assets/logo-hibouxe.png">
 
-    <!-- JSON-LD SEO Local & Personne (Structuration Schema.org) -->
+    <!-- JSON-LD Données Structurées (Schema.org) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@graph": [
         {
           "@type": "Person",
+          "@id": "https://www.quentinbeaud.com/#person",
           "name": "Quentin Beaud",
-          "jobTitle": "Concepteur Développeur Java",
+          "alternateName": ["Hibouxe", "Edsaje"],
+          "jobTitle": "Concepteur Développeur Fullstack",
+          "description": "Développeur Fullstack spécialisé dans l'écosystème Java (Spring Boot, SQL, Docker), le développement C# (Godot Engine) et le Web Vanilla sans framework.",
           "url": "https://www.quentinbeaud.com",
+          "nationality": "French",
           "address": {
             "@type": "PostalAddress",
             "addressLocality": "Annecy",
             "addressRegion": "Auvergne-Rhône-Alpes",
+            "postalCode": "74600",
             "addressCountry": "FR"
           },
+          "knowsAbout": ["Java", "Spring Boot", "C#", "Godot Engine", "Docker", "SQL", "Architecture Logicielle", "JavaScript", "HTML5", "CSS3", "Montage Vidéo"],
           "sameAs": [
             "https://github.com/Edsaje",
             "https://www.youtube.com/@Hibouxe",
-            "https://www.linkedin.com/in/quentin-beaud/"
+            "https://www.linkedin.com/in/quentin-beaud-82137a21b/"
           ]
         },
         {
           "@type": "WebSite",
+          "@id": "https://www.quentinbeaud.com/#website",
           "url": "https://www.quentinbeaud.com",
-          "name": "Portfolio de Quentin Beaud",
-          "author": {
-            "@type": "Person",
-            "name": "Quentin Beaud"
+          "name": "Portfolio Quentin Beaud",
+          "publisher": {
+            "@id": "https://www.quentinbeaud.com/#person"
           }
         }
       ]
     }
     </script>
 
-    <!-- Typographie (Google Fonts) -->
+    <!-- Typographie Studio (Google Fonts) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Cinzel pour les titres (élégant, mystique), Outfit pour le corps du texte (moderne, lisible) -->
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3.1">
+    
+    <!-- Scripts Modulaires Découplés -->
+    <script defer src="js/tracker.js?v=2.0"></script>
+    <script defer src="js/audio.js?v=2.2"></script>
+    <script defer src="js/particles.js?v=2.2"></script>
+    <script defer src="js/leaderboard.js?v=2.2"></script>
+    <script defer src="js/easter-eggs.js?v=2.2"></script>
+    <script defer src="js/arcade/arcade.js?v=2.2"></script>
+    <script defer src="js/vectrex/vectrex.js?v=2.2"></script>
+    <script defer src="js/idle-game/idle.js?v=2.2"></script>
+    <script defer src="js/main.js?v=2.2"></script>
 </head>
 <body>
 
-    <!-- Animation d'arrière-plan (Lucioles) -->
-    <div class="fireflies" id="fireflies-container"></div>
+    <!-- Animation d'Arrière-Plan (Canvas 60 FPS) -->
+    <canvas id="fireflies-canvas" class="fireflies-canvas"></canvas>
 
-    <!-- Navigation -->
+    <!-- En-tête & Navigation -->
     <header class="glass-nav">
-        <div class="logo">QB.</div>
-        <div class="menu-toggle" id="menu-toggle" aria-label="Ouvrir le menu">☰</div>
+        <div class="logo" role="button" aria-label="Accueil Portfolio">QB.</div>
+        <button class="menu-toggle" id="menu-toggle" aria-label="Ouvrir le menu de navigation" aria-expanded="false">☰</button>
         <nav id="nav-menu">
             <ul>
                 <li><a href="#hero">Accueil</a></li>
                 <li><a href="#skills">Compétences</a></li>
-                <li><a href="#passions">Passions</a></li>
-                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#projects">Projets</a></li>
+                <li><a href="#passions">Créations</a></li>
+                <li><a href="#philosophy">Philosophie</a></li>
                 <li><a href="#contact">Contact</a></li>
             </ul>
         </nav>
@@ -89,206 +114,764 @@
     <main>
         <!-- Section Hero (Accueil) -->
         <section id="hero" class="hero-section">
-            <div class="hero-content">
-                <h1 class="fade-in">Quentin Beaud</h1>
-                <h2 class="slide-up delay-1">Concepteur Développeur Java & Créateur de Contenu</h2>
-                <p class="catchphrase slide-up delay-2">Entre la logique implacable du code et la magie de la création visuelle.</p>
-                <div class="hero-buttons slide-up delay-3">
-                    <a href="assets/CV_Quentin_Beaud.pdf" class="btn btn-primary" download>Télécharger mon CV</a>
-                    <a href="#contact" class="btn btn-secondary">Me contacter</a>
+            <div class="hero-container">
+                <div class="hero-status-badge">
+                    <span class="pulse-dot"></span>
+                    <span>Disponible pour de nouveaux projets | Annecy & Remote</span>
+                </div>
+                <h1 class="hero-title">Quentin <span>Beaud</span></h1>
+                <h2 class="hero-subtitle">Développeur Fullstack & Créateur (Hibouxe / Edsaje)</h2>
+                <p class="hero-desc">
+                    Passionné par les architectures logicielles et l'apprentissage continu. Fort d'une solide base en <strong>Java (Spring Boot)</strong>, je développe activement en <strong>C# (.NET / Godot)</strong>, conçois des outils en <strong>Python</strong> et réalise des interfaces réactives en <strong>pur JavaScript (Canvas 2D)</strong> sans dépendance superflue.
+                </p>
+                <div class="hero-actions">
+                    <a href="cv.html" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                        CV Interactif
+                    </a>
+                    <a href="assets/CV_Quentin_Beaud_Soft.pdf" class="btn btn-secondary" download>
+                        CV au format PDF
+                    </a>
+                    <a href="#projects" class="btn btn-secondary">
+                        Mes Projets
+                    </a>
+                    <a href="#contact" class="btn btn-outline">
+                        Me contacter
+                    </a>
                 </div>
             </div>
-            <!-- Forme organique pour sublimer le design d'arrière-plan -->
-            <div class="organic-shape"></div>
         </section>
 
-        <!-- Section Compétences & CV -->
+        <!-- Section Parcours & Compétences -->
         <section id="skills" class="skills-section">
-            <h2 class="section-title">Parcours & Compétences</h2>
-            <div class="skills-grid">
-                <article class="skill-card glass">
-                    <div class="skill-icon">☕</div>
-                    <h3>Développement Java</h3>
-                    <p>Conception d'architectures robustes, POO avancée, maîtrise de l'écosystème Java pour des applications métiers performantes.</p>
-                </article>
-                <article class="skill-card glass">
-                    <div class="skill-icon">🍃</div>
-                    <h3>Spring Framework</h3>
-                    <p>Création d'APIs REST fluides, Spring Boot, Spring Security, gestion de données complexes, et microservices.</p>
-                </article>
-                <article class="skill-card glass">
-                    <div class="skill-icon">⚡</div>
-                    <h3>JavaScript & UX/UI</h3>
-                    <p>Développement d'interfaces interactives en Vanilla JS, intégration HTML5/CSS3 (Mobile-first) avec une sensibilité forte au design premium.</p>
-                </article>
-            </div>
-            
-            <div class="timeline">
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content glass">
-                        <h3>Futur Concepteur Développeur Java</h3>
-                        <p>Formation approfondie sur les architectures logicielles et l'écosystème Java/Spring (Conception, Tests, Déploiement).</p>
-                    </div>
+            <div class="container">
+                <div class="section-header reveal-on-scroll">
+                    <span class="section-tag">Stack & Outils</span>
+                    <h2 class="section-title">Ce que je pratique au quotidien</h2>
+                    <p class="section-subtitle">Concevoir des architectures fiables, explorer de multiples écosystèmes (Java, C#, Python, JS) et garder une vraie sensibilité ergonomique.</p>
                 </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content glass">
-                        <h3>Créateur de Contenu & Vidéaste</h3>
-                        <p>Analyse narrative, montage professionnel et création de communautés engagées autour du jeu vidéo.</p>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Mise en avant des repos GitHub -->
-            <div class="github-showcase">
-                <h3 class="subsection-title">Mes Projets sur GitHub</h3>
+                <div class="skills-grid">
+                    <article class="skill-card glass-card reveal-on-scroll">
+                        <h3>Back-End Java &amp; Écosystème Spring</h3>
+                        <p>Développement d'APIs REST avec Spring Boot, gestion de la sécurité avec Spring Security, modélisation objet claire et application des principes Clean Code.</p>
+                        <div class="skill-tags">
+                            <span class="skill-tag">Java 17/21</span>
+                            <span class="skill-tag">Spring Boot</span>
+                            <span class="skill-tag">Spring Security</span>
+                            <span class="skill-tag">POO &amp; Clean Architecture</span>
+                            <span class="skill-tag">Maven / Gradle</span>
+                        </div>
+                    </article>
+
+                    <article class="skill-card glass-card reveal-on-scroll">
+                        <h3>Agilité &amp; Multi-Langages (C# &amp; .NET)</h3>
+                        <p>Apprendre un nouveau langage n'est jamais un frein : fort d'un socle POO en Java, j'assimile rapidement d'autres syntaxes. Perfectionnement actif sur C# (.NET / Godot 4) et outillage Python.</p>
+                        <div class="skill-tags">
+                            <span class="skill-tag">C# (.NET)</span>
+                            <span class="skill-tag">Godot 4 Engine</span>
+                            <span class="skill-tag">Python Scripting</span>
+                            <span class="skill-tag">Apprentissage Rapide</span>
+                            <span class="skill-tag">Veille Active</span>
+                        </div>
+                    </article>
+
+                    <article class="skill-card glass-card reveal-on-scroll">
+                        <h3>Bases de données, SQL &amp; Docker</h3>
+                        <p>Modélisation relationnelle rigoureuse, requêtes SQL optimisées, persistance via JPA/Hibernate et conteneurisation Docker pour des environnements fiables et reproductibles.</p>
+                        <div class="skill-tags">
+                            <span class="skill-tag">PostgreSQL</span>
+                            <span class="skill-tag">MySQL</span>
+                            <span class="skill-tag">JPA / Hibernate</span>
+                            <span class="skill-tag">Docker</span>
+                            <span class="skill-tag">Git / GitHub</span>
+                        </div>
+                    </article>
+
+                    <article class="skill-card glass-card reveal-on-scroll">
+                        <h3>Front-End &amp; Moteurs Web Vanilla</h3>
+                        <p>Développer sans empiler 50 dépendances superflues : JavaScript ES6+ pur, manipulation directe du DOM, animations Canvas 2D interactives et CSS responsive soigné.</p>
+                        <div class="skill-tags">
+                            <span class="skill-tag">JavaScript ES6+</span>
+                            <span class="skill-tag">HTML5 / CSS3</span>
+                            <span class="skill-tag">Canvas API 2D</span>
+                            <span class="skill-tag">Mobile-First</span>
+                            <span class="skill-tag">UI / UX</span>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="timeline reveal-on-scroll">
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content glass-card">
+                            <span class="timeline-date">Développement Logiciel</span>
+                            <h3>Concepteur Développeur d'Applications Java</h3>
+                            <p>Formation approfondie sur l'écosystème Java/Spring, la conception d'architectures n-tiers, la modélisation de bases de données et les bonnes pratiques de tests et déploiements.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content glass-card">
+                            <span class="timeline-date">Création & Image</span>
+                            <h3>Monteur Vidéo & Créateur de contenu (Hibouxe)</h3>
+                            <p>Titre RNCP de monteur vidéo à Paris, écriture et montage d'analyses narratives sur YouTube. Un travail du rythme qui m'aide énormément à penser le feedback et l'ergonomie des applications.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bloc CV -->
+                <div class="cv-box glass-card reveal-on-scroll">
+                    <h3>Curriculum Vitæ & Expériences</h3>
+                    <p>Découvrez mon parcours complet et mes compétences détaillées. Disponible en version interactive thématisée ou en version PDF classique à imprimer.</p>
+                    <div class="cv-box-actions">
+                        <a href="cv.html" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                            Consulter le CV Interactif
+                        </a>
+                        <a href="assets/CV_Quentin_Beaud_Soft.pdf" class="btn btn-secondary" download>
+                            Télécharger le CV (PDF)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Projets GitHub -->
+        <section id="projects" class="github-section">
+            <div class="container">
+                <div class="section-header reveal-on-scroll">
+                    <span class="section-tag">Projets</span>
+                    <h2 class="section-title">Quelques réalisations</h2>
+                    <p class="section-subtitle">Des projets concrets explorant la POO en Java, le Game Dev en C# (.NET), la rétro-ingénierie en Python et les moteurs interactifs en Canvas 2D.</p>
+                </div>
+
                 <div class="repo-grid">
-                    <!-- Repo 1 -->
-                    <a href="https://github.com/Edsaje/TON_REPO_1" target="_blank" rel="noopener noreferrer" class="repo-card glass">
+                    <!-- Projet 1 : Java POO -->
+                    <a href="https://github.com/Edsaje/Donjon_de_Naheulbeuk_Fan_Game/" target="_blank" rel="noopener noreferrer" class="repo-card glass-card reveal-on-scroll">
                         <div class="repo-header">
-                            <span class="repo-icon">📁</span>
-                            <h4>Projet Spring Boot</h4>
+                            <h3>Donjon de Naheulbeuk (Fan Game)</h3>
                         </div>
-                        <p>API RESTful complète avec sécurité JWT et gestion de base de données.</p>
+                        <p>Moteur de RPG au tour par tour développé en Java pur pour maîtriser la POO en profondeur : machines à états finis pour les combats, inventaire dynamique, gestion des statistiques et progression sans framework externe.</p>
                         <div class="repo-tags">
-                            <span class="tag">Java</span>
-                            <span class="tag">Spring Boot</span>
+                            <span class="repo-tag">Java</span>
+                            <span class="repo-tag">POO</span>
+                            <span class="repo-tag">Clean Architecture</span>
+                            <span class="repo-tag">Game Logic</span>
                         </div>
                     </a>
-                    
-                    <!-- Repo 2 -->
-                    <a href="https://github.com/Edsaje/TON_REPO_2" target="_blank" rel="noopener noreferrer" class="repo-card glass">
+
+                    <!-- Projet 2 : C# .NET / Godot 4 -->
+                    <a href="https://github.com/Edsaje/kingdom_fan_game" target="_blank" rel="noopener noreferrer" class="repo-card glass-card reveal-on-scroll">
                         <div class="repo-header">
-                            <span class="repo-icon">📁</span>
-                            <h4>Application Frontend</h4>
+                            <h3>Kingdom (Fan Game C# / Godot)</h3>
                         </div>
-                        <p>Interface utilisateur dynamique 100% Vanilla JS sans framework externe.</p>
+                        <p>Jeu de gestion et stratégie 2D sous Godot 4 conçu pour explorer en profondeur la transition Java vers C# (.NET) : cycle jour/nuit dynamique, IA des villageois par états, gestion de l'économie et architecture orientée composants.</p>
                         <div class="repo-tags">
-                            <span class="tag">JavaScript</span>
-                            <span class="tag">CSS3</span>
+                            <span class="repo-tag">C# (.NET)</span>
+                            <span class="repo-tag">Godot 4</span>
+                            <span class="repo-tag">Architecture Composants</span>
+                            <span class="repo-tag">Game Dev</span>
+                        </div>
+                    </a>
+
+                    <!-- Projet 3 : Python / Reverse-Engineering -->
+                    <a href="https://github.com/Edsaje/French_Trad_Dragon_Quest_Heroes_Torneko-s_Mystery_Dungeon_-Classic-HD-" target="_blank" rel="noopener noreferrer" class="repo-card glass-card reveal-on-scroll">
+                        <div class="repo-header">
+                            <h3>Dragon Quest Torneko (Reverse &amp; Trad FR)</h3>
+                        </div>
+                        <p>Pipeline complet de rétro-ingénierie en Python pour le jeu de Square Enix : déchiffrement AES-256 des index PAK (moteur hybride UE5/Radec), décodeur de variantes binaires, codec 6-bit et patch 100% stable sur Steam Deck &amp; PC.</p>
+                        <div class="repo-tags">
+                            <span class="repo-tag">Python</span>
+                            <span class="repo-tag">Rétro-Ingénierie</span>
+                            <span class="repo-tag">Cryptographie AES-256</span>
+                            <span class="repo-tag">Binary Formats</span>
+                        </div>
+                    </a>
+
+                    <!-- Projet 4 : JavaScript Vanilla & Canvas 2D -->
+                    <a href="https://github.com/Edsaje/Portfolio_Hibou" target="_blank" rel="noopener noreferrer" class="repo-card glass-card reveal-on-scroll">
+                        <div class="repo-header">
+                            <h3>Portfolio &amp; Moteurs Rétro Vanilla</h3>
+                        </div>
+                        <p>Ce site même ! 0 dépendance npm, du pur JavaScript ES6 et Canvas 2D pour propulser 7 mini-jeux d'arcade, un simulateur vectoriel CRT (Vectrex) et un clicker incrémental avec scoreboard sécurisé en ligne.</p>
+                        <div class="repo-tags">
+                            <span class="repo-tag">JavaScript ES6+</span>
+                            <span class="repo-tag">HTML5 Canvas 2D</span>
+                            <span class="repo-tag">Zero Dependency</span>
+                            <span class="repo-tag">PHP 8 Backend</span>
                         </div>
                     </a>
                 </div>
-                
-                <div class="github-cta">
-                    <a href="https://github.com/Edsaje" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-github">
-                        <span class="icon-github">💻</span> Explorer tout mon profil GitHub
+
+                <div class="github-cta reveal-on-scroll">
+                    <a href="https://github.com/Edsaje" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                        Voir tous mes dépôts sur GitHub
                     </a>
                 </div>
             </div>
         </section>
 
-        <!-- Section Passions & Travail -->
+        <!-- Section Créations & Archives Vidéos -->
         <section id="passions" class="passions-section">
-            <h2 class="section-title">L'Œil du Hibou (Créations)</h2>
-            <p class="section-subtitle">Mon univers s'étend au-delà du code. L'analyse de lore et le montage vidéo font partie intégrante de mon ADN.</p>
-            
-            <div class="portfolio-grid">
-                <!-- Vidéo Shadow of the Colossus -->
-                <article class="portfolio-card glass">
-                    <div class="video-container">
-                        <!-- ex: si l'URL est youtube.com/watch?v=123456, l'ID est 123456 -->
-                        <iframe width="100%" height="200" src="https://www.youtube.com/embed/v=Clr-pThQtF0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                    </div>
-                    <div class="card-content">
-                        <h3>Shadow of the Colossus</h3>
-                        <p>L'Histoire de Shadow of the Colossus : exploration narrative, gigantisme et mélancolie.</p>
-                    </div>
-                </article>
-                
-                <!-- Vidéo Dark Souls -->
-                <article class="portfolio-card glass">
-                    <div class="video-container">
-                        <iframe width="100%" height="200" src="https://www.youtube.com/embed/f3S1_5z5g-M" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                    </div>
-                    <div class="card-content">
-                        <h3>Dark Souls</h3>
-                        <p>L'Histoire du Mort-Vivant Élu : décryptage du lore cryptique et du level design légendaire.</p>
-                    </div>
-                </article>
-                
-                <!-- Vidéo Dragon Quest 1 -->
-                <article class="portfolio-card glass">
-                    <div class="video-container">
-                        <iframe width="100%" height="200" src="https://www.youtube.com/embed/nfMuqDiQRz8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                    </div>
-                    <div class="card-content">
-                        <h3>Dragon Quest 1</h3>
-                        <p>L'Histoire de Dragon Quest : retour aux origines du JRPG et analyse de l'héritage de la saga.</p>
-                    </div>
-                </article>
-            </div>
+            <div class="container">
+                <div class="section-header reveal-on-scroll">
+                    <span class="section-tag">Vidéos</span>
+                    <h2 class="section-title">L'Œil du Hibou (Créations)</h2>
+                    <p class="section-subtitle">
+                        Mon univers s'étend au-delà du code. L'analyse de lore et le montage vidéo font partie intégrante de mon ADN.
+                        <span id="vectrex-secret-hint" class="secret-hint" title="Clique 3 fois vite pour ouvrir le simulateur Vectrex !">Oh, ma console de cœur reste la VECTREX.</span>
+                    </p>
+                </div>
 
-            <div class="social-links">
-                <a href="https://github.com/Edsaje" target="_blank" rel="noopener noreferrer" class="btn btn-social">Mon GitHub (Edsaje)</a>
-                <a href="https://www.youtube.com/@Hibouxe" target="_blank" rel="noopener noreferrer" class="btn btn-social btn-youtube">Ma Chaîne YouTube (Hibouxe)</a>
+                <div class="portfolio-grid">
+                    <!-- Vidéo 1 -->
+                    <article class="portfolio-card glass-card reveal-on-scroll">
+                        <div class="video-wrapper">
+                            <iframe src="https://www.youtube.com/embed/Clr-pThQtF0" title="L'Histoire de Shadow of the Colossus - Hibouxe" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <div class="video-content">
+                            <h3>Shadow of the Colossus</h3>
+                            <p>L'Histoire de Shadow of the Colossus : exploration narrative, gigantisme et mélancolie.</p>
+                        </div>
+                    </article>
+
+                    <!-- Vidéo 2 -->
+                    <article class="portfolio-card glass-card reveal-on-scroll">
+                        <div class="video-wrapper">
+                            <iframe src="https://www.youtube.com/embed/f3S1_5z5g-M" title="L'Histoire du Mort-Vivant Élu - Dark Souls - Hibouxe" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <div class="video-content">
+                            <h3>Dark Souls</h3>
+                            <p>L'Histoire du Mort-Vivant Élu : décryptage du lore cryptique et du level design légendaire.</p>
+                        </div>
+                    </article>
+
+                    <!-- Vidéo 3 -->
+                    <article class="portfolio-card glass-card reveal-on-scroll">
+                        <div class="video-wrapper">
+                            <iframe src="https://www.youtube.com/embed/nfMuqDiQRz8" title="L'Histoire de Dragon Quest 1 - Hibouxe" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <div class="video-content">
+                            <h3>Dragon Quest 1</h3>
+                            <p>L'Histoire de Dragon Quest : retour aux origines du JRPG et analyse de l'héritage de la saga.</p>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="social-links reveal-on-scroll">
+                    <a href="https://www.youtube.com/@Hibouxe" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                        Chaîne YouTube (Hibouxe)
+                    </a>
+                    <a href="https://github.com/Edsaje" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                        GitHub (Edsaje)
+                    </a>
+                </div>
             </div>
         </section>
 
-        <!-- Section FAQ -->
-        <section id="faq" class="faq-section">
-            <h2 class="section-title">Foire Aux Questions</h2>
-            <div class="accordion">
-                <div class="accordion-item glass">
-                    <button class="accordion-header">Pourquoi recruter un profil "hybride" (Développeur & Créateur) ? <span class="icon">+</span></button>
-                    <div class="accordion-content">
-                        <p>Le montage vidéo forge une attention maniaque aux détails et au rythme. Cette sensibilité à l'expérience utilisateur (UX) se reflète dans mon code : je ne crée pas seulement des fonctionnalités, je m'assure qu'elles soient agréables et fluides pour l'utilisateur final.</p>
-                    </div>
+        <!-- Section Ce qui guide ma pratique -->
+        <section id="philosophy" class="principles-section">
+            <div class="container">
+                <div class="section-header reveal-on-scroll">
+                    <span class="section-tag">Méthode</span>
+                    <h2 class="section-title">Ce qui guide ma façon de coder</h2>
+                    <p class="section-subtitle">Une vision pragmatique : du code compréhensible, des fondations solides et une obsession pour les interfaces rapides.</p>
                 </div>
-                <div class="accordion-item glass">
-                    <button class="accordion-header">Quelles sont vos technos de prédilection ? <span class="icon">+</span></button>
-                    <div class="accordion-content">
-                        <p>Je me spécialise en <strong>Java</strong> et <strong>Spring</strong> pour concevoir des architectures back-end robustes. Côté front-end, ma maîtrise du <strong>JavaScript Vanilla</strong>, du HTML et du CSS me permet de m'adapter rapidement à n'importe quel framework (Angular, React, etc.) sans en être dépendant.</p>
-                    </div>
-                </div>
-                <div class="accordion-item glass">
-                    <button class="accordion-header">Êtes-vous disponible sur Annecy ? <span class="icon">+</span></button>
-                    <div class="accordion-content">
-                        <p>Oui, je suis basé sur Annecy. Je suis ouvert aux opportunités en présentiel ou en format hybride dans la région, ou même en full-remote selon les conditions du projet.</p>
-                    </div>
+
+                <div class="principles-grid">
+                    <article class="principle-card glass-card reveal-on-scroll">
+                        <h3>La clarté avant la magie</h3>
+                        <p>Que ce soit en Java (Spring Boot), C# ou SQL, j'aime le code explicite et bien typé. Des bases saines et des responsabilités claires évitent des heures de refactoring inutile.</p>
+                    </article>
+
+                    <article class="principle-card glass-card reveal-on-scroll">
+                        <h3>Le goût du 'From Scratch'</h3>
+                        <p>Comprendre ce qui se passe sous le capot avant d'installer des bibliothèques. Coder un mini-jeu en Canvas 2D ou un moteur de combat en Java pur permet de vraiment maîtriser son langage.</p>
+                    </article>
+
+                    <article class="principle-card glass-card reveal-on-scroll">
+                        <h3>L'œil du monteur sur l'UX</h3>
+                        <p>Au montage vidéo, un mauvais raccord ou 200 ms de latence sautent aux yeux. Dans une application, c'est pareil : l'interaction doit être instantanée, fluide et gratifiante.</p>
+                    </article>
+
+                    <article class="principle-card glass-card reveal-on-scroll">
+                        <h3>L'agilité polyglotte par les concepts</h3>
+                        <p>Plutôt que d'apprendre par cœur des syntaxes, je me concentre sur les fondamentaux : POO, typage, gestion mémoire et patterns. C'est ce qui me permet de basculer avec fluidité entre Java, C#, Python et JavaScript.</p>
+                    </article>
                 </div>
             </div>
         </section>
 
         <!-- Section Contact -->
         <section id="contact" class="contact-section">
-            <h2 class="section-title">Contact</h2>
-            <div class="contact-container glass">
-                <div class="contact-info">
-                    <h3>Discutons de votre projet</h3>
-                    <p>Basé à <strong>Annecy (74000)</strong></p>
-                    <p>Que ce soit pour une opportunité de développement Java ou un projet de création de contenu, mon expertise est à votre disposition.</p>
+            <div class="container">
+                <div class="section-header reveal-on-scroll">
+                    <span class="section-tag">Contact</span>
+                    <h2 class="section-title">Me contacter</h2>
+                    <p class="section-subtitle">Un projet à développer, une opportunité d'embauche ou simplement envie d'échanger technique ou rétrogaming ?</p>
                 </div>
-                <!-- Formulaire avec intégration Formspree -->
-                <form id="contact-form" class="contact-form" action="https://formspree.io/f/xgogkgdb" method="POST" novalidate>
-                    <div class="input-group">
-                        <label for="name">Nom / Entreprise</label>
-                        <input type="text" id="name" name="name" required placeholder="Votre nom">
+
+                <div class="contact-container glass-card reveal-on-scroll">
+                    <div class="contact-info">
+                        <h3>Discutons ensemble</h3>
+                        <p>Basé à Annecy, je suis ouvert aux opportunités en présentiel, hybride ou remote complet.</p>
+                        
+                        <div class="contact-details">
+                            <div class="contact-item">
+                                <span class="contact-item-icon">—</span>
+                                <span><strong>Annecy (74600)</strong>, France</span>
+                            </div>
+                            <div class="contact-item">
+                                <span class="contact-item-icon">—</span>
+                                <a href="tel:0636344566">06.36.34.45.66</a>
+                            </div>
+                            <div class="contact-item">
+                                <span class="contact-item-icon">—</span>
+                                <div>
+                                    <a href="mailto:hibouxepro@gmail.com">hibouxepro@gmail.com</a>
+                                    <span class="contact-badge">(Pro)</span>
+                                </div>
+                            </div>
+                            <div class="contact-item">
+                                <span class="contact-item-icon">—</span>
+                                <div>
+                                    <a href="mailto:quentin.beaud@hotmail.fr">quentin.beaud@hotmail.fr</a>
+                                    <span class="contact-badge">(Perso)</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <a href="https://www.linkedin.com/in/quentin-beaud-82137a21b/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+                                Mon profil LinkedIn
+                            </a>
+                        </div>
                     </div>
-                    <div class="input-group">
-                        <label for="email">Email professionnel</label>
-                        <input type="email" id="email" name="email" required placeholder="nom@entreprise.com">
-                    </div>
-                    <div class="input-group">
-                        <label for="message">Message</label>
-                        <textarea id="message" name="message" rows="5" required placeholder="Comment puis-je vous aider ?"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Envoyer le message</button>
-                    <p id="form-status" class="form-status"></p>
-                </form>
+
+                    <!-- Formulaire Contact (Formspree AJAX) -->
+                    <form id="contact-form" class="contact-form" action="https://formspree.io/f/xgogkgdb" method="POST" novalidate>
+                        <div class="form-group">
+                            <label for="name">Nom ou Entreprise *</label>
+                            <input type="text" id="name" name="name" required placeholder="Votre nom ou société">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Adresse Email *</label>
+                            <input type="email" id="email" name="email" required placeholder="votre.email@domaine.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Message *</label>
+                            <textarea id="message" name="message" rows="5" required placeholder="Votre message ou proposition..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            Envoyer le message
+                        </button>
+                        <div id="form-status" class="form-status" role="alert"></div>
+                    </form>
+                </div>
             </div>
         </section>
     </main>
 
+    <!-- Pied de page -->
     <footer class="site-footer">
-        <p>&copy; 2026 Quentin Beaud. Conçu avec passion (et 100% Vanilla).</p>
-        
-        <!-- Easter Egg: Hidden Owl -->
-        <!-- L'architecture pour l'audio et l'animation est prête dans script.js -->
-        <div id="hidden-owl" class="easter-egg-owl" title="Hoot!" aria-label="Easter Egg Hibou">🦉</div>
+        <div class="footer-content">
+            <p class="footer-copyright">&copy; 2026 Quentin Beaud (Hibouxe / Edsaje). Développé avec passion en Vanilla JavaScript.</p>
+        </div>
+        <div id="hidden-owl" class="easter-egg-owl" title="Psst... Code secret : A-R-C-A-D-E (ou 3 clics rapides !)" role="button" aria-label="Secret Arcade">
+            <img src="assets/logo-hibouxe.png" alt="Hibouxe Logo">
+        </div>
     </footer>
 
-    <script src="script.js"></script>
+    <!-- Contrôle Sonore Global -->
+    <div id="sound-control" class="sound-control">
+        <button id="mute-btn" class="mute-btn" title="Activer / Couper le son" aria-label="Activer le son">🔇</button>
+        <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.05" value="0.5" aria-label="Volume">
+    </div>
+
+    <!-- Hibou Clicker (Idle Game) -->
+    <div id="idle-toggle" class="idle-toggle" title="Ouvrir Hibou Clicker" role="button" aria-label="Ouvrir Hibou Clicker">
+        <img src="assets/logo-hibouxe.png" alt="Hibou Clicker">
+    </div>
+    
+    <div id="idle-panel" class="idle-panel">
+        <div class="idle-header">
+            <h3>🦉 Hibou Clicker <span id="idle-prestige-badge" class="idle-prestige-badge"></span></h3>
+            <span class="close-idle" id="close-idle" role="button" aria-label="Fermer le jeu">&times;</span>
+        </div>
+        <div class="idle-content">
+            <div class="idle-score">Plumes : <span id="idle-score-val">0</span></div>
+            <div class="idle-pps">Production : <span id="idle-pps-val">0</span> / sec | Clic : <span id="idle-cpc-val">1</span> <span id="crit-chance-display" class="crit-badge" title="Chance de Coup Critique">(6% Crit x10)</span></div>
+            
+            <!-- Barre de Buffs Actifs -->
+            <div id="idle-active-buffs" class="idle-active-buffs hidden-view"></div>
+
+            <div class="idle-click-area">
+                <img src="assets/logo-hibouxe.png" id="idle-logo" alt="Clique-moi pour récolter des plumes !" role="button">
+                <div id="idle-click-feedback-container"></div>
+            </div>
+            
+            <div class="idle-tabs">
+                <button class="idle-tab-btn active" data-tab="shop" id="tab-btn-shop">🛍️ Bâtiments</button>
+                <button class="idle-tab-btn" data-tab="spells" id="tab-btn-spells">⚡ Sorts</button>
+                <button class="idle-tab-btn" data-tab="celestial" id="tab-btn-celestial">✨ Céleste</button>
+                <button class="idle-tab-btn" data-tab="achievements" id="tab-btn-achievements">🏆 Succès <span id="achiev-count">(0/18)</span></button>
+                <button class="idle-tab-btn" data-tab="stats" id="tab-btn-stats">📊 Stats</button>
+            </div>
+            
+            <!-- Vue 1: Bâtiments & Améliorations -->
+            <div id="idle-view-shop" class="idle-view">
+                <div class="buy-mode-selector">
+                    <span class="buy-mode-label">Achat :</span>
+                    <div class="buy-mode-btns">
+                        <button class="buy-mode-btn active" data-mode="1">x1</button>
+                        <button class="buy-mode-btn" data-mode="10">x10</button>
+                        <button class="buy-mode-btn" data-mode="100">x100</button>
+                        <button class="buy-mode-btn" data-mode="max">MAX</button>
+                    </div>
+                </div>
+
+                <h4 class="idle-section-title">Améliorations de Clic</h4>
+                <button class="idle-upgrade-btn" id="upg-click">
+                    <span class="upg-info">
+                        <strong>👆 Clic Doré</strong> <span id="stars-click" class="idle-stars"></span>
+                        <small id="desc-click">+1 Plume / clic</small>
+                    </span>
+                    <span class="upg-cost"><span id="cost-click">10</span> 🪶 (<span id="count-click">0</span>)</span>
+                </button>
+                <button class="idle-upgrade-btn" id="upg-click2">
+                    <span class="upg-info">
+                        <strong>✨ Griffe Magique</strong> <span id="stars-click2" class="idle-stars"></span>
+                        <small id="desc-click2">+10 Plumes / clic</small>
+                    </span>
+                    <span class="upg-cost"><span id="cost-click2">1 000</span> 🪶 (<span id="count-click2">0</span>)</span>
+                </button>
+                <button class="idle-upgrade-btn" id="upg-click3">
+                    <span class="upg-info">
+                        <strong>🔥 Pouvoir Solaire</strong> <span id="stars-click3" class="idle-stars"></span>
+                        <small id="desc-click3">+100 Plumes / clic</small>
+                    </span>
+                    <span class="upg-cost"><span id="cost-click3">20 000</span> 🪶 (<span id="count-click3">0</span>)</span>
+                </button>
+                <button class="idle-upgrade-btn" id="upg-click4">
+                    <span class="upg-info">
+                        <strong>⚡ Foudre Nocturne</strong> <span id="stars-click4" class="idle-stars"></span>
+                        <small id="desc-click4">+1 500 Plumes / clic</small>
+                    </span>
+                    <span class="upg-cost"><span id="cost-click4">500 000</span> 🪶 (<span id="count-click4">0</span>)</span>
+                </button>
+
+                <h4 class="idle-section-title">Production Automatique</h4>
+                <button class="idle-upgrade-btn" id="upg-auto1">
+                    <span class="upg-info">
+                        <strong>🕰️ Hibou Apprenti</strong> <span id="stars-auto1" class="idle-stars"></span>
+                        <small id="desc-auto1">+1 Plume / sec</small>
+                    </span>
+                    <span class="upg-cost"><span id="cost-auto1">50</span> 🪶 (<span id="count-auto1">0</span>)</span>
+                </button>
+                <button class="idle-upgrade-btn" id="upg-auto2">
+                    <span class="upg-info">
+                        <strong>🌲 Forêt Magique</strong> <span id="stars-auto2" class="idle-stars"></span>
+                        <small id="desc-auto2">+15 Plumes / sec</small>
+                    </span>
+                    <span class="upg-cost"><span id="cost-auto2">500</span> 🪶 (<span id="count-auto2">0</span>)</span>
+                </button>
+                <button class="idle-upgrade-btn" id="upg-auto3">
+                    <span class="upg-info">
+                        <strong>🌌 Gardien Nocturne</strong> <span id="stars-auto3" class="idle-stars"></span>
+                        <small id="desc-auto3">+100 Plumes / sec</small>
+                    </span>
+                    <span class="upg-cost"><span id="cost-auto3">5 000</span> 🪶 (<span id="count-auto3">0</span>)</span>
+                </button>
+                <button class="idle-upgrade-btn" id="upg-auto4">
+                    <span class="upg-info">
+                        <strong>👑 Couronne Dorée</strong> <span id="stars-auto4" class="idle-stars"></span>
+                        <small id="desc-auto4">+800 Plumes / sec</small>
+                    </span>
+                    <span class="upg-cost"><span id="cost-auto4">25 000</span> 🪶 (<span id="count-auto4">0</span>)</span>
+                </button>
+                <button class="idle-upgrade-btn" id="upg-auto5">
+                    <span class="upg-info">
+                        <strong>⚡ Temple Céleste</strong> <span id="stars-auto5" class="idle-stars"></span>
+                        <small id="desc-auto5">+5 000 Plumes / sec</small>
+                    </span>
+                    <span class="upg-cost"><span id="cost-auto5">150 000</span> 🪶 (<span id="count-auto5">0</span>)</span>
+                </button>
+                <button class="idle-upgrade-btn" id="upg-auto6">
+                    <span class="upg-info">
+                        <strong>🖥️ Serveur Dédié C#</strong> <span id="stars-auto6" class="idle-stars"></span>
+                        <small id="desc-auto6">+35 000 Plumes / sec</small>
+                    </span>
+                    <span class="upg-cost"><span id="cost-auto6">1 000 000</span> 🪶 (<span id="count-auto6">0</span>)</span>
+                </button>
+                <button class="idle-upgrade-btn" id="upg-auto7">
+                    <span class="upg-info">
+                        <strong>🌌 Sanctuaire du Hibouxe</strong> <span id="stars-auto7" class="idle-stars"></span>
+                        <small id="desc-auto7">+250 000 Plumes / sec</small>
+                    </span>
+                    <span class="upg-cost"><span id="cost-auto7">10 000 000</span> 🪶 (<span id="count-auto7">0</span>)</span>
+                </button>
+            </div>
+
+            <!-- Vue 2: Sorts Actifs & Scripts -->
+            <div id="idle-view-spells" class="idle-view hidden-view">
+                <h4 class="idle-section-title">⚡ Sorts & Compétences Actives</h4>
+                <p class="idle-tab-desc">Active des sorts puissants avec temps de recharge pour booster temporairement ta production !</p>
+                <div class="spells-list">
+                    <div class="spell-card" id="spell-coffee">
+                        <div class="spell-header">
+                            <span class="spell-icon">☕</span>
+                            <div class="spell-titles">
+                                <strong>Caféine Pure</strong>
+                                <small>Double la puissance des clics (x2) pendant 25s.</small>
+                            </div>
+                        </div>
+                        <div class="spell-footer">
+                            <span class="spell-cooldown-text" id="cd-coffee">Prêt !</span>
+                            <button class="btn-cast-spell" id="btn-cast-coffee">Activer</button>
+                        </div>
+                    </div>
+                    <div class="spell-card" id="spell-deploy">
+                        <div class="spell-header">
+                            <span class="spell-icon">🚀</span>
+                            <div class="spell-titles">
+                                <strong>Déploiement Vendredi 17h</strong>
+                                <small>Burst instantané de 10 min de PPS (15% chance jackpot x5).</small>
+                            </div>
+                        </div>
+                        <div class="spell-footer">
+                            <span class="spell-cooldown-text" id="cd-deploy">Prêt !</span>
+                            <button class="btn-cast-spell" id="btn-cast-deploy">Activer</button>
+                        </div>
+                    </div>
+                    <div class="spell-card" id="spell-godot">
+                        <div class="spell-header">
+                            <span class="spell-icon">🎮</span>
+                            <div class="spell-titles">
+                                <strong>Moteur Turbo C# Godot</strong>
+                                <small>Toute la production automatique x5 pendant 15s.</small>
+                            </div>
+                        </div>
+                        <div class="spell-footer">
+                            <span class="spell-cooldown-text" id="cd-godot">Prêt !</span>
+                            <button class="btn-cast-spell" id="btn-cast-godot">Activer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vue 3: Renaissance & Talents Célestes -->
+            <div id="idle-view-celestial" class="idle-view hidden-view">
+                <div id="prestige-container" class="prestige-container">
+                    <h4 class="prestige-title">✨ RENAISSANCE CÉLESTE ✨</h4>
+                    <p class="prestige-desc">Tu possèdes <strong id="celestial-owned-val">0</strong> Plumes Célestes (<strong id="celestial-bonus-val">+0%</strong> bonus global).</p>
+                    <p class="prestige-desc">Gain à la Renaissance : <strong id="celestial-gain-val">+0</strong> Plumes Célestes</p>
+                    <button class="btn btn-primary" id="btn-trigger-prestige">🌟 Renaître dans la Gloire</button>
+                </div>
+
+                <h4 class="idle-section-title">🔮 Arbre de Talents Célestes</h4>
+                <p class="idle-tab-desc">Dépense tes Plumes Célestes pour des passifs permanents conservés après chaque renaissance !</p>
+                <div class="talents-grid">
+                    <div class="talent-card">
+                        <div class="talent-header">
+                            <strong>🦉 Griffe Acérée</strong>
+                            <span class="talent-lvl-badge" id="lvl-talent-crit-chance">0/5</span>
+                        </div>
+                        <small>+2% chance de coup critique par niveau.</small>
+                        <button class="btn-buy-talent" id="btn-talent-crit-chance">Acheter (<span id="cost-talent-crit-chance">1</span> 🔮)</button>
+                    </div>
+                    <div class="talent-card">
+                        <div class="talent-header">
+                            <strong>💥 Frappe Dévastatrice</strong>
+                            <span class="talent-lvl-badge" id="lvl-talent-crit-mult">0/5</span>
+                        </div>
+                        <small>+3x sur le multiplicateur des critiques.</small>
+                        <button class="btn-buy-talent" id="btn-talent-crit-mult">Acheter (<span id="cost-talent-crit-mult">2</span> 🔮)</button>
+                    </div>
+                    <div class="talent-card">
+                        <div class="talent-header">
+                            <strong>📦 Architecture Modulaire</strong>
+                            <span class="talent-lvl-badge" id="lvl-talent-discount">0/5</span>
+                        </div>
+                        <small>-4% sur le coût de tous les bâtiments.</small>
+                        <button class="btn-buy-talent" id="btn-talent-discount">Acheter (<span id="cost-talent-discount">1</span> 🔮)</button>
+                    </div>
+                    <div class="talent-card">
+                        <div class="talent-header">
+                            <strong>🌙 Veille Nocturne</strong>
+                            <span class="talent-lvl-badge" id="lvl-talent-offline">0/4</span>
+                        </div>
+                        <small>+15% d'efficacité de gain hors-ligne (50% -> 110%).</small>
+                        <button class="btn-buy-talent" id="btn-talent-offline">Acheter (<span id="cost-talent-offline">2</span> 🔮)</button>
+                    </div>
+                    <div class="talent-card">
+                        <div class="talent-header">
+                            <strong>⏳ Sommeil Profond</strong>
+                            <span class="talent-lvl-badge" id="lvl-talent-offline-cap">0/4</span>
+                        </div>
+                        <small>Stockage max hors-ligne (+2h à +10h, Base: 2h -> Max 24h).</small>
+                        <button class="btn-buy-talent" id="btn-talent-offline-cap">Acheter (<span id="cost-talent-offline-cap">2</span> 🔮)</button>
+                    </div>
+                    <div class="talent-card">
+                        <div class="talent-header">
+                            <strong>🌟 Attraction Dorée</strong>
+                            <span class="talent-lvl-badge" id="lvl-talent-firefly">0/3</span>
+                        </div>
+                        <small>Lucioles dorées 25% plus fréquentes.</small>
+                        <button class="btn-buy-talent" id="btn-talent-firefly">Acheter (<span id="cost-talent-firefly">3</span> 🔮)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vue 4: Succès & Trophées (18 Succès) -->
+            <div id="idle-view-achievements" class="idle-view hidden-view">
+                <div class="achievements-header-banner">
+                    <p>Bonus de production cumulé : <strong id="achiev-bonus-display">+0%</strong> (+1% par succès débloqué)</p>
+                </div>
+                <div class="achievements-list">
+                    <div class="achievement-item" id="ach-first_click"><span class="ach-icon">🔒</span><div><strong>Premier Clic</strong><br><small>Faire son 1er clic sur le hibou.</small></div></div>
+                    <div class="achievement-item" id="ach-clicks_100"><span class="ach-icon">🔒</span><div><strong>Spam Débutant</strong><br><small>Faire 100 clics manuels.</small></div></div>
+                    <div class="achievement-item" id="ach-clicks_1000"><span class="ach-icon">🔒</span><div><strong>Doigts d'Acier</strong><br><small>Faire 1 000 clics manuels.</small></div></div>
+                    <div class="achievement-item" id="ach-clicks_10k"><span class="ach-icon">🔒</span><div><strong>Frénésie Manuelle</strong><br><small>Faire 10 000 clics manuels.</small></div></div>
+                    <div class="achievement-item" id="ach-feathers_100"><span class="ach-icon">🔒</span><div><strong>Plumes Débutant</strong><br><small>Récolter 100 plumes au total.</small></div></div>
+                    <div class="achievement-item" id="ach-feathers_10k"><span class="ach-icon">🔒</span><div><strong>Plumes d'Argent</strong><br><small>Récolter 10 000 plumes au total.</small></div></div>
+                    <div class="achievement-item" id="ach-feathers_1m"><span class="ach-icon">🔒</span><div><strong>Millionnaire Nocturne</strong><br><small>Récolter 1 000 000 de plumes.</small></div></div>
+                    <div class="achievement-item" id="ach-feathers_1b"><span class="ach-icon">🔒</span><div><strong>Milliardaire Céleste</strong><br><small>Récolter 1 Milliard de plumes.</small></div></div>
+                    <div class="achievement-item" id="ach-feathers_1t"><span class="ach-icon">🔒</span><div><strong>Trillionnaire Galactique</strong><br><small>Récolter 1 Trillion de plumes.</small></div></div>
+                    <div class="achievement-item" id="ach-pps_100"><span class="ach-icon">🔒</span><div><strong>Usine à Plumes</strong><br><small>Production de 100 plumes / sec.</small></div></div>
+                    <div class="achievement-item" id="ach-pps_10k"><span class="ach-icon">🔒</span><div><strong>Industrie Mystique</strong><br><small>Production de 10 000 plumes / sec.</small></div></div>
+                    <div class="achievement-item" id="ach-pps_1m"><span class="ach-icon">🔒</span><div><strong>Supercalculateur</strong><br><small>Production de 1 000 000 plumes / sec.</small></div></div>
+                    <div class="achievement-item" id="ach-click_god"><span class="ach-icon">🔒</span><div><strong>Clic Divin</strong><br><small>Puissance de 100 plumes par clic.</small></div></div>
+                    <div class="achievement-item" id="ach-first_crit"><span class="ach-icon">🔒</span><div><strong>Coup de Maître</strong><br><small>Déclencher son 1er coup critique.</small></div></div>
+                    <div class="achievement-item" id="ach-firefly_catcher"><span class="ach-icon">🔒</span><div><strong>Chasseur de Lucioles</strong><br><small>Attraper sa 1ère Luciole Dorée.</small></div></div>
+                    <div class="achievement-item" id="ach-firefly_master"><span class="ach-icon">🔒</span><div><strong>Maître des Étoiles</strong><br><small>Attraper 10 Lucioles Dorées.</small></div></div>
+                    <div class="achievement-item" id="ach-spell_caster"><span class="ach-icon">🔒</span><div><strong>Mage du Code</strong><br><small>Lancer 5 sorts actifs.</small></div></div>
+                    <div class="achievement-item" id="ach-first_prestige"><span class="ach-icon">🔒</span><div><strong>Renaissance Stellaire</strong><br><small>Effectuer sa 1ère Renaissance Céleste.</small></div></div>
+                </div>
+            </div>
+
+            <!-- Vue 5: Statistiques & Leaderboard -->
+            <div id="idle-view-stats" class="idle-view hidden-view">
+                <div class="stats-card">
+                    <p><span>Total clics manuels :</span> <span id="stat-clicks">0</span></p>
+                    <p><span>Coups critiques infligés :</span> <span id="stat-crits">0</span></p>
+                    <p><span>Lucioles dorées attrapées :</span> <span id="stat-fireflies">0</span></p>
+                    <p><span>Sorts lancés :</span> <span id="stat-spells">0</span></p>
+                    <p><span>Total plumes récoltées :</span> <span id="stat-total-feathers">0</span></p>
+                    <p><span>Temps de jeu :</span> <span id="stat-time">0s</span></p>
+                    <p><span>Plumes Célestes possédées :</span> <span id="stat-prestige">0</span></p>
+                    <p><span>Renaissances effectuées :</span> <span id="stat-rebirths">0</span></p>
+                </div>
+                <div class="idle-leaderboard-actions">
+                    <button class="btn btn-primary" id="btn-submit-idle-score" style="width: 100%; margin-bottom: 8px;">🏆 Soumettre mon score au Classement</button>
+                    <button class="btn btn-secondary" onclick="if(window.leaderboardManager) window.leaderboardManager.openLeaderboard('clicker')" style="width: 100%; margin-bottom: 12px;">📊 Voir le Hall of Fame</button>
+                </div>
+                <button class="btn btn-outline" id="btn-reset-idle">🗑️ Réinitialiser la partie</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Gains Hors-Ligne -->
+    <div id="offline-gains-modal" class="offline-gains-modal hidden-view" role="dialog" aria-modal="true">
+        <div class="offline-modal-box">
+            <button class="close-offline" id="close-offline-modal" aria-label="Fermer la fenêtre">&times;</button>
+            <div class="offline-icon">🌙</div>
+            <h3 class="offline-title">Bon retour parmi nous !</h3>
+            <p class="offline-time-text">Pendant ton absence de <strong id="offline-duration-val">0m</strong>, tes hiboux ont continué à récolter dans la nuit.</p>
+            <div class="offline-gain-display">
+                <span class="offline-gain-label">Plumes récoltées :</span>
+                <span class="offline-gain-val" id="offline-feathers-val">+0 🪶</span>
+            </div>
+            <button class="btn btn-primary" id="btn-claim-offline">Récolter mes plumes</button>
+        </div>
+    </div>
+
+    <!-- Notification Toast de Succès -->
+    <div id="achievement-toast" class="achievement-toast" role="status" aria-live="polite">
+        <span class="toast-trophy">🏆</span>
+        <div>
+            <strong class="toast-badge-title">SUCCÈS DÉBLOQUÉ !</strong>
+            <p id="toast-title" class="toast-desc"></p>
+        </div>
+    </div>
+
+    <!-- Modale Salle d'Arcade (7 Jeux Rétro) -->
+    <div id="arcade-modal" class="arcade-modal" role="dialog" aria-modal="true" aria-label="Salle d'Arcade Secrète">
+        <div class="arcade-modal-content">
+            <button class="close-arcade" aria-label="Fermer la salle d'arcade">&times;</button>
+            
+            <!-- Menu Arcade -->
+            <div id="arcade-menu">
+                <h2 class="arcade-menu-title">🎮 Salle d'Arcade Secrète 🎮</h2>
+                <p class="arcade-menu-subtitle">Choisis ton jeu rétro :</p>
+                <div class="arcade-games-grid">
+                    <button class="arcade-btn" onclick="launchGame('snake')">🐍 Snake Doré</button>
+                    <button class="arcade-btn" onclick="launchGame('pong')">🏓 Pong Magique</button>
+                    <button class="arcade-btn" onclick="launchGame('breakout')">🧱 Casse-Briques</button>
+                    <button class="arcade-btn" onclick="launchGame('flappy')">🦅 Flappy Hibou</button>
+                    <button class="arcade-btn" onclick="launchGame('invaders')">🚀 Hibou Invaders</button>
+                    <button class="arcade-btn" onclick="launchGame('run')">🦘 Forest Run</button>
+                    <button class="arcade-btn full-span" onclick="launchGame('tetris')">🧩 Tetris Mystique</button>
+                    <button class="arcade-btn full-span lb-hall-btn" onclick="if(window.leaderboardManager) window.leaderboardManager.openLeaderboard('snake')">🏆 Hall of Fame (Scores en ligne)</button>
+                </div>
+            </div>
+
+            <!-- Vue de Jeu Arcade -->
+            <div id="arcade-game-view" class="hidden-view">
+                <h2 id="arcade-game-title" class="arcade-menu-title">Jeu</h2>
+                <div class="arcade-score-display">Score : <span id="arcade-score-val">0</span></div>
+                <canvas id="arcade-canvas" width="400" height="400"></canvas>
+                
+                <!-- Manette Virtuelle Tactile -->
+                <div id="virtual-gamepad" class="virtual-gamepad">
+                    <div class="d-pad">
+                        <button id="btn-up" class="d-btn up" aria-label="Haut">▲</button>
+                        <button id="btn-left" class="d-btn left" aria-label="Gauche">◄</button>
+                        <button id="btn-right" class="d-btn right" aria-label="Droite">►</button>
+                        <button id="btn-down" class="d-btn down" aria-label="Bas">▼</button>
+                    </div>
+                    <div class="action-pad">
+                        <button id="btn-action" class="action-btn" aria-label="Action / Tir">A</button>
+                    </div>
+                </div>
+                <p id="arcade-instructions" class="arcade-instructions">Instructions du jeu</p>
+                <div class="arcade-view-actions">
+                    <button class="arcade-btn-small" onclick="if(window.arcadeEngine && window.arcadeEngine.currentGame && window.leaderboardManager) window.leaderboardManager.openLeaderboard(window.arcadeEngine.currentGame)">🏆 Voir les scores</button>
+                    <button class="arcade-btn-small" onclick="showArcadeMenu()">🔙 Retour au menu arcade</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Easter Egg Vectrex (Mine Storm 1982) -->
+    <div id="vectrex-modal" class="arcade-modal" role="dialog" aria-modal="true" aria-label="Console Vectrex">
+        <div class="arcade-modal-content vectrex-modal-content">
+            <button class="close-vectrex" id="close-vectrex" aria-label="Fermer le simulateur Vectrex">&times;</button>
+            <div>
+                <h2 class="vectrex-title">⚡ VECTREX : MINE STORM ⚡</h2>
+                <p class="vectrex-subtitle">Simulation vectorielle - 1982</p>
+                <div class="vectrex-stats">SCORE: <span id="vectrex-score">0</span> | VIES: <span id="vectrex-lives">3</span></div>
+                
+                <canvas id="vectrex-canvas" width="400" height="400"></canvas>
+                
+                <!-- Manette Virtuelle Tactile Vectrex -->
+                <div id="vectrex-gamepad" class="virtual-gamepad">
+                    <div class="d-pad">
+                        <button id="vbtn-up" class="d-btn up" aria-label="Poussée">▲</button>
+                        <button id="vbtn-left" class="d-btn left" aria-label="Tourner à gauche">◄</button>
+                        <button id="vbtn-right" class="d-btn right" aria-label="Tourner à droite">►</button>
+                    </div>
+                    <div class="action-pad">
+                        <button id="vbtn-action" class="action-btn" aria-label="Tirer">TIR</button>
+                    </div>
+                </div>
+                
+                <p class="vectrex-subtitle vectrex-instructions">◄ ► : Rotation | ▲ : Poussée | ESPACE / TIR : Tirer Laser</p>
+                <div class="vectrex-modal-actions">
+                    <button class="arcade-btn-small vectrex-restart-btn" id="restart-vectrex-btn">🔄 Rejouer</button>
+                    <button class="arcade-btn-small" onclick="if(window.leaderboardManager) window.leaderboardManager.openLeaderboard('vectrex')">🏆 Scores Mondiaux</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

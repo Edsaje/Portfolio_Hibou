@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Quentin Beaud - Thème Hibouxe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d1a12;
+            --bg-light: #162a1c;
+            --accent-gold: #d4af37;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #222; 
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .page {
+            width: 210mm;
+            height: 297mm; /* Hauteur exacte A4 */
+            overflow: hidden; /* Empêche tout débordement sur une 2ème page */
+            background-color: var(--bg-color); 
+            color: var(--text-main);
+            box-shadow: 0 0 25px rgba(0,0,0,0.8);
+            padding: 12mm 16mm;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        /* Header */
+        header {
+            text-align: center;
+            border-bottom: 2px solid var(--accent-gold);
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-family: 'Cinzel', serif;
+            color: var(--accent-gold);
+            font-size: 28px;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        .contact {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .contact span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* Contenu */
+        .content {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            flex-grow: 1;
+        }
+        
+        /* Objectif */
+        .objective {
+            background-color: var(--bg-light);
+            padding: 10px 15px;
+            border-left: 3px solid var(--accent-gold);
+            font-size: 13.5px;
+            line-height: 1.4;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 4px;
+        }
+        
+        /* Sections (Titres plus espacés selon demande) */
+        .section-title {
+            font-family: 'Cinzel', serif;
+            color: var(--accent-gold);
+            font-size: 17px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+            padding-bottom: 4px;
+            margin-top: 6px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .item {
+            margin-bottom: 12px;
+        }
+        .item:last-child {
+            margin-bottom: 0;
+        }
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 3px;
+        }
+        .item-title {
+            font-weight: 600;
+            font-size: 14.5px;
+            color: #fff;
+        }
+        .item-location {
+            color: var(--text-muted);
+            font-weight: 400;
+            font-size: 13px;
+        }
+        .item-meta {
+            font-size: 12.5px;
+            color: var(--accent-gold);
+            font-style: italic;
+            white-space: nowrap;
+        }
+        .item-desc {
+            font-size: 12.5px;
+            line-height: 1.4;
+            color: var(--text-main);
+        }
+        
+        /* Skills Grids */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 20px;
+        }
+        .skill-group h4 {
+            color: var(--accent-gold);
+            font-size: 13.5px;
+            margin-bottom: 3px;
+        }
+        .skill-group p {
+            font-size: 12.5px;
+            line-height: 1.35;
+        }
+
+        /* Langues & Intérêts */
+        .bottom-section {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(212, 175, 55, 0.05);
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        /* IMPRESSION PDF */
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            body {
+                background-color: var(--bg-color) !important; 
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .page {
+                box-shadow: none;
+                width: 210mm;
+                height: 297mm;
+                padding: 12mm 16mm;
+                background-color: var(--bg-color) !important;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div>
+            <header>
+                <h1>Quentin Beaud</h1>
+                <div class="title">Concepteur Développeur d’Applications et IA – Spécialiste Java</div>
+                <div class="contact">
+                    <span>📍 Annecy (74000)</span>
+                    <span>📞 06.36.34.45.66</span>
+                    <span>✉️ quentin.beaud@hotmail.fr</span>
+                    <span>🚗 Permis B</span>
+                </div>
+            </header>
+
+            <div class="content">
+                <section>
+                    <div class="objective">
+                        <strong>OBJECTIF :</strong> À la recherche d'une alternance d'un an en développement Java / IA à partir du 25 janvier 2027.
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="section-title">Compétences Techniques</h2>
+                    <div class="skills-grid">
+                        <div class="skill-group">
+                            <h4>Langages & Frameworks</h4>
+                            <p>Java (POO), Spring Boot, JavaScript ES6+, HTML5 / CSS3, C# (.NET)</p>
+                        </div>
+                        <div class="skill-group">
+                            <h4>Bases de données & Systèmes</h4>
+                            <p>SQL (PostgreSQL, MySQL), JPA / Hibernate, Docker, Git / GitHub, Linux</p>
+                        </div>
+                        <div class="skill-group">
+                            <h4>Architecture & Méthodes</h4>
+                            <p>Architecture n-tiers, APIs REST, POO & Clean Code, Méthode Agile, Tests</p>
+                        </div>
+                        <div class="skill-group">
+                            <h4>Création & Outils</h4>
+                            <p>Godot Engine 4, Montage vidéo professionnel (Suite Adobe), Canvas 2D</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="section-title">Formations</h2>
+                    
+                    <div class="item">
+                        <div class="item-header">
+                            <div class="item-title">Concepteur Développeur d’Applications – Spécialiste Java <span class="item-location">| Annecy</span></div>
+                            <div class="item-meta">En cours</div>
+                        </div>
+                        <div class="item-desc">Développement approfondi sur l'écosystème Java/Spring, la conception logicielle, les bases de données et les architectures applicatives.</div>
+                    </div>
+
+                    <div class="item">
+                        <div class="item-header">
+                            <div class="item-title">Pré-qualifications Technicien en Maintenance Industrielle <span class="item-location">| Pôle Formation, Annecy</span></div>
+                            <div class="item-meta">Oct. 2024 – Janv. 2025</div>
+                        </div>
+                        <div class="item-desc">Obtention des habilitations électriques professionnelles (BR, BIV, B2V, BC).</div>
+                    </div>
+
+                    <div class="item">
+                        <div class="item-header">
+                            <div class="item-title">Monteur Vidéo (Titre RNCP Niveau 5) <span class="item-location">| Paris</span></div>
+                            <div class="item-meta">2023</div>
+                        </div>
+                    </div>
+
+                    <div class="item">
+                        <div class="item-header">
+                            <div class="item-title">Baccalauréat Scientifique <span class="item-location">| Lycée Charles Baudelaire, Annecy</span></div>
+                            <div class="item-meta">2015</div>
+                        </div>
+                        <div class="item-desc">Option ISN (Informatique et Sciences du Numérique) et Cinéma.</div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="section-title">Expériences Professionnelles</h2>
+                    
+                    <div class="item">
+                        <div class="item-header">
+                            <div class="item-title">Stagiaire Technicien en Maintenance Industrielle <span class="item-location">| Aptar Reboul, Annecy</span></div>
+                            <div class="item-meta">Déc. 2024</div>
+                        </div>
+                        <div class="item-desc">Interventions logiques et techniques sur systèmes automatisés (Maintenance mécanique, électrique sur automate et bras robotique, pneumatique).</div>
+                    </div>
+
+                    <div class="item">
+                        <div class="item-header">
+                            <div class="item-title">Agent Polyvalent Informatique <span class="item-location">| Bazar Sans Frontière, Annecy</span></div>
+                            <div class="item-meta">Mars 2022 – Mars 2023</div>
+                        </div>
+                        <div class="item-desc">Diagnostic matériel et logiciel, reconditionnement d'équipements informatiques, résolution d'incidents et support utilisateur.</div>
+                    </div>
+
+                    <div class="item">
+                        <div class="item-header">
+                            <div class="item-title">Intérimaire (Manutention et logistique) <span class="item-location">| Annecy</span></div>
+                            <div class="item-meta">Oct. 2015 – Avr. 2016</div>
+                        </div>
+                        <div class="item-desc">Manutention, logistique, distribution postale à vélo.</div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <section class="bottom-section">
+            <div>
+                <strong>Langues :</strong> Français (Maternel), <strong>Anglais (Courant / C1)</strong>
+            </div>
+            <div>
+                <strong>Centres d'intérêt :</strong> Game Dev, Cinéma, Rétrogaming & Restauration
+            </div>
+        </section>
+    </div>
+</body>
+</html>
