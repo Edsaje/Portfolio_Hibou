@@ -139,7 +139,15 @@
                     this.track('cv_download', { format });
                 }
 
-                // B. Clics sur les liens de contact
+                // B. Clics sur les cartes de projets GitHub
+                const repoCard = target.closest('.repo-card');
+                if (repoCard) {
+                    const h3 = repoCard.querySelector('h3');
+                    const title = h3 ? h3.textContent.trim() : 'projet';
+                    this.track('project_click', { project: title.substring(0, 40) });
+                }
+
+                // C. Clics sur les liens de contact
                 if (href.startsWith('mailto:')) {
                     const isPro = href.includes('pro') || href.includes('hibouxe');
                     this.track('contact_click', { target: isPro ? 'email_pro' : 'email_perso' });
@@ -147,7 +155,7 @@
                     this.track('contact_click', { target: 'phone' });
                 } else if (href.includes('linkedin.com')) {
                     this.track('social_click', { target: 'linkedin' });
-                } else if (href.includes('github.com')) {
+                } else if (href.includes('github.com') && !repoCard) {
                     this.track('social_click', { target: 'github' });
                 } else if (href.includes('youtube.com')) {
                     this.track('social_click', { target: 'youtube' });
