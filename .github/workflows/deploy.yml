@@ -1,0 +1,39 @@
+name: 🚀 Déploiement automatique vers OVH
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Permet aussi de déclencher manuellement depuis l'onglet Actions de GitHub
+
+jobs:
+  deploy:
+    name: 🎉 Synchronisation FTP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🚚 Récupération du code (Git Checkout)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # Permet de ne transférer que les fichiers réellement modifiés
+
+      - name: 📂 Déploiement vers l'hébergement OVH
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_DIR || 'www/' }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github*
+            **/.github*/**
+            GEMINI.md
+            README.md
+            api/.secret
+            api/.admin_pass
+            api/stats.json
+            api/scores.json
+            api/rate_limits.json
+            api/track_rate_limits.json
