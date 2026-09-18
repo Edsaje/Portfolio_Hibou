@@ -35,3 +35,11 @@ Pour éviter à tout prix l'effet "site généré par IA" ou "template SaaS Drib
 
 - **Zéro dépendance externe inutile :** Tout doit rester en pur Vanilla JS, Canvas 2D et CSS natif.
 - **Spécificité et masquage :** Les classes utilitaires critiques comme `.hidden-view` doivent être garanties (`display: none !important;`) et les composants modaux masqués par défaut pour éviter tout conflit de cascade CSS.
+
+---
+
+## 5. Déploiement Continu & Synchronisation Automatique (CI/CD OVH)
+
+- **Synchronisation automatique par `git push` :** Tout commit poussé sur la branche `main` déclenche automatiquement le workflow GitHub Actions (`.github/workflows/deploy.yml`) qui synchronise le code vers l'hébergement web OVH via FTP.
+- **Aucun transfert manuel requis :** Inutile de téléverser manuellement des fichiers via FileZilla pour mettre à jour le site en production, le déploiement se fait seul en quelques secondes.
+- **Sanctuarisation des données de production :** Le déploiement n'écrase et ne supprime jamais les fichiers générés dynamiquement sur le serveur distant (`api/stats.json`, `api/scores.json`, `api/rate_limits.json`, `api/.secret`, `api/.admin_pass`, etc.). Ces données privées restent protégées et persistantes.
