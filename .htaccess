@@ -1,6 +1,27 @@
 # Interdire le listage des répertoires
 Options -Indexes
 
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Redirection HTTPS 301 stricte (compatible Cloudflare & hébergement direct)
+  RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# Bloquer l'accès direct aux fichiers sensibles, fichiers cachés et sauvegardes
+<FilesMatch "(^\..*|\.json|\.secret|\.admin_pass|\.log|\.env|\.bak|\.tmp.*|\.swp|\.swo|~$|\.php\.bak)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
 # Types MIME modernes pour les polices WOFF2
 <IfModule mod_mime.c>
   AddType font/woff2 .woff2
@@ -24,8 +45,11 @@ Options -Indexes
   ExpiresByType application/javascript "access plus 1 month"
 </IfModule>
 
-# En-têtes HTTP de sécurité
+# En-têtes HTTP de sécurité stricts (OWASP / ANSSI)
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 </IfModule>
