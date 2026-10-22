@@ -391,9 +391,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || isset($_POST['admin_login']) || isse
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Analytics & Tracking | Quentin Beaud</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <link rel="preload" href="../fonts/cinzel-latin.woff2" as="font" type="font/woff2" crossorigin>
+        <link rel="preload" href="../fonts/outfit-latin.woff2" as="font" type="font/woff2" crossorigin>
+        <link rel="stylesheet" href="../fonts/fonts.css">
         <style>
             :root {
                 --bg: #060d08;
