@@ -22,6 +22,10 @@
       this.vaultKeyBuffer = "";
       // Empreinte SHA-256 secrète
       this.vaultSha256 = "96f91d14f1f678c058c24c447fc0605b4a13bbeec9e1111e65e5dfeb1cd31937";
+
+      // Détecteur cryptographique Cloud Archiviste (tampon circulaire de 18 caractères)
+      this.cloudKeyBuffer = "";
+      this.cloudSha256 = "e4d8de0fcd22fe4e48bf23e6e8a1d97db92c980a668abc32d1977466e362339e";
     }
 
     init() {
@@ -51,6 +55,17 @@
               window.location.hash = "";
             }
             this.openRetroVault();
+            return;
+          }
+
+          if (hashHex === this.cloudSha256) {
+            try {
+              history.replaceState(null, document.title, window.location.pathname + window.location.search);
+            } catch (e) {
+              window.location.hash = "";
+            }
+            this.triggerCloudArchivist();
+            return;
           }
         } catch (e) {}
       };
@@ -77,6 +92,11 @@
           this.vaultKeyBuffer = (this.vaultKeyBuffer + lowerKey).slice(-13);
           if (this.vaultKeyBuffer.length === 13) {
             this.verifyVaultHash(this.vaultKeyBuffer);
+          }
+
+          this.cloudKeyBuffer = (this.cloudKeyBuffer + lowerKey).slice(-18);
+          if (this.cloudKeyBuffer.length === 18) {
+            this.verifyCloudHash(this.cloudKeyBuffer);
           }
         }
 
@@ -143,6 +163,31 @@
       } catch (e) {}
     }
 
+    async verifyCloudHash(str) {
+      try {
+        const msgUint8 = new TextEncoder().encode(str);
+        const hashBuf = await crypto.subtle.digest("SHA-256", msgUint8);
+        const hashHex = Array.from(new Uint8Array(hashBuf))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        if (hashHex === this.cloudSha256) {
+          this.triggerCloudArchivist();
+        }
+      } catch (e) {}
+    }
+
+    triggerCloudArchivist() {
+      this.openRetroVault();
+      const checkAndOpen = () => {
+        if (window.RetroVaultEngine && typeof window.RetroVaultEngine.openCloudArchivistModal === "function") {
+          window.RetroVaultEngine.openCloudArchivistModal();
+        } else {
+          setTimeout(checkAndOpen, 100);
+        }
+      };
+      setTimeout(checkAndOpen, 300);
+    }
+
     bindCartridgeDrop() {
       // Détection de glisser-déposer furtif de ROMs
       window.addEventListener("dragover", (e) => {
@@ -170,7 +215,7 @@
         window.audioManager.play("coin");
       }
 
-      if (window.RetroVaultEngine && window.RetroVaultEngine.version === "8.4-mario64-analog") {
+      if (window.RetroVaultEngine && typeof window.RetroVaultEngine.open === "function") {
         window.RetroVaultEngine.open(bootFile);
         return;
       }

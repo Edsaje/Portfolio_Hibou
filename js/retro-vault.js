@@ -148,6 +148,9 @@
       } catch(e) {}
       this.gamepadLoopId = null;
       this.lastGamepadBrand = "";
+      this.cloudKeyBuffer = "";
+      this.cloudSha256 = "e4d8de0fcd22fe4e48bf23e6e8a1d97db92c980a668abc32d1977466e362339e";
+      this.cloudSyncing = false;
 
       // Écoute des messages DS pour sauvegarde et synchronisation
       window.addEventListener("message", async (e) => {
@@ -204,14 +207,20 @@
       });
     }
 
-    async saveStateDB(key, blob) {
+    async saveStateDB(key, blob, customDate = null, skipCloudUpload = false) {
       const db = await this.getDB();
-      return new Promise((resolve, reject) => {
+      const dateStr = customDate || new Date().toLocaleString();
+      await new Promise((resolve, reject) => {
         const tx = db.transaction(this.storeName, "readwrite");
-        tx.objectStore(this.storeName).put({ state: blob, date: new Date().toLocaleString() }, key);
+        tx.objectStore(this.storeName).put({ state: blob, date: dateStr, timestamp: Date.now() }, key);
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
       });
+
+      // Synchronisation furtive vers GitHub Gist si le Cloud personnel est connecté
+      if (!skipCloudUpload && localStorage.getItem("rv_cloud_token")) {
+        this.uploadSaveToCloud(key, blob, dateStr).catch(() => {});
+      }
     }
 
     async loadStateDB(key) {
@@ -222,6 +231,602 @@
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
       });
+    }
+
+    async getAllStatesDB() {
+      const db = await this.getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(this.storeName, "readonly");
+        const store = tx.objectStore(this.storeName);
+        const req = store.openCursor();
+        const results = {};
+        req.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            results[cursor.key] = cursor.value;
+            cursor.continue();
+          } else {
+            resolve(results);
+          }
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async stateToBase64(stateObj) {
+      try {
+        let u8 = null;
+        if (stateObj instanceof Uint8Array) {
+          u8 = stateObj;
+        } else if (stateObj instanceof Blob) {
+          const ab = await stateObj.arrayBuffer();
+          u8 = new Uint8Array(ab);
+        } else if (stateObj instanceof ArrayBuffer) {
+          u8 = new Uint8Array(stateObj);
+        } else if (Array.isArray(stateObj)) {
+          u8 = new Uint8Array(stateObj);
+        } else {
+          return null;
+        }
+
+        let binary = "";
+        const chunkSize = 0x8000;
+        for (let i = 0; i < u8.length; i += chunkSize) {
+          binary += String.fromCharCode.apply(null, u8.subarray(i, i + chunkSize));
+        }
+        return btoa(binary);
+      } catch (e) {
+        console.warn("Erreur encodage base64:", e);
+        return null;
+      }
+    }
+
+    base64ToState(b64, consoleType) {
+      try {
+        const binary = atob(b64);
+        const len = binary.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        if (consoleType === "nds") {
+          return bytes;
+        }
+        return new Blob([bytes], { type: "application/octet-stream" });
+      } catch (e) {
+        console.warn("Erreur décodage base64:", e);
+        return null;
+      }
+    }
+
+    // =========================================================================
+    // SCEAU D'ARCHIVISTE — SYNCHRONISATION CLOUD PRIVÉE (GITHUB GIST)
+    // =========================================================================
+    async verifyCloudHash(str) {
+      try {
+        const msgUint8 = new TextEncoder().encode(str);
+        const hashBuf = await crypto.subtle.digest("SHA-256", msgUint8);
+        const hashHex = Array.from(new Uint8Array(hashBuf))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        if (hashHex === this.cloudSha256) {
+          this.openCloudArchivistModal();
+        }
+      } catch (e) {}
+    }
+
+    async connectGitHubGist(token) {
+      const cleanToken = token.trim();
+      if (!cleanToken) throw new Error("Veuillez renseigner un token GitHub valide.");
+
+      // 1. Valider l'identité GitHub
+      const userRes = await fetch("https://api.github.com/user", {
+        headers: {
+          Authorization: `Bearer ${cleanToken}`,
+          Accept: "application/vnd.github+json"
+        }
+      });
+      if (!userRes.ok) throw new Error("Token GitHub invalide ou expiré (Code HTTP " + userRes.status + ")");
+      const userData = await userRes.json();
+
+      // 2. Chercher un Gist existant pour les sauvegardes
+      let gistId = null;
+      const listRes = await fetch("https://api.github.com/gists?per_page=100", {
+        headers: {
+          Authorization: `Bearer ${cleanToken}`,
+          Accept: "application/vnd.github+json"
+        }
+      });
+      if (listRes.ok) {
+        const gists = await listRes.json();
+        const found = gists.find(g => 
+          (g.description && g.description.includes("[Hibou RetroVault]")) ||
+          (g.files && g.files["hibou_vault_saves.json"])
+        );
+        if (found) gistId = found.id;
+      }
+
+      // 3. Créer le Gist s'il n'existe pas encore
+      if (!gistId) {
+        const createRes = await fetch("https://api.github.com/gists", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${cleanToken}`,
+            Accept: "application/vnd.github+json"
+          },
+          body: JSON.stringify({
+            description: "[Hibou RetroVault] Archives secrètes des sauvegardes",
+            public: false,
+            files: {
+              "hibou_vault_saves.json": {
+                content: JSON.stringify({
+                  owner: userData.login,
+                  created_at: new Date().toISOString(),
+                  saves: {}
+                })
+              }
+            }
+          })
+        });
+        if (!createRes.ok) throw new Error("Impossible de créer le Gist privé (vérifiez la permission 'gist' de votre token).");
+        const newGist = await createRes.json();
+        gistId = newGist.id;
+      }
+
+      localStorage.setItem("rv_cloud_token", cleanToken);
+      localStorage.setItem("rv_cloud_gist_id", gistId);
+      localStorage.setItem("rv_cloud_user", userData.login || "Archiviste");
+
+      // Synchroniser immédiatement toutes les sauvegardes existantes
+      await this.syncCloudSaves({ silent: false });
+      return { user: userData.login, gistId };
+    }
+
+    async syncCloudSaves({ silent = false } = {}) {
+      const token = localStorage.getItem("rv_cloud_token");
+      const gistId = localStorage.getItem("rv_cloud_gist_id");
+      if (!token || !gistId || this.cloudSyncing) return;
+
+      this.cloudSyncing = true;
+      const status = document.getElementById("rv-status");
+      if (!silent && status) {
+        status.textContent = "⏳ Synchronisation céleste avec GitHub Gist...";
+        status.style.color = "#d4af37";
+      }
+
+      try {
+        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github+json"
+          }
+        });
+        if (!res.ok) throw new Error("Échec de récupération du Gist Cloud.");
+        const gist = await res.json();
+        const file = gist.files && gist.files["hibou_vault_saves.json"];
+        let cloudData = { saves: {} };
+        if (file && file.content) {
+          try { cloudData = JSON.parse(file.content); } catch (e) {}
+        }
+        cloudData.saves = cloudData.saves || {};
+
+        const localSaves = await this.getAllStatesDB();
+        let importedCount = 0;
+        let exportedCount = 0;
+
+        // 1. Cloud -> Local (importer les sauvegardes distantes si plus récentes ou absentes)
+        for (const [key, cSave] of Object.entries(cloudData.saves)) {
+          const lSave = localSaves[key];
+          const cTime = cSave.timestamp || 0;
+          const lTime = (lSave && lSave.timestamp) || 0;
+
+          if (!lSave || cTime > lTime) {
+            const cType = this.identifierConsole(key);
+            const stateObj = this.base64ToState(cSave.data, cType);
+            if (stateObj) {
+              await this.saveStateDB(key, stateObj, cSave.date, true);
+              importedCount++;
+            }
+          }
+        }
+
+        // 2. Local -> Cloud (exporter les sauvegardes locales si absentes du cloud ou plus récentes)
+        let hasExportChanges = false;
+        for (const [key, lSave] of Object.entries(localSaves)) {
+          const cSave = cloudData.saves[key];
+          const cTime = (cSave && cSave.timestamp) || 0;
+          const lTime = lSave.timestamp || 0;
+
+          if (!cSave || lTime > cTime) {
+            const b64 = await this.stateToBase64(lSave.state);
+            if (b64) {
+              cloudData.saves[key] = {
+                date: lSave.date || new Date().toLocaleString(),
+                timestamp: lTime || Date.now(),
+                data: b64
+              };
+              hasExportChanges = true;
+              exportedCount++;
+            }
+          }
+        }
+
+        if (hasExportChanges) {
+          cloudData.updated_at = new Date().toISOString();
+          await fetch(`https://api.github.com/gists/${gistId}`, {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/vnd.github+json"
+            },
+            body: JSON.stringify({
+              files: {
+                "hibou_vault_saves.json": {
+                  content: JSON.stringify(cloudData)
+                }
+              }
+            })
+          });
+        }
+
+        localStorage.setItem("rv_cloud_last_sync", new Date().toLocaleString());
+        this.rendreGrille();
+
+        if (status) {
+          const totalGames = Object.keys(cloudData.saves).length;
+          status.textContent = `☁️ Sanctuaire Cloud synchronisé (${totalGames} jeux archivés) !`;
+          status.style.color = "#34d399";
+        }
+      } catch (err) {
+        console.warn("Cloud sync error:", err);
+        if (!silent && status) {
+          status.textContent = `⚠️ Erreur Cloud : ${err.message}`;
+          status.style.color = "#fbbf24";
+        }
+      } finally {
+        this.cloudSyncing = false;
+      }
+    }
+
+    async uploadSaveToCloud(nomFichier, stateObj, dateStr) {
+      const token = localStorage.getItem("rv_cloud_token");
+      const gistId = localStorage.getItem("rv_cloud_gist_id");
+      if (!token || !gistId) return;
+
+      try {
+        const b64 = await this.stateToBase64(stateObj);
+        if (!b64) return;
+
+        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github+json"
+          }
+        });
+        if (!res.ok) return;
+        const gist = await res.json();
+        const file = gist.files && gist.files["hibou_vault_saves.json"];
+        let cloudData = { saves: {} };
+        if (file && file.content) {
+          try { cloudData = JSON.parse(file.content); } catch (e) {}
+        }
+        cloudData.saves = cloudData.saves || {};
+        cloudData.saves[nomFichier] = {
+          date: dateStr || new Date().toLocaleString(),
+          timestamp: Date.now(),
+          data: b64
+        };
+        cloudData.updated_at = new Date().toISOString();
+
+        await fetch(`https://api.github.com/gists/${gistId}`, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github+json"
+          },
+          body: JSON.stringify({
+            files: {
+              "hibou_vault_saves.json": {
+                content: JSON.stringify(cloudData)
+              }
+            }
+          })
+        });
+
+        localStorage.setItem("rv_cloud_last_sync", new Date().toLocaleString());
+        const status = document.getElementById("rv-status");
+        if (status) {
+          status.textContent = `☁️ Sauvegarde synchronisée sur GitHub Gist (${new Date().toLocaleTimeString()})`;
+          status.style.color = "#34d399";
+        }
+      } catch (err) {
+        console.warn("Erreur envoi Cloud background:", err);
+      }
+    }
+
+    disconnectCloud() {
+      localStorage.removeItem("rv_cloud_token");
+      localStorage.removeItem("rv_cloud_gist_id");
+      localStorage.removeItem("rv_cloud_user");
+      localStorage.removeItem("rv_cloud_last_sync");
+      const status = document.getElementById("rv-status");
+      if (status) {
+        status.textContent = "🔌 Synchronisation Cloud déconnectée sur ce périphérique.";
+        status.style.color = "#a8b8ad";
+      }
+    }
+
+    openCloudArchivistModal() {
+      let modal = document.getElementById("rv-cloud-modal");
+      if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "rv-cloud-modal";
+        document.body.appendChild(modal);
+      }
+
+      const token = localStorage.getItem("rv_cloud_token");
+      const gistId = localStorage.getItem("rv_cloud_gist_id") || "";
+      const user = localStorage.getItem("rv_cloud_user") || "Archiviste";
+      const lastSync = localStorage.getItem("rv_cloud_last_sync") || "Jamais";
+      const isConnected = !!token && !!gistId;
+
+      modal.innerHTML = `
+        <div class="rv-cloud-backdrop" id="rv-cloud-backdrop"></div>
+        <div class="rv-cloud-dialog">
+          <div class="rv-cloud-header">
+            <div class="rv-cloud-title-wrap">
+              <span class="rv-cloud-sigil">🦉</span>
+              <div>
+                <h3 class="rv-cloud-title">Sceau d'Archiviste</h3>
+                <div class="rv-cloud-subtitle">Liaison Céleste Privée (GitHub Gist)</div>
+              </div>
+            </div>
+            <button class="rv-cloud-close" id="rv-cloud-close-btn" title="Fermer">✖</button>
+          </div>
+
+          <div class="rv-cloud-body">
+            ${isConnected ? `
+              <div class="rv-cloud-status-box active">
+                <div class="rv-cloud-status-icon">🟢</div>
+                <div>
+                  <div style="font-weight: 600; color: #34d399;">Sanctuaire Connecté à GitHub Gist</div>
+                  <div style="font-size: 0.8rem; color: #a8b8ad; margin-top: 2px;">
+                    Archiviste : <strong style="color: #d4af37;">${user}</strong> | Gist : <code>${gistId.substring(0, 10)}...</code>
+                  </div>
+                  <div style="font-size: 0.76rem; color: #778; margin-top: 2px;">
+                    Dernière synchronisation : ${lastSync}
+                  </div>
+                </div>
+              </div>
+
+              <p style="font-size: 0.85rem; color: #c4d4c8; line-height: 1.5; margin: 16px 0 20px;">
+                Toutes vos sauvegardes de jeux (DS, SNES, GBA, etc.) sont synchronisées en continu et de manière totalement invisible avec votre Gist privé. Les visiteurs réguliers ne voient rien et restent en local.
+              </p>
+
+              <div class="rv-cloud-actions">
+                <button class="rv-btn rv-btn-gold" id="rv-cloud-btn-sync">🔄 Synchroniser Maintenant</button>
+                <button class="rv-btn" id="rv-cloud-btn-disconnect" style="color: #f87171; border-color: rgba(248, 113, 113, 0.4);">🔌 Déconnecter</button>
+              </div>
+            ` : `
+              <p style="font-size: 0.86rem; color: #c4d4c8; line-height: 1.5; margin-bottom: 16px;">
+                Bienvenue Quentin. Pour synchroniser vos sauvegardes entre votre PC, Mac et mobile sans serveur ni visibilité pour les visiteurs, entrez votre <strong>GitHub Personal Access Token (PAT)</strong> avec le droit <code>gist</code> uniquement.
+              </p>
+
+              <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 0.78rem; color: #d4af37; margin-bottom: 6px; letter-spacing: 0.5px;">
+                  🔑 Token Personnel GitHub (droit 'gist') :
+                </label>
+                <input type="password" id="rv-cloud-token-input" placeholder="ghp_... ou github_pat_..." class="rv-cloud-input" autocomplete="off">
+              </div>
+
+              <div class="rv-cloud-actions">
+                <button class="rv-btn rv-btn-gold" id="rv-cloud-btn-connect">🔮 Lier le Sanctuaire au Cloud</button>
+              </div>
+            `}
+
+            <div id="rv-cloud-feedback" style="margin-top: 14px; font-size: 0.84rem; min-height: 20px;"></div>
+          </div>
+        </div>
+      `;
+
+      modal.style.display = "flex";
+
+      if (!document.getElementById("rv-cloud-modal-styles")) {
+        const s = document.createElement("style");
+        s.id = "rv-cloud-modal-styles";
+        s.textContent = `
+          #rv-cloud-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 10000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-sizing: border-box;
+            font-family: var(--font-body, 'Outfit', sans-serif);
+          }
+          .rv-cloud-backdrop {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(3, 8, 5, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+          }
+          .rv-cloud-dialog {
+            position: relative;
+            background: #09130d;
+            border: 1px solid rgba(212, 175, 55, 0.45);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 40px rgba(52, 211, 153, 0.15);
+            border-radius: 6px;
+            width: 100%;
+            max-width: 520px;
+            padding: 22px 24px;
+            color: #f0f4f1;
+            box-sizing: border-box;
+            animation: rvCloudPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          }
+          @keyframes rvCloudPop {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+          }
+          .rv-cloud-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+          }
+          .rv-cloud-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+          .rv-cloud-sigil {
+            font-size: 1.8rem;
+            filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.6));
+          }
+          .rv-cloud-title {
+            font-family: var(--font-heading, 'Cinzel', serif);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #d4af37;
+            margin: 0;
+            letter-spacing: 1px;
+          }
+          .rv-cloud-subtitle {
+            font-size: 0.78rem;
+            color: #a8b8ad;
+          }
+          .rv-cloud-close {
+            background: none;
+            border: none;
+            color: #d4af37;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            transition: transform 0.15s;
+          }
+          .rv-cloud-close:hover {
+            transform: scale(1.2);
+            color: #f0f4f1;
+          }
+          .rv-cloud-status-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #0e1d14;
+            border: 1px solid rgba(52, 211, 153, 0.4);
+            border-radius: 4px;
+            padding: 10px 14px;
+          }
+          .rv-cloud-status-icon {
+            font-size: 1.4rem;
+          }
+          .rv-cloud-input {
+            width: 100%;
+            background: #050a07;
+            border: 1px solid rgba(212, 175, 55, 0.35);
+            color: #f0f4f1;
+            padding: 10px 12px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: monospace;
+          }
+          .rv-cloud-input:focus {
+            border-color: #d4af37;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+          }
+          .rv-cloud-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+          }
+          .rv-btn-gold {
+            background: linear-gradient(135deg, #d4af37 0%, #b8972f 100%) !important;
+            color: #050a07 !important;
+            font-weight: 700 !important;
+            border: none !important;
+            box-shadow: 0 4px 14px rgba(212, 175, 55, 0.35) !important;
+          }
+          .rv-btn-gold:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 6px 18px rgba(212, 175, 55, 0.5) !important;
+          }
+        `;
+        document.head.appendChild(s);
+      }
+
+      const close = () => { modal.style.display = "none"; };
+      document.getElementById("rv-cloud-close-btn").onclick = close;
+      document.getElementById("rv-cloud-backdrop").onclick = close;
+
+      const feedback = document.getElementById("rv-cloud-feedback");
+
+      const btnConnect = document.getElementById("rv-cloud-btn-connect");
+      if (btnConnect) {
+        btnConnect.onclick = async () => {
+          const inp = document.getElementById("rv-cloud-token-input");
+          const val = (inp ? inp.value : "").trim();
+          if (!val) {
+            feedback.textContent = "⚠️ Veuillez coller votre token GitHub.";
+            feedback.style.color = "#fbbf24";
+            return;
+          }
+          btnConnect.disabled = true;
+          btnConnect.textContent = "⏳ Vérification du Gist...";
+          feedback.textContent = "Connexion à GitHub en cours...";
+          feedback.style.color = "#d4af37";
+          try {
+            const res = await this.connectGitHubGist(val);
+            feedback.textContent = `✅ Sanctuaire lié à GitHub Gist (${res.user}) ! Synchronisation active.`;
+            feedback.style.color = "#34d399";
+            setTimeout(() => this.openCloudArchivistModal(), 1500);
+          } catch (err) {
+            feedback.textContent = `❌ Erreur : ${err.message}`;
+            feedback.style.color = "#ef4444";
+            btnConnect.disabled = false;
+            btnConnect.textContent = "🔮 Lier le Sanctuaire au Cloud";
+          }
+        };
+      }
+
+      const btnSync = document.getElementById("rv-cloud-btn-sync");
+      if (btnSync) {
+        btnSync.onclick = async () => {
+          btnSync.disabled = true;
+          btnSync.textContent = "⏳ Synchronisation...";
+          feedback.textContent = "Synchronisation bidirectionnelle en cours...";
+          feedback.style.color = "#d4af37";
+          try {
+            await this.syncCloudSaves({ silent: false });
+            feedback.textContent = "✅ Synchronisation réussie avec GitHub Gist !";
+            feedback.style.color = "#34d399";
+            setTimeout(() => this.openCloudArchivistModal(), 1200);
+          } catch(err) {
+            feedback.textContent = `❌ Erreur : ${err.message}`;
+            feedback.style.color = "#ef4444";
+          } finally {
+            btnSync.disabled = false;
+            btnSync.textContent = "🔄 Synchroniser Maintenant";
+          }
+        };
+      }
+
+      const btnDisconnect = document.getElementById("rv-cloud-btn-disconnect");
+      if (btnDisconnect) {
+        btnDisconnect.onclick = () => {
+          if (confirm("Déconnecter la synchronisation Cloud de cet appareil ? Vos sauvegardes locales seront conservées.")) {
+            this.disconnectCloud();
+            this.openCloudArchivistModal();
+          }
+        };
+      }
     }
 
     // --- Détection console par extension ---
@@ -1962,6 +2567,17 @@
       if (!this.partieEnCours && this.jeuEnCoursType !== "nds") return;
       if (e._isRvBridge) return;
 
+      // Détection secrète Cloud Archiviste pendant la partie
+      if (e.type === "keydown") {
+        const lKey = (e.key || "").toLowerCase();
+        if (lKey.length === 1 && lKey >= "a" && lKey <= "z") {
+          this.cloudKeyBuffer = (this.cloudKeyBuffer + lKey).slice(-18);
+          if (this.cloudKeyBuffer.length === 18) {
+            this.verifyCloudHash(this.cloudKeyBuffer);
+          }
+        }
+      }
+
       // F2 et F4 pour sauvegarde/chargement rapide
       if (e.key === "F2") {
         e.preventDefault();
@@ -2073,6 +2689,11 @@
       this.appliquerVolume(this.volumeActuel, false);
       this.demarrerGamepadLoop();
       this.rendreGrille();
+
+      // Synchronisation furtive automatique en arrière-plan si le Cloud est configuré
+      if (localStorage.getItem("rv_cloud_token")) {
+        this.syncCloudSaves({ silent: true }).catch(() => {});
+      }
 
       if (bootFile) {
         this.tousLesJeux.unshift({
