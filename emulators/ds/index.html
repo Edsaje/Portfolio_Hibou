@@ -64,6 +64,46 @@
       gap: 8px;
     }
 
+    .ds-lang-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #0e1d14;
+      border: 1px solid rgba(212, 175, 55, 0.45);
+      border-radius: 4px;
+      padding: 3px 8px;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .ds-lang-wrap:hover, .ds-lang-wrap:focus-within {
+      border-color: #d4af37;
+      background: #14281c;
+    }
+
+    .ds-lang-label {
+      font-size: 0.85rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .ds-select {
+      background: transparent;
+      color: #d4af37;
+      border: none;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 0.78rem;
+      cursor: pointer;
+      outline: none;
+      padding: 2px 0;
+    }
+
+    .ds-select option {
+      background: #09130d;
+      color: #f0f4f1;
+      font-weight: 600;
+    }
+
     .ds-btn {
       color: #050a07;
       background: linear-gradient(135deg, #d4af37 0%, #997d25 100%);
@@ -169,6 +209,17 @@
       <span class="ds-status-bar" id="ds-status">Prêt — Déposez une ROM (.nds)</span>
     </div>
     <div class="ds-tools">
+      <div class="ds-lang-wrap" title="Langue de la console Nintendo DS (Micrologiciel)">
+        <label for="ds-lang" class="ds-lang-label">🌐</label>
+        <select id="ds-lang" class="ds-select" aria-label="Langue de la console Nintendo DS">
+          <option value="2">🇫🇷 Français</option>
+          <option value="1">🇬🇧 English</option>
+          <option value="0">🇯🇵 日本語</option>
+          <option value="3">🇩🇪 Deutsch</option>
+          <option value="4">🇮🇹 Italiano</option>
+          <option value="5">🇪🇸 Español</option>
+        </select>
+      </div>
       <button class="ds-btn" id="btn-open-rom">📁 Insérer ROM</button>
       <button class="ds-btn ds-btn-secondary" id="btn-save-dsv" title="Télécharger le fichier de sauvegarde DSV">💾 Sauvegarder</button>
       <button class="ds-btn ds-btn-secondary" id="btn-restart" title="Redémarrer la console">🔄 Reset</button>
@@ -195,6 +246,103 @@
       const btnOpen = document.getElementById("btn-open-rom");
       const btnSave = document.getElementById("btn-save-dsv");
       const btnReset = document.getElementById("btn-restart");
+      const langSelect = document.getElementById("ds-lang");
+
+      let currentLanguage = 2; // Français par défaut (0: JP, 1: EN, 2: FR, 3: DE, 4: IT, 5: ES)
+      let fwLangOffset = -1;
+
+      const dsLangNames = {
+        0: "Japonais",
+        1: "Anglais",
+        2: "Français",
+        3: "Allemand",
+        4: "Italien",
+        5: "Espagnol"
+      };
+
+      // Restaurer la préférence de langue depuis localStorage
+      try {
+        const savedLang = localStorage.getItem("nds_fw_lang");
+        if (savedLang !== null) {
+          const parsed = parseInt(savedLang, 10);
+          if (parsed >= 0 && parsed <= 5) {
+            currentLanguage = parsed;
+          }
+        }
+      } catch (err) {}
+
+      if (langSelect) {
+        langSelect.value = String(currentLanguage);
+      }
+
+      // Localisation dynamique de l'offset CommonSettings.fwConfig.language dans le HEAP WASM
+      function getFwLanguageOffset() {
+        if (typeof Module === "undefined" || !Module.HEAPU8) return -1;
+        const heap = Module.HEAPU8;
+        if (fwLangOffset !== -1 && heap[fwLangOffset - 1] === 24 && heap[fwLangOffset + 1] === 3) {
+          return fwLangOffset;
+        }
+        const needle = [68, 0, 101, 0, 83, 0, 109, 0, 117, 0, 77, 0, 69, 0]; // "DeSmuME" UTF-16
+        const limit = Math.min(heap.length, 75000000);
+        for (let i = 0; i < limit; i++) {
+          if (heap[i] === 68 && heap[i+1] === 0 && heap[i+2] === 101 && heap[i+3] === 0) {
+            let match = true;
+            for (let j = 0; j < needle.length; j++) {
+              if (heap[i + j] !== needle[j]) { match = false; break; }
+            }
+            if (match && heap[i + 80] === 3 && heap[i + 78] === 24) {
+              fwLangOffset = i + 79;
+              return fwLangOffset;
+            }
+          }
+        }
+        return -1;
+      }
+
+      function applyFirmwareLanguage(langCode) {
+        const code = parseInt(langCode, 10);
+        if (isNaN(code) || code < 0 || code > 5) return;
+        currentLanguage = code;
+        try { localStorage.setItem("nds_fw_lang", code); } catch(err) {}
+
+        const offset = getFwLanguageOffset();
+        if (offset !== -1 && Module.HEAPU8) {
+          Module.HEAPU8[offset] = code;
+        }
+
+        // Si la console est déjà en cours d'exécution, patcher aussi le bloc userSettings dans la RAM principale
+        try {
+          if (typeof Module !== "undefined" && Module._getSymbol) {
+            const ramBase = Module._getSymbol(7);
+            if (ramBase && Module.HEAPU8) {
+              Module.HEAPU8[ramBase + 0x3FFCE4] = 48 + code;
+            }
+          }
+        } catch(err) {}
+      }
+
+      // Appliquer la langue dès que le runtime WASM est prêt
+      function ensureLanguageApplied() {
+        if (typeof Module !== "undefined" && Module.HEAPU8) {
+          applyFirmwareLanguage(currentLanguage);
+        } else {
+          setTimeout(ensureLanguageApplied, 100);
+        }
+      }
+      ensureLanguageApplied();
+
+      if (langSelect) {
+        langSelect.addEventListener("change", (e) => {
+          const newCode = parseInt(e.target.value, 10);
+          applyFirmwareLanguage(newCode);
+          const name = dsLangNames[newCode] || "Inconnue";
+          if (typeof romSize !== "undefined" && romSize > 0) {
+            setStatus("🌐 Langue : " + name + " active | Cliquez sur Reset pour recharger le jeu", "#34d399");
+          } else {
+            setStatus("🌐 Langue console : " + name + " active pour les prochains jeux", "#34d399");
+          }
+        });
+      }
 
       // Injecter le style Dark Fantasy à l'intérieur du shadowRoot de desmond-player
       if (player && player.shadowRoot) {
@@ -239,15 +387,20 @@
         }
       }
 
+      let lastLoadedBlob = null;
+      let lastLoadedName = null;
+
       function loadRomBlob(blob, name) {
         if (!blob) return;
-        const romName = name || blob.name || "relique.nds";
-        setStatus("⏳ Invocation de " + romName + "...");
+        lastLoadedBlob = blob;
+        lastLoadedName = name || blob.name || "relique.nds";
+        applyFirmwareLanguage(currentLanguage);
+        setStatus("⏳ Invocation de " + lastLoadedName + " (Langue : " + (dsLangNames[currentLanguage] || "FR") + ")...");
         try {
           const url = URL.createObjectURL(blob);
           if (player && typeof player.loadURL === "function") {
             player.loadURL(url, function() {
-              setStatus("🎮 En cours : " + romName + " (Stylet actif sur écran bas)", "#34d399");
+              setStatus("🎮 En cours : " + lastLoadedName + " (Langue : " + (dsLangNames[currentLanguage] || "FR") + " — Stylet actif)", "#34d399");
             });
           }
         } catch (err) {
@@ -275,11 +428,13 @@
       });
 
       btnReset.addEventListener("click", () => {
-        if (typeof Module !== "undefined" && Module._reset) {
-          try { Module._reset(); setStatus("🔄 Console réinitialisée", "#d4af37"); } catch(e){}
-        } else {
-          location.reload();
+        applyFirmwareLanguage(currentLanguage);
+        if (lastLoadedBlob) {
+          loadRomBlob(lastLoadedBlob, lastLoadedName);
+          setStatus("🔄 Console redémarrée (Langue : " + (dsLangNames[currentLanguage] || "FR") + ")", "#34d399");
+          return;
         }
+        location.reload();
       });
 
       // Drag & Drop
@@ -356,12 +511,24 @@
               bubbles: true
             }));
           }
-        } else if (e.data.type === "RESET") {
-          if (typeof Module !== "undefined" && Module._reset) {
-            try { Module._reset(); setStatus("🔄 Console réinitialisée", "#d4af37"); } catch(err){}
-          } else {
-            location.reload();
+        } else if (e.data.type === "SET_LANGUAGE") {
+          const code = parseInt(e.data.lang, 10);
+          if (!isNaN(code) && code >= 0 && code <= 5) {
+            currentLanguage = code;
+            if (langSelect) langSelect.value = String(code);
+            applyFirmwareLanguage(code);
+            if (lastLoadedBlob) {
+              loadRomBlob(lastLoadedBlob, lastLoadedName);
+            }
           }
+        } else if (e.data.type === "RESET") {
+          applyFirmwareLanguage(currentLanguage);
+          if (lastLoadedBlob) {
+            loadRomBlob(lastLoadedBlob, lastLoadedName);
+            setStatus("🔄 Console réinitialisée (Langue : " + (dsLangNames[currentLanguage] || "FR") + ")", "#34d399");
+            return;
+          }
+          location.reload();
         } else if (e.data.type === "SAVE_STATE") {
           if (typeof uiSaveBackup === "function") {
             uiSaveBackup();
