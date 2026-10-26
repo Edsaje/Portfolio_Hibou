@@ -65,6 +65,18 @@
       titre: "Dragon Quest I (Dragon Warrior)",
       console: "nes",
       desc: "La légende qui a tout commencé par Yuji Horii (1986)."
+    },
+    {
+      nom: "console-nds-launcher",
+      titre: "Nintendo DS — Double Écran Tactile",
+      console: "nds",
+      desc: "Moteur DeSmuME WebAssembly mono-thread avec écran tactile stylet. Glissez ou insérez un fichier .nds."
+    },
+    {
+      nom: "console-psp-launcher",
+      titre: "PlayStation Portable — 3D WebAssembly",
+      console: "psp",
+      desc: "Moteur PPSSPP WebAssembly haute performance avec support WebGL et contrôles PS. Glissez ou insérez un fichier .iso/.cso."
     }
   ];
 
@@ -75,6 +87,8 @@
     nes: { label: "NES 8-bit", core: "fceumm", tag: "tag-nes", hasExtra: false },
     megadrive: { label: "Mega Drive", core: "genesis_plus_gx", tag: "tag-md", hasExtra: true },
     ps1: { label: "PlayStation 1", core: "pcsx_rearmed", tag: "tag-ps1", hasExtra: true },
+    psp: { label: "PlayStation Portable", core: "ppsspp", tag: "tag-psp", hasExtra: true },
+    nds: { label: "Nintendo DS", core: "desmume", tag: "tag-nds", hasExtra: true },
     pce: { label: "PC Engine", core: "mednafen_pce_fast", tag: "tag-pce", hasExtra: false },
     arcade: { label: "Arcade", core: "fbneo", tag: "tag-arcade", hasExtra: true }
   };
@@ -136,13 +150,18 @@
     // --- Détection console par extension ---
     identifierConsole(nom) {
       const ext = nom.split(".").pop().toLowerCase();
+      if (["nds"].includes(ext) || nom.includes("console-nds-launcher")) return "nds";
+      if (["cso"].includes(ext) || nom.includes("console-psp-launcher")) return "psp";
       if (["sfc", "smc"].includes(ext)) return "snes";
       if (["gba"].includes(ext)) return "gba";
       if (["gb", "gbc"].includes(ext)) return "gb";
-      if (["iso", "cue", "chd", "pbp", "img"].includes(ext)) return "ps1";
       if (["md", "bin", "gen", "smd", "sms", "gg"].includes(ext)) return "megadrive";
       if (["pce"].includes(ext)) return "pce";
       if (["zip"].includes(ext)) return "arcade";
+      if (["iso", "cue", "chd", "pbp", "img"].includes(ext)) {
+        if (this.filtreActuel === "psp") return "psp";
+        return "ps1";
+      }
       return "nes";
     }
 
@@ -628,8 +647,18 @@
         .tag-nes { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
         .tag-md { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
         .tag-ps1 { background: rgba(59, 130, 246, 0.25); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.5); }
+        .tag-psp { background: rgba(14, 165, 233, 0.25); color: #7dd3fc; border: 1px solid rgba(14, 165, 233, 0.5); }
+        .tag-nds { background: rgba(244, 63, 94, 0.25); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.5); }
         .tag-pce { background: rgba(249, 115, 22, 0.25); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.5); }
         .tag-arcade { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.4); }
+        .rv-embedded-frame {
+          width: 100%;
+          height: 560px;
+          max-height: 75vh;
+          border: none;
+          display: block;
+          background: #000;
+        }
         .rv-save-badge {
           font-size: 0.7rem;
           color: #34d399;
@@ -720,7 +749,7 @@
                 <button class="rv-btn" id="rv-btn-pad-toggle">🎮 Manette</button>
                 <button class="rv-btn" id="rv-btn-crt">📺 CRT</button>
                 <button class="rv-btn" id="rv-btn-fullscreen">⛶ Plein Écran</button>
-                <input type="file" id="rv-file-input" style="display: none;" accept=".nes,.sfc,.smc,.gba,.gb,.gbc,.md,.bin,.gen,.zip,.iso,.cue,.chd,.pbp,.img,.pce">
+                <input type="file" id="rv-file-input" style="display: none;" accept=".nes,.sfc,.smc,.gba,.gb,.gbc,.md,.bin,.gen,.zip,.iso,.cue,.chd,.pbp,.img,.pce,.nds,.cso">
                 <button class="rv-btn" id="rv-btn-upload">📁 Insérer ROM</button>
               </div>
             </div>
@@ -796,7 +825,9 @@
             <div class="rv-lib-title">📚 Reliques Conservées</div>
             <div class="rv-tabs">
               <button class="rv-tab active" data-filter="all">TOUTES</button>
-              <button class="rv-tab" data-filter="ps1">PLAYSTATION</button>
+              <button class="rv-tab" data-filter="nds">NINTENDO DS</button>
+              <button class="rv-tab" data-filter="psp">PSP</button>
+              <button class="rv-tab" data-filter="ps1">PLAYSTATION 1</button>
               <button class="rv-tab" data-filter="snes">SUPER NINTENDO</button>
               <button class="rv-tab" data-filter="megadrive">MEGA DRIVE</button>
               <button class="rv-tab" data-filter="gba">GBA</button>
@@ -961,7 +992,7 @@
         if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
         const file = e.dataTransfer.files[0];
         const ext = file.name.split(".").pop().toLowerCase();
-        if (["nes", "sfc", "smc", "gba", "gb", "gbc", "md", "bin", "gen", "zip", "iso", "cue", "chd", "pbp", "img", "pce"].includes(ext)) {
+        if (["nes", "sfc", "smc", "gba", "gb", "gbc", "md", "bin", "gen", "zip", "iso", "cue", "chd", "pbp", "img", "pce", "nds", "cso"].includes(ext)) {
           e.preventDefault();
           this.tousLesJeux.unshift({
             nom: file.name,
@@ -1014,7 +1045,7 @@
           if (badgeTriggers) badgeTriggers.style.display = "none";
           badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
           badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : C';
-        } else if (consoleType === "ps1") {
+        } else if (consoleType === "ps1" || consoleType === "psp") {
           if (badgeY) {
             badgeY.style.display = "inline";
             badgeY.innerHTML = '<span class="rv-kbd">4</span> : □ Carré';
@@ -1027,7 +1058,22 @@
           }
           if (badgeTriggers) {
             badgeTriggers.style.display = "inline";
-            badgeTriggers.innerHTML = '<span class="rv-kbd">7</span> L1 / <span class="rv-kbd">9</span> R1';
+            badgeTriggers.innerHTML = '<span class="rv-kbd">7</span> L / <span class="rv-kbd">9</span> R';
+          }
+        } else if (consoleType === "nds") {
+          if (badgeY) {
+            badgeY.style.display = "inline";
+            badgeY.innerHTML = '<span class="rv-kbd">4</span> : Y';
+          }
+          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
+          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : A';
+          if (badgeX) {
+            badgeX.style.display = "inline";
+            badgeX.innerHTML = '<span class="rv-kbd">8</span> : X';
+          }
+          if (badgeTriggers) {
+            badgeTriggers.style.display = "inline";
+            badgeTriggers.innerHTML = '<span class="rv-kbd">7</span> L / <span class="rv-kbd">9</span> R / 🖊️ Stylet';
           }
         } else {
           // SNES & Arcade
@@ -1056,12 +1102,13 @@
       const touchL = document.getElementById("rv-touch-l");
       const touchR = document.getElementById("rv-touch-r");
 
-      if (touchX) touchX.textContent = consoleType === "ps1" ? "△" : "X";
-      if (touchY) touchY.textContent = consoleType === "ps1" ? "□" : (consoleType === "megadrive" ? "A" : "Y");
-      if (touchB) touchB.textContent = consoleType === "ps1" ? "✕" : (consoleType === "pce" ? "II" : "B");
-      if (touchA) touchA.textContent = consoleType === "ps1" ? "○" : (consoleType === "pce" ? "I" : (consoleType === "megadrive" ? "C" : "A"));
-      if (touchL) touchL.textContent = consoleType === "ps1" ? "L1" : "L";
-      if (touchR) touchR.textContent = consoleType === "ps1" ? "R1" : "R";
+      const isPlayStation = consoleType === "ps1" || consoleType === "psp";
+      if (touchX) touchX.textContent = isPlayStation ? "△" : "X";
+      if (touchY) touchY.textContent = isPlayStation ? "□" : (consoleType === "megadrive" ? "A" : "Y");
+      if (touchB) touchB.textContent = isPlayStation ? "✕" : (consoleType === "pce" ? "II" : "B");
+      if (touchA) touchA.textContent = isPlayStation ? "○" : (consoleType === "pce" ? "I" : (consoleType === "megadrive" ? "C" : "A"));
+      if (touchL) touchL.textContent = isPlayStation ? "L1" : "L";
+      if (touchR) touchR.textContent = isPlayStation ? "R1" : "R";
 
       if (consoleType === "nes" || consoleType === "gb" || consoleType === "pce") {
         if (touchX) touchX.style.opacity = "0.15";
@@ -1147,6 +1194,39 @@
         }
 
         const container = document.getElementById("rv-game-container");
+
+        if (cType === "nds") {
+          const isLauncher = nomFichier.includes("console-nds-launcher");
+          container.innerHTML = `
+            <div style="width: 100%; height: 580px; max-height: 78vh; display: flex; flex-direction: column; background: #000; position: relative;">
+              <iframe id="rv-nds-frame" class="rv-embedded-frame" src="https://ds.44670.org/" allow="autoplay; fullscreen; gamepad"></iframe>
+            </div>
+          `;
+          status.textContent = isLauncher
+            ? "🎮 Console Nintendo DS (DeSmuME Wasm) active | Glissez votre jeu .nds ou cliquez sur 'Choose File'."
+            : `🎮 Relique Nintendo DS : "${nomFichier}". Glissez-la dans l'écran DS pour jouer avec stylet tactile !`;
+          status.style.color = "#fda4af";
+          this.jeuEnCoursNom = nomFichier;
+          this.rendreGrille();
+          return;
+        }
+
+        if (cType === "psp") {
+          const isLauncher = nomFichier.includes("console-psp-launcher");
+          container.innerHTML = `
+            <div style="width: 100%; height: 540px; max-height: 75vh; display: flex; flex-direction: column; background: #000; position: relative;">
+              <iframe id="rv-psp-frame" class="rv-embedded-frame" src="https://root-hunter.github.io/ppsspp-web/" allow="autoplay; fullscreen; gamepad"></iframe>
+            </div>
+          `;
+          status.textContent = isLauncher
+            ? "🎮 Console PlayStation Portable (PPSSPP Wasm) active | Glissez votre ISO/CSO dans l'écran ci-dessus."
+            : `🎮 Image PSP : "${nomFichier}". Glissez-la dans la console ci-dessus pour lancer le jeu !`;
+          status.style.color = "#7dd3fc";
+          this.jeuEnCoursNom = nomFichier;
+          this.rendreGrille();
+          return;
+        }
+
         container.innerHTML = `
           <div class="rv-crt-overlay" id="rv-crt"></div>
           <canvas id="rv-canvas"></canvas>
@@ -1218,7 +1298,12 @@
 
     // --- Sauvegarde & Restauration rapides ---
     async sauvegarderPartie() {
-      if (!this.partieEnCours) return;
+      if (!this.partieEnCours) {
+        const status = document.getElementById("rv-status");
+        status.textContent = "💡 Sauvegarde intégrée dans le menu de la console (DS / PSP).";
+        status.style.color = "#d4af37";
+        return;
+      }
       const status = document.getElementById("rv-status");
       status.textContent = "⏳ Sauvegarde de l'état...";
       try {
@@ -1234,7 +1319,12 @@
     }
 
     async chargerPartie() {
-      if (!this.partieEnCours) return;
+      if (!this.partieEnCours) {
+        const status = document.getElementById("rv-status");
+        status.textContent = "💡 Chargement de sauvegarde intégré dans le menu de la console (DS / PSP).";
+        status.style.color = "#d4af37";
+        return;
+      }
       const status = document.getElementById("rv-status");
       try {
         const data = await this.loadStateDB(this.jeuEnCoursNom);
@@ -1357,6 +1447,11 @@
 
       if (this.partieEnCours) {
         this.partieEnCours.pause();
+      }
+
+      const activeFrame = document.getElementById("rv-nds-frame") || document.getElementById("rv-psp-frame");
+      if (activeFrame) {
+        activeFrame.src = "about:blank";
       }
 
       window.removeEventListener("keydown", this.boundKeyHandler);
