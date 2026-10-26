@@ -170,7 +170,7 @@
         window.audioManager.play("coin");
       }
 
-      if (window.RetroVaultEngine && window.RetroVaultEngine.version === "7.0-local-emulators") {
+      if (window.RetroVaultEngine && window.RetroVaultEngine.version === "8.0-desmond-gamepad") {
         window.RetroVaultEngine.open(bootFile);
         return;
       }
@@ -203,7 +203,7 @@
         });
 
       loadScript("nostalgist-script", "https://cdn.jsdelivr.net/npm/nostalgist/dist/nostalgist.umd.js")
-        .then(() => loadScript("retro-vault-script", "js/retro-vault.js?v=7.0"))
+        .then(() => loadScript("retro-vault-script", "js/retro-vault.js?v=8.0"))
         .then(() => {
           if (window.RetroVaultEngine) {
             window.RetroVaultEngine.open(bootFile);

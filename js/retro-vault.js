@@ -70,7 +70,7 @@
       nom: "console-nds-launcher",
       titre: "Nintendo DS — Double Écran Tactile",
       console: "nds",
-      desc: "Moteur DeSmuME WebAssembly mono-thread avec écran tactile stylet. Glissez ou insérez un fichier .nds."
+      desc: "Moteur DeSmuME Desmond WebAssembly avec écran tactile stylet. Glissez ou insérez un fichier .nds."
     }
   ];
 
@@ -88,7 +88,7 @@
 
   class RetroVault {
     constructor() {
-      this.version = "7.0-local-emulators";
+      this.version = "8.0-desmond-gamepad";
       this.modal = null;
       this.partieEnCours = null;
       this.jeuEnCoursNom = "";
@@ -826,34 +826,34 @@
           <!-- Manette Tactile Virtuelle Rétro (Mobile First) -->
           <div class="rv-gamepad" id="rv-gamepad">
             <div class="rv-pad-top-bar">
-              <button class="rv-pad-shoulder rv-pad-l" data-code="Numpad7" data-key="7" id="rv-touch-l">L</button>
+              <button class="rv-pad-shoulder rv-pad-l" data-btn="l" data-code="Numpad7" data-key="7" id="rv-touch-l">L</button>
               <div class="rv-pad-menu-cluster">
-                <button class="rv-pad-pill" data-code="Numpad0" data-key="0">SELECT</button>
-                <button class="rv-pad-pill" data-code="NumpadEnter" data-key="Enter">START</button>
+                <button class="rv-pad-pill" data-btn="select" data-code="Numpad0" data-key="0">SELECT</button>
+                <button class="rv-pad-pill" data-btn="start" data-code="NumpadEnter" data-key="Enter">START</button>
               </div>
-              <button class="rv-pad-shoulder rv-pad-r" data-code="Numpad9" data-key="9" id="rv-touch-r">R</button>
+              <button class="rv-pad-shoulder rv-pad-r" data-btn="r" data-code="Numpad9" data-key="9" id="rv-touch-r">R</button>
             </div>
 
             <div class="rv-pad-main-row">
               <!-- D-Pad Directionnel tactile (Gauche) -->
               <div class="rv-dpad" id="rv-dpad">
-                <button class="rv-dpad-btn rv-dpad-u" data-code="KeyW" data-key="w" aria-label="Haut">▲</button>
+                <button class="rv-dpad-btn rv-dpad-u" data-btn="up" data-code="KeyW" data-key="w" aria-label="Haut">▲</button>
                 <div class="rv-dpad-mid">
-                  <button class="rv-dpad-btn rv-dpad-l" data-code="KeyA" data-key="a" aria-label="Gauche">◀</button>
+                  <button class="rv-dpad-btn rv-dpad-l" data-btn="left" data-code="KeyA" data-key="a" aria-label="Gauche">◀</button>
                   <div class="rv-dpad-core"></div>
-                  <button class="rv-dpad-btn rv-dpad-r" data-code="KeyD" data-key="d" aria-label="Droite">▶</button>
+                  <button class="rv-dpad-btn rv-dpad-r" data-btn="right" data-code="KeyD" data-key="d" aria-label="Droite">▶</button>
                 </div>
-                <button class="rv-dpad-btn rv-dpad-d" data-code="KeyS" data-key="s" aria-label="Bas">▼</button>
+                <button class="rv-dpad-btn rv-dpad-d" data-btn="down" data-code="KeyS" data-key="s" aria-label="Bas">▼</button>
               </div>
 
               <!-- Cluster d'actions en losange (Droite) -->
               <div class="rv-actions" id="rv-actions">
-                <button class="rv-act-btn rv-act-x" data-code="Numpad8" data-key="8" id="rv-touch-x">X</button>
+                <button class="rv-act-btn rv-act-x" data-btn="x" data-code="Numpad8" data-key="8" id="rv-touch-x">X</button>
                 <div class="rv-act-mid">
-                  <button class="rv-act-btn rv-act-y" data-code="Numpad4" data-key="4" id="rv-touch-y">Y</button>
-                  <button class="rv-act-btn rv-act-a" data-code="Numpad6" data-key="6" id="rv-touch-a">A</button>
+                  <button class="rv-act-btn rv-act-y" data-btn="y" data-code="Numpad4" data-key="4" id="rv-touch-y">Y</button>
+                  <button class="rv-act-btn rv-act-a" data-btn="a" data-code="Numpad6" data-key="6" id="rv-touch-a">A</button>
                 </div>
-                <button class="rv-act-btn rv-act-b" data-code="Numpad5" data-key="5" id="rv-touch-b">B</button>
+                <button class="rv-act-btn rv-act-b" data-btn="b" data-code="Numpad5" data-key="5" id="rv-touch-b">B</button>
               </div>
             </div>
           </div>
@@ -913,67 +913,100 @@
     }
 
     bindVirtualGamepad() {
-      const triggerKey = (code, key, isDown) => {
+      const triggerKey = (btnName, code, key, isDown) => {
         if (isDown && navigator.vibrate) {
           try { navigator.vibrate(12); } catch (e) {}
         }
 
-        // Si le moteur natif DeSmuME est actif
-        if (this.jeuEnCoursType === "nds" && typeof DesmumePlayer !== "undefined" && DesmumePlayer.isRunning) {
-          let bit = -1;
-          if (code === "KeyD") bit = 0;
-          else if (code === "KeyA" || code === "KeyQ") bit = 1;
-          else if (code === "KeyS") bit = 2;
-          else if (code === "KeyW" || code === "KeyZ") bit = 3;
-          else if (code === "Numpad0") bit = 4;
-          else if (code === "NumpadEnter") bit = 5;
-          else if (code === "Numpad5") bit = 6; // B
-          else if (code === "Numpad6") bit = 7; // A
-          else if (code === "Numpad4") bit = 8; // Y
-          else if (code === "Numpad8") bit = 9; // X
-          else if (code === "Numpad7") bit = 10; // L
-          else if (code === "Numpad9") bit = 11; // R
-          if (bit >= 0) {
-            DesmumePlayer.setKeyBit(bit, isDown);
-            return;
+        // Si le moteur Nintendo DS (Desmond via iframe) est actif
+        if (this.jeuEnCoursType === "nds") {
+          const frame = document.getElementById("rv-nds-frame");
+          if (frame && frame.contentWindow) {
+            try {
+              frame.contentWindow.postMessage({
+                type: "KEY_STATE",
+                btn: btnName,
+                code: code,
+                isDown: isDown
+              }, "*");
+            } catch (err) {}
+          }
+          return;
+        }
+
+        // Si un émulateur RetroArch / Nostalgist tourne (SNES, GBA, GB, NES, MD, PS1, PCE)
+        if (this.partieEnCours) {
+          if (btnName && typeof this.partieEnCours.pressDown === "function") {
+            try {
+              if (isDown) this.partieEnCours.pressDown(btnName);
+              else this.partieEnCours.pressUp(btnName);
+            } catch (err) {}
+          }
+          if (code && typeof this.partieEnCours.keyboardDown === "function") {
+            try {
+              if (isDown) this.partieEnCours.keyboardDown(code);
+              else this.partieEnCours.keyboardUp(code);
+            } catch (err) {}
           }
         }
 
         const canvas = document.getElementById("rv-canvas");
-        if (!canvas) return;
-        const synth = new KeyboardEvent(isDown ? "keydown" : "keyup", {
-          code: code,
-          key: key,
-          bubbles: true,
-          cancelable: true
-        });
-        synth._isRvBridge = true;
-        canvas.dispatchEvent(synth);
+        if (canvas) {
+          try {
+            const synth = new KeyboardEvent(isDown ? "keydown" : "keyup", {
+              code: code,
+              key: key,
+              bubbles: true,
+              cancelable: true
+            });
+            synth._isRvBridge = true;
+            canvas.dispatchEvent(synth);
+          } catch (e) {}
+        }
       };
 
       const bindBtn = (el) => {
         if (!el) return;
-        const code = el.getAttribute("data-code");
-        const key = el.getAttribute("data-key");
+        const btn = (el.getAttribute("data-btn") || "").toLowerCase();
+        const code = el.getAttribute("data-code") || "";
+        const key = el.getAttribute("data-key") || "";
 
-        const onStart = (e) => {
+        let isTouchActive = false;
+
+        const onTouchStart = (e) => {
+          e.preventDefault();
+          isTouchActive = true;
+          el.classList.add("pressed");
+          triggerKey(btn, code, key, true);
+        };
+
+        const onTouchEnd = (e) => {
+          e.preventDefault();
+          isTouchActive = false;
+          el.classList.remove("pressed");
+          triggerKey(btn, code, key, false);
+        };
+
+        const onMouseDown = (e) => {
+          if (isTouchActive) return;
           e.preventDefault();
           el.classList.add("pressed");
-          triggerKey(code, key, true);
+          triggerKey(btn, code, key, true);
         };
 
-        const onEnd = (e) => {
+        const onMouseUp = (e) => {
+          if (isTouchActive) return;
           e.preventDefault();
           el.classList.remove("pressed");
-          triggerKey(code, key, false);
+          triggerKey(btn, code, key, false);
         };
 
-        el.addEventListener("touchstart", onStart, { passive: false });
-        el.addEventListener("touchend", onEnd, { passive: false });
-        el.addEventListener("touchcancel", onEnd, { passive: false });
-        el.addEventListener("mousedown", onStart);
-        el.addEventListener("mouseup", onEnd);
-        el.addEventListener("mouseleave", onEnd);
+        el.addEventListener("touchstart", onTouchStart, { passive: false });
+        el.addEventListener("touchend", onTouchEnd, { passive: false });
+        el.addEventListener("touchcancel", onTouchEnd, { passive: false });
+        el.addEventListener("mousedown", onMouseDown);
+        el.addEventListener("mouseup", onMouseUp);
+        el.addEventListener("mouseleave", onMouseUp);
       };
 
       document.querySelectorAll("#rv-gamepad button").forEach(bindBtn);
@@ -993,15 +1026,30 @@
             if (target !== currentDpadBtn) {
               if (currentDpadBtn) {
                 currentDpadBtn.classList.remove("pressed");
-                triggerKey(currentDpadBtn.getAttribute("data-code"), currentDpadBtn.getAttribute("data-key"), false);
+                triggerKey(
+                  (currentDpadBtn.getAttribute("data-btn") || "").toLowerCase(),
+                  currentDpadBtn.getAttribute("data-code") || "",
+                  currentDpadBtn.getAttribute("data-key") || "",
+                  false
+                );
               }
               currentDpadBtn = target;
               currentDpadBtn.classList.add("pressed");
-              triggerKey(currentDpadBtn.getAttribute("data-code"), currentDpadBtn.getAttribute("data-key"), true);
+              triggerKey(
+                (currentDpadBtn.getAttribute("data-btn") || "").toLowerCase(),
+                currentDpadBtn.getAttribute("data-code") || "",
+                currentDpadBtn.getAttribute("data-key") || "",
+                true
+              );
             }
           } else if (currentDpadBtn) {
             currentDpadBtn.classList.remove("pressed");
-            triggerKey(currentDpadBtn.getAttribute("data-code"), currentDpadBtn.getAttribute("data-key"), false);
+            triggerKey(
+              (currentDpadBtn.getAttribute("data-btn") || "").toLowerCase(),
+              currentDpadBtn.getAttribute("data-code") || "",
+              currentDpadBtn.getAttribute("data-key") || "",
+              false
+            );
             currentDpadBtn = null;
           }
         }, { passive: false });
@@ -1009,7 +1057,12 @@
         dpad.addEventListener("touchend", () => {
           if (currentDpadBtn) {
             currentDpadBtn.classList.remove("pressed");
-            triggerKey(currentDpadBtn.getAttribute("data-code"), currentDpadBtn.getAttribute("data-key"), false);
+            triggerKey(
+              (currentDpadBtn.getAttribute("data-btn") || "").toLowerCase(),
+              currentDpadBtn.getAttribute("data-code") || "",
+              currentDpadBtn.getAttribute("data-key") || "",
+              false
+            );
             currentDpadBtn = null;
           }
         });
@@ -1031,7 +1084,14 @@
       document.getElementById("rv-close-btn").addEventListener("click", () => this.close());
       document.getElementById("rv-btn-pause").addEventListener("click", () => this.togglePause());
       document.getElementById("rv-btn-reset").addEventListener("click", () => {
-        if (this.partieEnCours) this.partieEnCours.restart();
+        if (this.jeuEnCoursType === "nds") {
+          const frame = document.getElementById("rv-nds-frame");
+          if (frame && frame.contentWindow) {
+            try { frame.contentWindow.postMessage({ type: "RESET" }, "*"); } catch (e) {}
+          }
+        } else if (this.partieEnCours) {
+          this.partieEnCours.restart();
+        }
       });
       document.getElementById("rv-btn-save").addEventListener("click", () => this.sauvegarderPartie());
       document.getElementById("rv-btn-load").addEventListener("click", () => this.chargerPartie());
@@ -1039,6 +1099,24 @@
         const c = document.getElementById("rv-game-container");
         if (!document.fullscreenElement) c.requestFullscreen().catch(() => {});
         else document.exitFullscreen().catch(() => {});
+      });
+
+      // Écoute des messages venant de l'iframe DS
+      window.addEventListener("message", (e) => {
+        if (e.data && e.data.type === "NDS_READY") {
+          if (this.pendingNdsRom) {
+            const frame = document.getElementById("rv-nds-frame");
+            if (frame && frame.contentWindow) {
+              try {
+                frame.contentWindow.postMessage({
+                  type: "LOAD_ROM",
+                  blob: this.pendingNdsRom.blob,
+                  name: this.pendingNdsRom.name
+                }, "*");
+              } catch (err) {}
+            }
+          }
+        }
       });
       document.getElementById("rv-btn-crt").addEventListener("click", () => {
         const crt = document.getElementById("rv-crt");
@@ -1286,6 +1364,17 @@
 
         if (cType === "nds") {
           const isLauncher = nomFichier.includes("console-nds-launcher");
+
+          let romBlob = customBlob;
+          if (!romBlob && !isLauncher) {
+            try {
+              const res = await fetch("assets/vault/" + encodeURI(nomFichier));
+              if (res.ok) romBlob = await res.blob();
+            } catch (e) {
+              console.warn("Could not fetch ROM from vault:", e);
+            }
+          }
+
           container.innerHTML = `
             <div style="width: 100%; height: 600px; max-height: 80vh; display: flex; flex-direction: column; background: #000; position: relative;">
               <div style="position: absolute; top: 8px; right: 8px; z-index: 10;">
@@ -1294,20 +1383,29 @@
               <iframe id="rv-nds-frame" class="rv-embedded-frame" src="emulators/ds/index.html" allow="autoplay; fullscreen; gamepad"></iframe>
             </div>
           `;
+
           const frame = document.getElementById("rv-nds-frame");
-          if (frame && customBlob) {
-            frame.onload = () => {
-              setTimeout(() => {
-                try {
-                  frame.contentWindow.postMessage({ type: "LOAD_ROM", blob: customBlob, name: nomFichier }, "*");
-                } catch (e) {}
-              }, 500);
+          this.pendingNdsRom = romBlob ? { blob: romBlob, name: nomFichier } : null;
+
+          if (frame && this.pendingNdsRom) {
+            const sendRom = () => {
+              try {
+                if (frame.contentWindow && this.pendingNdsRom) {
+                  frame.contentWindow.postMessage({
+                    type: "LOAD_ROM",
+                    blob: this.pendingNdsRom.blob,
+                    name: this.pendingNdsRom.name
+                  }, "*");
+                }
+              } catch (e) {}
             };
+            frame.onload = () => setTimeout(sendRom, 400);
           }
+
           status.textContent = isLauncher
-            ? "🎮 Console Nintendo DS (DeSmuME Local) prête | Cliquez sur 'Choose File' ou glissez votre jeu .nds !"
-            : `🎮 Relique DS : "${nomFichier}". Émulateur local démarré avec stylet tactile !`;
-          status.style.color = "#fda4af";
+            ? "🎮 Console Nintendo DS (DeSmuME Desmond) prête | Insérez une cartouche ou glissez un .nds !"
+            : `🎮 Relique DS : "${nomFichier}". Émulateur Desmond actif (Stylet sur écran bas).`;
+          status.style.color = "#d4af37";
           this.jeuEnCoursNom = nomFichier;
           this.rendreGrille();
           return;
@@ -1333,14 +1431,14 @@
           input_player1_down: "s",
           input_player1_left: "a",
           input_player1_right: "d",
-          input_player1_b: "keypad5",
-          input_player1_a: "keypad6",
-          input_player1_y: "keypad4",
-          input_player1_x: "keypad8",
-          input_player1_l: "keypad7",
-          input_player1_r: "keypad9",
+          input_player1_b: "num5",
+          input_player1_a: "num6",
+          input_player1_y: "num4",
+          input_player1_x: "num8",
+          input_player1_l: "num7",
+          input_player1_r: "num9",
           input_player1_start: "kp_enter",
-          input_player1_select: "keypad0"
+          input_player1_select: "num0"
         };
 
         const canvasEl = document.getElementById("rv-canvas");
@@ -1384,22 +1482,32 @@
 
     // --- Sauvegarde & Restauration rapides ---
     async sauvegarderPartie() {
-      if (!this.partieEnCours) {
-        const status = document.getElementById("rv-status");
-        status.textContent = "💡 Sauvegarde intégrée dans le menu de la console.";
-        status.style.color = "#d4af37";
+      const status = document.getElementById("rv-status");
+      if (this.jeuEnCoursType === "nds") {
+        const frame = document.getElementById("rv-nds-frame");
+        if (frame && frame.contentWindow) {
+          try {
+            frame.contentWindow.postMessage({ type: "SAVE_STATE" }, "*");
+            if (status) {
+              status.textContent = "💾 Sauvegarde DSV exportée depuis la console Nintendo DS";
+              status.style.color = "#34d399";
+            }
+          } catch (e) {}
+        }
         return;
       }
-      const status = document.getElementById("rv-status");
+
+      if (!this.partieEnCours) {
+        if (status) {
+          status.textContent = "💡 Sauvegarde intégrée dans le menu de la console.";
+          status.style.color = "#d4af37";
+        }
+        return;
+      }
       status.textContent = "⏳ Sauvegarde de l'état...";
       try {
-        let stateObj;
-        if (this.jeuEnCoursType === "nds" && typeof DesmumePlayer !== "undefined" && DesmumePlayer.isRunning) {
-          stateObj = DesmumePlayer.saveState();
-        } else {
-          const res = await this.partieEnCours.saveState();
-          stateObj = res.state;
-        }
+        const res = await this.partieEnCours.saveState();
+        const stateObj = res.state;
         if (stateObj) {
           await this.saveStateDB(this.jeuEnCoursNom, stateObj);
           status.textContent = `✅ Sauvegarde réussie (${new Date().toLocaleTimeString()}) !`;
@@ -1416,13 +1524,22 @@
     }
 
     async chargerPartie() {
-      if (!this.partieEnCours) {
-        const status = document.getElementById("rv-status");
-        status.textContent = "💡 Chargement de sauvegarde intégré dans le menu de la console.";
-        status.style.color = "#d4af37";
+      const status = document.getElementById("rv-status");
+      if (this.jeuEnCoursType === "nds") {
+        if (status) {
+          status.textContent = "💡 Les cartouches DS gèrent automatiquement leur fichier de sauvegarde (.dsv).";
+          status.style.color = "#d4af37";
+        }
         return;
       }
-      const status = document.getElementById("rv-status");
+
+      if (!this.partieEnCours) {
+        if (status) {
+          status.textContent = "💡 Chargement de sauvegarde intégré dans le menu de la console.";
+          status.style.color = "#d4af37";
+        }
+        return;
+      }
       try {
         const data = await this.loadStateDB(this.jeuEnCoursNom);
         if (!data || !data.state) {
@@ -1430,11 +1547,7 @@
           status.style.color = "#fbbf24";
           return;
         }
-        if (this.jeuEnCoursType === "nds" && typeof DesmumePlayer !== "undefined" && DesmumePlayer.isRunning) {
-          DesmumePlayer.loadState(new Uint8Array(data.state));
-        } else {
-          await this.partieEnCours.loadState(data.state);
-        }
+        await this.partieEnCours.loadState(data.state);
         status.textContent = `📂 Sauvegarde restaurée ! (${data.date})`;
         status.style.color = "#34d399";
       } catch (e) {
@@ -1444,6 +1557,7 @@
     }
 
     togglePause() {
+      if (this.jeuEnCoursType === "nds") return;
       if (!this.partieEnCours) return;
       const btn = document.getElementById("rv-btn-pause");
       if (this.estEnPause) {
@@ -1459,7 +1573,8 @@
 
     // --- Pont Clavier Intelligent (ZSQD, 8546, Flèches, Chiffres portables) ---
     bridgeClavier(e) {
-      if (!this.modal || !this.modal.classList.contains("active") || !this.partieEnCours) return;
+      if (!this.modal || !this.modal.classList.contains("active")) return;
+      if (!this.partieEnCours && this.jeuEnCoursType !== "nds") return;
       if (e._isRvBridge) return;
 
       // F2 et F4 pour sauvegarde/chargement rapide
@@ -1474,44 +1589,84 @@
         return;
       }
 
-      const canvas = document.getElementById("rv-canvas");
-      if (!canvas) return;
-
+      let btn = null;
       let targetCode = null;
       let targetKey = null;
 
-      if (e.code === "Enter") { targetCode = "NumpadEnter"; targetKey = "Enter"; }
-      else if (e.code === "Space") { targetCode = "Numpad0"; targetKey = "0"; }
-      else if (e.code === "ArrowUp") { targetCode = "KeyW"; targetKey = "w"; }
-      else if (e.code === "ArrowDown") { targetCode = "KeyS"; targetKey = "s"; }
-      else if (e.code === "ArrowLeft") { targetCode = "KeyA"; targetKey = "a"; }
-      else if (e.code === "ArrowRight") { targetCode = "KeyD"; targetKey = "d"; }
-      else if (e.code === "Digit8") { targetCode = "Numpad8"; targetKey = "8"; }
-      else if (e.code === "Digit5") { targetCode = "Numpad5"; targetKey = "5"; }
-      else if (e.code === "Digit4") { targetCode = "Numpad4"; targetKey = "4"; }
-      else if (e.code === "Digit6") { targetCode = "Numpad6"; targetKey = "6"; }
-      else if (e.code === "Digit7") { targetCode = "Numpad7"; targetKey = "7"; }
-      else if (e.code === "Digit9") { targetCode = "Numpad9"; targetKey = "9"; }
-      else if (e.code === "Digit0") { targetCode = "Numpad0"; targetKey = "0"; }
-      else if (e.code === "KeyZ") { targetCode = "KeyW"; targetKey = "w"; }
-      else if (e.code === "KeyQ") { targetCode = "KeyA"; targetKey = "a"; }
+      if (e.code === "Enter") { btn = "start"; targetCode = "NumpadEnter"; targetKey = "Enter"; }
+      else if (e.code === "Space") { btn = "select"; targetCode = "Numpad0"; targetKey = "0"; }
+      else if (e.code === "ArrowUp" || e.code === "KeyW") { btn = "up"; targetCode = "KeyW"; targetKey = "w"; }
+      else if (e.code === "ArrowDown" || e.code === "KeyS") { btn = "down"; targetCode = "KeyS"; targetKey = "s"; }
+      else if (e.code === "ArrowLeft" || e.code === "KeyA") { btn = "left"; targetCode = "KeyA"; targetKey = "a"; }
+      else if (e.code === "ArrowRight" || e.code === "KeyD") { btn = "right"; targetCode = "KeyD"; targetKey = "d"; }
+      else if (e.code === "KeyZ") { btn = "up"; targetCode = "KeyW"; targetKey = "w"; } // AZERTY Z
+      else if (e.code === "KeyQ") { btn = "left"; targetCode = "KeyA"; targetKey = "a"; } // AZERTY Q
+      else if (e.code === "Numpad8" || e.code === "Digit8") { btn = "x"; targetCode = "Numpad8"; targetKey = "8"; }
+      else if (e.code === "Numpad5" || e.code === "Digit5") { btn = "b"; targetCode = "Numpad5"; targetKey = "5"; }
+      else if (e.code === "Numpad4" || e.code === "Digit4") { btn = "y"; targetCode = "Numpad4"; targetKey = "4"; }
+      else if (e.code === "Numpad6" || e.code === "Digit6") { btn = "a"; targetCode = "Numpad6"; targetKey = "6"; }
+      else if (e.code === "Numpad7" || e.code === "Digit7") { btn = "l"; targetCode = "Numpad7"; targetKey = "7"; }
+      else if (e.code === "Numpad9" || e.code === "Digit9") { btn = "r"; targetCode = "Numpad9"; targetKey = "9"; }
+      else if (e.code === "Numpad0" || e.code === "Digit0") { btn = "select"; targetCode = "Numpad0"; targetKey = "0"; }
       else if ((e.code === "Numpad4" || e.code === "Digit4") && ["nes", "gb", "pce"].includes(this.jeuEnCoursType)) {
+        btn = "b";
         targetCode = "Numpad5";
         targetKey = "5";
       }
 
-      if (targetCode) {
+      if (btn) {
         if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
           e.preventDefault();
         }
-        const synth = new KeyboardEvent(e.type, {
-          code: targetCode,
-          key: targetKey,
-          bubbles: true,
-          cancelable: true
-        });
-        synth._isRvBridge = true;
-        canvas.dispatchEvent(synth);
+
+        const isDown = e.type === "keydown";
+
+        // Si console Nintendo DS (dans l'iframe Desmond)
+        if (this.jeuEnCoursType === "nds") {
+          const frame = document.getElementById("rv-nds-frame");
+          if (frame && frame.contentWindow) {
+            try {
+              frame.contentWindow.postMessage({
+                type: "KEY_STATE",
+                btn: btn,
+                code: targetCode,
+                keyCode: e.keyCode,
+                isDown: isDown
+              }, "*");
+            } catch (err) {}
+          }
+          return;
+        }
+
+        // Si moteur Nostalgist
+        if (this.partieEnCours) {
+          if (typeof this.partieEnCours.pressDown === "function") {
+            try {
+              if (isDown) this.partieEnCours.pressDown(btn);
+              else this.partieEnCours.pressUp(btn);
+            } catch (err) {}
+          }
+          if (targetCode && typeof this.partieEnCours.keyboardDown === "function") {
+            try {
+              if (isDown) this.partieEnCours.keyboardDown(targetCode);
+              else this.partieEnCours.keyboardUp(targetCode);
+            } catch (err) {}
+          }
+        }
+
+        const canvas = document.getElementById("rv-canvas");
+        if (canvas) {
+          try {
+            const synth = new KeyboardEvent(e.type, {
+              code: targetCode,
+              key: targetKey,
+              bubbles: true,
+              cancelable: true
+            });
+            synth._isRvBridge = true;
+            canvas.dispatchEvent(synth);
+          } catch (e) {}
+        }
       }
     }
 
@@ -1547,12 +1702,10 @@
       document.body.style.overflow = "";
 
       if (this.partieEnCours) {
-        this.partieEnCours.pause();
+        try { this.partieEnCours.pause(); } catch (e) {}
       }
 
-      if (typeof DesmumePlayer !== "undefined" && DesmumePlayer.isRunning) {
-        DesmumePlayer.exit();
-      }
+      this.pendingNdsRom = null;
 
       const activeFrame = document.getElementById("rv-nds-frame");
       if (activeFrame) {

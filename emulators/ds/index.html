@@ -1,278 +1,382 @@
 <!doctype html>
-<html>
-
+<html lang="fr">
 <head>
-    <meta charset="utf-8" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="viewport"
-        content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon.png">
-    <link href="dark.css" rel="stylesheet">
-    <title>Sanctuaire Nintendo DS — Quentin Beaud</title>
-    <!-- Add hint for search engine -->
-    <meta name="description"
-        content="Sanctuaire Nintendo DS — Quentin Beaud is a web emulator for playing NDS and GBA games, designed for iOS(iPhone and iPad) and also workable for other devices.">
-    <meta name="keywords" content="NDS, GBA, iOS, iPhone, iPad, emulator, DS, Safari, online, PWA">
-    <meta name="author" content="Quentin Beaud">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sanctuaire Nintendo DS — Quentin Beaud</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dark.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050a07;
+      color: #f0f4f1;
+      font-family: 'Outfit', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* En-tête / Barre d'actions Dark Fantasy */
+    .ds-header {
+      width: 100%;
+      background: linear-gradient(180deg, rgba(9, 19, 13, 0.95) 0%, rgba(5, 10, 7, 0.9) 100%);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      z-index: 10;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .ds-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ds-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #d4af37;
+      letter-spacing: 0.5px;
+      margin: 0;
+      text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+    }
+
+    .ds-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ds-btn {
+      color: #050a07;
+      background: linear-gradient(135deg, #d4af37 0%, #997d25 100%);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 0.78rem;
+      padding: 6px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: filter 0.15s ease, transform 0.1s ease;
+      white-space: nowrap;
+    }
+
+    .ds-btn:hover {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+
+    .ds-btn-secondary {
+      background: #0e1d14;
+      color: #d4af37;
+      border: 1px solid rgba(212, 175, 55, 0.4);
+    }
+
+    .ds-btn-secondary:hover {
+      background: #14281c;
+      color: #fff;
+    }
+
+    .ds-status-bar {
+      font-size: 0.8rem;
+      color: #a8b8ad;
+      max-width: 400px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Zone d'affichage des écrans */
+    .ds-stage {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 6px;
+      touch-action: none;
+    }
+
+    desmond-player {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    /* Overlay glisser-déposer */
+    .ds-drop-hint {
+      position: absolute;
+      inset: 12px;
+      border: 2px dashed rgba(212, 175, 55, 0.4);
+      border-radius: 8px;
+      background: rgba(5, 10, 7, 0.85);
+      backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 5;
+    }
+
+    .ds-drop-hint.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .ds-drop-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      color: #d4af37;
+    }
+
+    .ds-drop-sub {
+      font-size: 0.85rem;
+      color: #a8b8ad;
+    }
+  </style>
 </head>
-
 <body>
-    <style>
-        html,
-        body {
-            overflow-x: hidden;
-            -webkit-user-select: none;
-            user-select: none;
-            -webkit-touch-callout: none;
-            cursor: inherit;
-        }
-
-        body {
-            background-color: black;
-            color: white;
-            padding: 0;
-            margin: 0;
-            width: 100vw;
-            height: 100vh;
-            font-family: 'Myriad Set Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-        }
-
-        canvas {
-            position: absolute;
-            z-index: 1;
-        }
-
-        #msg-layer {
-            position: absolute;
-            left: 0;
-            width: 100%;
-            top: 40vh;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 3;
-            backdrop-filter: blur(3px);
-            -webkit-backdrop-filter: blur(3px);
-        }
-
-        #vk-layer {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            touch-action: none;
-            opacity: 0.3;
-        }
-
-        #menu {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 4;
-            overflow: hidden scroll;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(3px);
-            -webkit-backdrop-filter: blur(3px);
-        }
-
-        #menu button {
-            background: transparent;
-        }
-
-        #menu button:active {
-            background: rgba(255, 255, 255, 0.5);
-        }
-
-        a,
-        a:visited {
-            color: white;
-
-        }
-
-        .vk-round {
-            text-align: center;
-            vertical-align: middle;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .vk-round-rect {
-            border-radius: 0.5em;
-            display: inline-block;
-        }
-
-
-        .vk {
-            color: #000;
-            background-color: #fff;
-            position: absolute;
-            z-index: 1;
-            text-align: center;
-            vertical-align: middle;
-            display: inline-block;
-        }
-
-
-
-
-        .vk-touched {}
-
-        .link {
-            text-decoration: underline;
-        }
-
-        hr {
-            border: 1px solid #fff;
-            height: 0;
-        }
-    </style>
-    <div id="welcome" class="menu">
-        <h1>Sanctuaire Nintendo DS — Quentin Beaud</h1>
-        <div id="loading">Loading...</div>
-        <div id="loadrom" hidden>
-            <input id="rom" type="file" hidden>
-            <button style="width:calc(100% - 2em);margin: 1em;" id="btn-choose-file">Choose File (or
-                drag/drop)...</button><br>
-        </div>
-        <p style="color: #888;">
-            Your files are processed locally and won't be uploaded to any server.<br>
-            This software should not be used to play games you have not legally obtained.<br>
-            "Nintendo DS" is a trademark of Nintendo Co., Ltd. This site is not affiliated with Nintendo in any way.
-        </p>
-        <hr>
-        <p><span id="ver-info"></span><a onclick="whatsNew()" id="whats-new" href="#">What's New</a>&nbsp;|&nbsp;<a
-                href="#" onclick="uiSwitchTo('menu')">⚙ Settings...</a></p>
-        <p id="p-sns">
-            
-        </p>
-        <p>
-            &nbsp;|&nbsp;<a href="#" id="a-gamepad">No Gamepad Detected</a>
-        </p>
-        <p>
-            Powered by desmume-wasm.&nbsp;|&nbsp;quentinbeaud.com<br>
-        </p>
-        <p>
-            
-        </p>
-
-
-        <div id="pro" style="background-color: #333">
-        </div>
-        <p id="ios-power-hint" hidden>
-            Please <b>turn off "Low Power Mode"</b> in iOS Control Center for better performance.
-        </p>
-        
+  <div class="ds-header">
+    <div class="ds-brand">
+      <span style="font-size: 1.1rem;">🔮</span>
+      <h1 class="ds-title">Nintendo DS Sanctuaire</h1>
+      <span class="ds-status-bar" id="ds-status">Prêt — Déposez une ROM (.nds)</span>
     </div>
-    
-    <div id="vk-layer" hidden>
-        <div class="vk-rect vk" data-k="menu" id="vk-menu">M</div>
-        <div class="vk-rect vk" data-k="l">L</div>
-        <div class="vk-rect vk" data-k="r">R</div>
-        <div class="vk-round vk" data-k="a">A</div>
-        <div class="vk-round vk" data-k="b">B</div>
-        <div class="vk-round vk" data-k="x">X</div>
-        <div class="vk-round vk" data-k="y">Y</div>
-        <div class="vk-rect vk" data-k="select">SE</div>
-        <div class="vk-rect vk" data-k="start">ST</div>
-        <div class="vk-round vk" data-k="stick" id="vk-stick"></div>
-        <div id="vk-dpad-1" class="vk vk-round-rect"></div>
-        <div id="vk-dpad-2" class="vk vk-round-rect"></div>
+    <div class="ds-tools">
+      <button class="ds-btn" id="btn-open-rom">📁 Insérer ROM</button>
+      <button class="ds-btn ds-btn-secondary" id="btn-save-dsv" title="Télécharger le fichier de sauvegarde DSV">💾 Sauvegarder</button>
+      <button class="ds-btn ds-btn-secondary" id="btn-restart" title="Redémarrer la console">🔄 Reset</button>
+      <input type="file" id="file-input" accept=".nds" style="display: none;">
     </div>
-    <div style="z-index: 2;position: absolute;bottom: 20px;" id="fps"></div>
-    <div id="msg-layer" hidden>
-        <p id="msg-text"></p>
-    </div>
-    <div id="menu" hidden>
-        <button onclick="uiMenuBack()">❮ Back</button>
-        <hr>
-        <div id="cfg-ea">
-            <input type="checkbox" id="cfg-turbo">
-            <label for="cfg-turbo">Turbo mode</label><br>
-            <br>
-            <label for="cfg-scale-mode">Screen filter(restart required)</label>
-            <select id="cfg-scale-mode" value="">
-                <option value="0">Pixelated</option>
-                <option value="1">Smooth</option>
-                <option value="2">XBRZ</option>
-            </select><br>
-            <button onclick="enableMicrophone()">Enable Microphone</button><br>
-            <button onclick="setVkScale()">Resize Virtual Gamepad</button><br>
+  </div>
 
-        </div>
-        <hr>
-        <input type="checkbox" id="cfg-opt">
-        <label for="cfg-opt">Use experimental optimization</label><br>
-        <input type="checkbox" id="power-save">
-        <label for="power-save">30FPS limit</label><br>
-        <input type="checkbox" id="vk-enabled">
-        <label for="vk-enabled">Virtual gamepad</label><br>
-        <input type="checkbox" id="cfg-mute-sound">
-        <label for="cfg-mute-sound">Mute sound</label><br>
-        <label for="vk-direction">Virtual gamepad Style</label>
-        <select id="vk-direction" value="">
-            <option value="0">Circle-Pad</option>
-            <option value="1">D-Pad</option>
-        </select><br>
-        <label for="cfg-ls-layout">Landscape Screen Layout</label>
-        <select id="cfg-ls-layout" value="">
-            <option value="0">TB</option>
-            <option value="1">LR 1:1</option>
-            <option value="2">LR X:1</option>
-        </select><br>
-        <label for="cfg-lang">Firmware Language</label>
-        <select id="cfg-lang">
-            <option value="0">Japanese</option>
-            <option value="1">English</option>
-            <option value="2">French</option>
-            <option value="3">German</option>
-            <option value="4">Italian</option>
-            <option value="5">Spanish</option>
-        </select><br>
-        <input type="checkbox" id="cfg-swap-abxy">
-        <label for="cfg-swap-abxy">Gamepad: Swap A/B and X/Y</label><br>
-        <input type="checkbox" id="lid-closed" onchange="window.lidClosed = this.checked">
-        <label for="lid-closed">Close the lid</label><br>
-        <hr>
-        <div id="menu-savegame" hidden>
-            <input type="file" id="restore-file" onchange="uiSaveRestore()" hidden>
-            Savegame Management:<br><button onclick="uiSaveExport()">Backup</button>|<button
-                onclick="$id('restore-file').click()">Restore</button><br>
+  <div class="ds-stage" id="ds-stage">
+    <desmond-player id="player"></desmond-player>
+    <div class="ds-drop-hint" id="drop-hint">
+      <div style="font-size: 2.2rem;">📥</div>
+      <div class="ds-drop-title">Déposer la relique Nintendo DS (.nds)</div>
+      <div class="ds-drop-sub">Le moteur DeSmuME WebAssembly lancera immédiatement la cartouche.</div>
+    </div>
+  </div>
 
-        </div>
-        <hr>
-        <div id="menu-cloud-save" hidden>
-            Cloud Save:<span id="span-cloud-id"></span><br>
-            <button onclick="dpOnConnectButtonClicked()" id="btn-dp-connect">Connect Dropbox</button><br>
-            <button onclick="dpManualBtn(true)">↑ Upload</button>|<button onclick="dpManualBtn(false)">↓
-                Download</button><br>
-        </div>
-    </div>
-    <div id="player" hidden>
-        <canvas id="top" width="256" height="192"></canvas>
-        <canvas id="bottom" width="256" height="192"></canvas>
-    </div>
-    <script src="localforage.js"></script>
-    <script src="pako.min.js"></script>
-    <script src="app.js"></script>
-    <script>
-        var jsFile = "build/nds.js";
-        if (localStorage) {
-            if (localStorage['simd'] == "1") {
-                jsFile = "build-simd/nds.js";
-            }
-            if (localStorage['showEA'] == "1") {
-                $id('cfg-ea').hidden = false;
-            }
+  <script src="desmond.min.js"></script>
+  <script>
+    (function() {
+      const player = document.querySelector("desmond-player");
+      const statusEl = document.getElementById("ds-status");
+      const fileInput = document.getElementById("file-input");
+      const dropHint = document.getElementById("drop-hint");
+      const btnOpen = document.getElementById("btn-open-rom");
+      const btnSave = document.getElementById("btn-save-dsv");
+      const btnReset = document.getElementById("btn-restart");
+
+      // Injecter le style Dark Fantasy à l'intérieur du shadowRoot de desmond-player
+      if (player && player.shadowRoot) {
+        const shadowStyle = document.createElement("style");
+        shadowStyle.textContent = `
+          #player {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
+            margin: 0 auto !important;
+            padding: 4px !important;
+          }
+          canvas {
+            image-rendering: pixelated !important;
+            image-rendering: -moz-crisp-edges !important;
+            image-rendering: crisp-edges !important;
+            width: auto !important;
+            max-width: 95vw !important;
+            height: auto !important;
+            max-height: 42vh !important;
+            aspect-ratio: 4 / 3 !important;
+            border: 2px solid rgba(212, 175, 55, 0.45) !important;
+            border-radius: 5px !important;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.85) !important;
+            background: #000 !important;
+            display: block !important;
+          }
+          #bottom {
+            cursor: crosshair !important;
+            border-color: rgba(212, 175, 55, 0.7) !important;
+          }
+        `;
+        player.shadowRoot.appendChild(shadowStyle);
+      }
+
+      function setStatus(text, color = "#d4af37") {
+        if (statusEl) {
+          statusEl.textContent = text;
+          statusEl.style.color = color;
         }
-        var script = document.createElement('script');
-        script.src = jsFile;
-        document.body.appendChild(script);
-    </script>
+      }
 
+      function loadRomBlob(blob, name) {
+        if (!blob) return;
+        const romName = name || blob.name || "relique.nds";
+        setStatus("⏳ Invocation de " + romName + "...");
+        try {
+          const url = URL.createObjectURL(blob);
+          if (player && typeof player.loadURL === "function") {
+            player.loadURL(url, function() {
+              setStatus("🎮 En cours : " + romName + " (Stylet actif sur écran bas)", "#34d399");
+            });
+          }
+        } catch (err) {
+          console.error("Erreur chargement ROM:", err);
+          setStatus("❌ Erreur : " + err.message, "#ef4444");
+        }
+      }
+
+      // Gestion des boutons
+      btnOpen.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          loadRomBlob(file, file.name);
+        }
+      });
+
+      btnSave.addEventListener("click", () => {
+        if (typeof uiSaveBackup === "function") {
+          uiSaveBackup();
+          setStatus("💾 Fichier de sauvegarde .dsv exporté", "#34d399");
+        } else {
+          setStatus("⚠️ Sauvegarde non disponible pour le moment", "#fda4af");
+        }
+      });
+
+      btnReset.addEventListener("click", () => {
+        if (typeof Module !== "undefined" && Module._reset) {
+          try { Module._reset(); setStatus("🔄 Console réinitialisée", "#d4af37"); } catch(e){}
+        } else {
+          location.reload();
+        }
+      });
+
+      // Drag & Drop
+      window.addEventListener("dragenter", (e) => {
+        e.preventDefault();
+        dropHint.classList.add("active");
+      });
+      window.addEventListener("dragover", (e) => {
+        e.preventDefault();
+      });
+      window.addEventListener("dragleave", (e) => {
+        if (e.relatedTarget === null || e.clientX === 0 || e.clientY === 0) {
+          dropHint.classList.remove("active");
+        }
+      });
+      window.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropHint.classList.remove("active");
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+          const file = e.dataTransfer.files[0];
+          loadRomBlob(file, file.name);
+        }
+      });
+
+      // Mappage touches DS Desmond
+      // ["right", "left", "down", "up", "select", "start", "b", "a", "y", "x", "l", "r", "debug", "lid"]
+      const dsKeyMap = {
+        right: 0,
+        left: 1,
+        down: 2,
+        up: 3,
+        select: 4,
+        start: 5,
+        b: 6,
+        a: 7,
+        y: 8,
+        x: 9,
+        l: 10,
+        r: 11
+      };
+
+      const dsKeyCodeMap = {
+        right: 39,
+        left: 37,
+        down: 40,
+        up: 38,
+        select: 16,
+        start: 13,
+        b: 90,
+        a: 88,
+        y: 65,
+        x: 83,
+        l: 81,
+        r: 87
+      };
+
+      // Écoute des ordres envoyés depuis la fenêtre parente (RetroVault)
+      window.addEventListener("message", (e) => {
+        if (!e.data) return;
+
+        if (e.data.type === "LOAD_ROM" && e.data.blob) {
+          loadRomBlob(e.data.blob, e.data.name);
+        } else if (e.data.type === "KEY_STATE") {
+          const btn = (e.data.btn || "").toLowerCase();
+          const isDown = !!e.data.isDown;
+          const idx = dsKeyMap[btn];
+          if (typeof emuKeyState !== "undefined" && idx !== undefined) {
+            emuKeyState[idx] = isDown;
+          }
+          const kCode = dsKeyCodeMap[btn] || e.data.keyCode;
+          if (kCode) {
+            window.dispatchEvent(new KeyboardEvent(isDown ? "keydown" : "keyup", {
+              keyCode: kCode,
+              bubbles: true
+            }));
+          }
+        } else if (e.data.type === "RESET") {
+          if (typeof Module !== "undefined" && Module._reset) {
+            try { Module._reset(); setStatus("🔄 Console réinitialisée", "#d4af37"); } catch(err){}
+          } else {
+            location.reload();
+          }
+        } else if (e.data.type === "SAVE_STATE") {
+          if (typeof uiSaveBackup === "function") {
+            uiSaveBackup();
+            setStatus("💾 Fichier de sauvegarde .dsv exporté", "#34d399");
+          }
+        }
+      });
+
+      // Notifier le Sanctuaire parent que la console DS est prête
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: "NDS_READY" }, "*");
+        }
+      } catch (err) {}
+    })();
+  </script>
 </body>
-
 </html>
