@@ -136,6 +136,17 @@
       this.storeName = "saves";
       this.db = null;
       this.boundKeyHandler = this.bridgeClavier.bind(this);
+      this.volumeActuel = 0.8;
+      this.volumePrecedent = 0.8;
+      try {
+        const sv = localStorage.getItem("rv_volume");
+        if (sv !== null) {
+          const pv = parseFloat(sv);
+          if (!isNaN(pv) && pv >= 0 && pv <= 1) this.volumeActuel = pv;
+        }
+      } catch(e) {}
+      this.gamepadLoopId = null;
+      this.lastGamepadBrand = "";
     }
 
     // --- Initialisation de la Base IndexedDB ---
@@ -384,6 +395,97 @@
           min-height: 20px;
           margin-top: 6px;
           text-align: center;
+        }
+
+        /* Contrôle du Volume Sanctuaire */
+        .rv-vol-wrap {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: #0e1d14;
+          border: 1px solid rgba(212, 175, 55, 0.45);
+          border-radius: 4px;
+          padding: 3px 8px;
+          transition: border-color 0.15s ease, background 0.15s ease;
+        }
+        .rv-vol-wrap:hover, .rv-vol-wrap:focus-within {
+          border-color: #d4af37;
+          background: #14281c;
+        }
+        .rv-vol-btn {
+          background: none !important;
+          border: none !important;
+          color: #d4af37 !important;
+          font-size: 0.88rem !important;
+          padding: 0 2px !important;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          line-height: 1;
+          box-shadow: none !important;
+          transform: none !important;
+        }
+        .rv-vol-btn:hover {
+          filter: brightness(1.2);
+        }
+        .rv-vol-slider {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 65px;
+          height: 4px;
+          border-radius: 2px;
+          background: rgba(212, 175, 55, 0.3);
+          outline: none;
+          cursor: pointer;
+        }
+        .rv-vol-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: #d4af37;
+          cursor: pointer;
+          box-shadow: 0 0 6px rgba(212, 175, 55, 0.6);
+        }
+        .rv-vol-slider::-moz-range-thumb {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: #d4af37;
+          border: none;
+          cursor: pointer;
+          box-shadow: 0 0 6px rgba(212, 175, 55, 0.6);
+        }
+        .rv-vol-val {
+          font-size: 0.74rem;
+          font-weight: 700;
+          color: #d4af37;
+          min-width: 28px;
+        }
+
+        /* Badge Manette Physique Connectée */
+        .rv-gp-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: #0e1d14;
+          border: 1px solid rgba(212, 175, 55, 0.35);
+          border-radius: 4px;
+          padding: 4px 8px;
+          font-size: 0.74rem;
+          font-weight: 600;
+          color: #a8b8ad;
+          transition: all 0.2s ease;
+        }
+        .rv-gp-badge.connected {
+          border-color: rgba(52, 211, 153, 0.65);
+          color: #34d399;
+          background: #0d2218;
+          box-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
+        }
+        .rv-gp-icon {
+          font-size: 0.85rem;
         }
 
         /* ========================================================
@@ -850,7 +952,16 @@
                 <button class="rv-btn" id="rv-btn-reset">🔄 Reset</button>
               </div>
               <div class="rv-tool-group">
-                <button class="rv-btn" id="rv-btn-pad-toggle">🎮 Manette</button>
+                <div class="rv-vol-wrap" title="Volume sonore général du sanctuaire">
+                  <button class="rv-btn rv-vol-btn" id="rv-btn-mute" title="Couper / Rétablir le son" aria-label="Couper ou rétablir le son">🔊</button>
+                  <input type="range" class="rv-vol-slider" id="rv-vol-slider" min="0" max="1" step="0.02" value="0.8" aria-label="Contrôle du volume sonore">
+                  <span class="rv-vol-val" id="rv-vol-val">80%</span>
+                </div>
+                <div class="rv-gp-badge" id="rv-gp-badge" title="État de la manette physique (PS5 DualSense / Xbox / Switch)">
+                  <span class="rv-gp-icon">🎮</span>
+                  <span id="rv-gp-name">Aucune manette</span>
+                </div>
+                <button class="rv-btn" id="rv-btn-pad-toggle">📱 Manette Virtuelle</button>
                 <button class="rv-btn" id="rv-btn-crt">📺 CRT</button>
                 <button class="rv-btn" id="rv-btn-fullscreen">⛶ Plein Écran</button>
                 <input type="file" id="rv-file-input" style="display: none;" accept=".nes,.sfc,.smc,.gba,.gb,.gbc,.md,.bin,.gen,.zip,.iso,.cue,.chd,.pbp,.img,.pce,.nds,.cso">
@@ -1007,42 +1118,50 @@
         const code = el.getAttribute("data-code") || "";
         const key = el.getAttribute("data-key") || "";
 
-        let isTouchActive = false;
+        let isDown = false;
 
-        const onTouchStart = (e) => {
-          e.preventDefault();
-          isTouchActive = true;
+        const press = (e) => {
+          if (isDown) return;
+          isDown = true;
           el.classList.add("pressed");
           triggerKey(btn, code, key, true);
         };
 
-        const onTouchEnd = (e) => {
-          e.preventDefault();
-          isTouchActive = false;
+        const release = (e) => {
+          if (!isDown) return;
+          isDown = false;
           el.classList.remove("pressed");
           triggerKey(btn, code, key, false);
         };
 
-        const onMouseDown = (e) => {
-          if (isTouchActive) return;
+        // Pointer Events (Touch, Mouse, Stylet) avec capture pour éviter de perdre le bouton
+        el.addEventListener("pointerdown", (e) => {
           e.preventDefault();
-          el.classList.add("pressed");
-          triggerKey(btn, code, key, true);
-        };
-
-        const onMouseUp = (e) => {
-          if (isTouchActive) return;
+          try { el.setPointerCapture(e.pointerId); } catch(err) {}
+          press(e);
+        });
+        el.addEventListener("pointerup", (e) => {
           e.preventDefault();
-          el.classList.remove("pressed");
-          triggerKey(btn, code, key, false);
-        };
+          try { el.releasePointerCapture(e.pointerId); } catch(err) {}
+          release(e);
+        });
+        el.addEventListener("pointercancel", () => release());
+        el.addEventListener("pointerleave", (e) => {
+          if (!el.hasPointerCapture || !el.hasPointerCapture(e.pointerId)) {
+            release();
+          }
+        });
 
-        el.addEventListener("touchstart", onTouchStart, { passive: false });
-        el.addEventListener("touchend", onTouchEnd, { passive: false });
-        el.addEventListener("touchcancel", onTouchEnd, { passive: false });
-        el.addEventListener("mousedown", onMouseDown);
-        el.addEventListener("mouseup", onMouseUp);
-        el.addEventListener("mouseleave", onMouseUp);
+        // Événements tactiles directs (fallbacks)
+        el.addEventListener("touchstart", (e) => {
+          e.preventDefault();
+          press(e);
+        }, { passive: false });
+        el.addEventListener("touchend", (e) => {
+          e.preventDefault();
+          release(e);
+        }, { passive: false });
+        el.addEventListener("touchcancel", (e) => release(), { passive: false });
       };
 
       document.querySelectorAll("#rv-gamepad button").forEach(bindBtn);
@@ -1137,12 +1256,37 @@
         else document.exitFullscreen().catch(() => {});
       });
 
+      // Gestion du volume sonore
+      const rvVolSlider = document.getElementById("rv-vol-slider");
+      const rvVolBtn = document.getElementById("rv-btn-mute");
+      if (rvVolSlider) {
+        rvVolSlider.addEventListener("input", (e) => {
+          this.appliquerVolume(parseFloat(e.target.value));
+        });
+      }
+      if (rvVolBtn) {
+        rvVolBtn.addEventListener("click", () => {
+          if (this.volumeActuel > 0) {
+            this.volumePrecedent = this.volumeActuel;
+            this.appliquerVolume(0);
+          } else {
+            this.appliquerVolume(this.volumePrecedent > 0 ? this.volumePrecedent : 0.8);
+          }
+        });
+      }
+
       // Écoute des messages venant de l'iframe DS
       window.addEventListener("message", (e) => {
         if (e.data && e.data.type === "NDS_READY") {
-          if (this.pendingNdsRom) {
-            const frame = document.getElementById("rv-nds-frame");
-            if (frame && frame.contentWindow) {
+          const frame = document.getElementById("rv-nds-frame");
+          if (frame && frame.contentWindow) {
+            try {
+              frame.contentWindow.postMessage({
+                type: "SET_VOLUME",
+                volume: this.volumeActuel
+              }, "*");
+            } catch(e) {}
+            if (this.pendingNdsRom) {
               try {
                 frame.contentWindow.postMessage({
                   type: "LOAD_ROM",
@@ -1414,28 +1558,34 @@
           container.innerHTML = `
             <div style="width: 100%; height: 600px; max-height: 80vh; display: flex; flex-direction: column; background: #000; position: relative;">
               <div style="position: absolute; top: 8px; right: 8px; z-index: 10;">
-                <a href="emulators/ds/index.html?v=8.4" target="_blank" class="rv-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
+                <a href="emulators/ds/index.html?v=8.5" target="_blank" class="rv-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
               </div>
-              <iframe id="rv-nds-frame" class="rv-embedded-frame" src="emulators/ds/index.html?v=8.4" allow="autoplay; fullscreen; gamepad"></iframe>
+              <iframe id="rv-nds-frame" class="rv-embedded-frame" src="emulators/ds/index.html?v=8.5" allow="autoplay; fullscreen; gamepad"></iframe>
             </div>
           `;
 
           const frame = document.getElementById("rv-nds-frame");
           this.pendingNdsRom = romBlob ? { blob: romBlob, name: nomFichier } : null;
 
-          if (frame && this.pendingNdsRom) {
-            const sendRom = () => {
+          if (frame) {
+            const sendRomAndVolume = () => {
               try {
-                if (frame.contentWindow && this.pendingNdsRom) {
+                if (frame.contentWindow) {
                   frame.contentWindow.postMessage({
-                    type: "LOAD_ROM",
-                    blob: this.pendingNdsRom.blob,
-                    name: this.pendingNdsRom.name
+                    type: "SET_VOLUME",
+                    volume: this.volumeActuel
                   }, "*");
+                  if (this.pendingNdsRom) {
+                    frame.contentWindow.postMessage({
+                      type: "LOAD_ROM",
+                      blob: this.pendingNdsRom.blob,
+                      name: this.pendingNdsRom.name
+                    }, "*");
+                  }
                 }
               } catch (e) {}
             };
-            frame.onload = () => setTimeout(sendRom, 400);
+            frame.onload = () => setTimeout(sendRomAndVolume, 400);
           }
 
           status.textContent = isLauncher
@@ -1479,7 +1629,8 @@
           input_save_state_key: "f2",
           input_load_state_btn: "nul",
           input_save_state_btn: "nul",
-          input_reset_key: "nul"
+          input_reset_key: "nul",
+          audio_volume: String(this.volumeActuel === 0 ? -80 : Math.max(-80, Math.min(12, Math.round(20 * Math.log10(this.volumeActuel)))))
         };
 
         const canvasEl = document.getElementById("rv-canvas");
@@ -1514,10 +1665,139 @@
         }
 
         this.rendreGrille();
+        setTimeout(() => this.appliquerVolume(this.volumeActuel, false), 500);
       } catch (err) {
         console.error(err);
         status.textContent = `❌ Erreur : ${err.message}`;
         status.style.color = "#ef4444";
+      }
+    }
+
+    // --- Contrôle du Volume & Détection Manette ---
+    appliquerVolume(vol, sauvegarder = true) {
+      this.volumeActuel = Math.max(0, Math.min(1, Number(vol)));
+      const slider = document.getElementById("rv-vol-slider");
+      const valEl = document.getElementById("rv-vol-val");
+      const btnMute = document.getElementById("rv-btn-mute");
+
+      if (slider) slider.value = String(this.volumeActuel);
+      if (valEl) valEl.textContent = Math.round(this.volumeActuel * 100) + "%";
+      if (btnMute) btnMute.textContent = this.volumeActuel === 0 ? "🔇" : "🔊";
+
+      if (sauvegarder) {
+        try { localStorage.setItem("rv_volume", String(this.volumeActuel)); } catch(e) {}
+      }
+
+      // Si console DS (iframe)
+      if (this.jeuEnCoursType === "nds") {
+        const frame = document.getElementById("rv-nds-frame");
+        if (frame && frame.contentWindow) {
+          try {
+            frame.contentWindow.postMessage({
+              type: "SET_VOLUME",
+              volume: this.volumeActuel
+            }, "*");
+          } catch(e) {}
+        }
+      }
+
+      // Si console Nostalgist (OpenAL gain)
+      try {
+        const al = this.partieEnCours?.getEmscriptenAL?.();
+        if (al && al.currentCtx && al.currentCtx.gain) {
+          al.currentCtx.gain.gain.value = this.volumeActuel;
+        }
+      } catch(e) {}
+    }
+
+    demarrerGamepadLoop() {
+      if (this.gamepadLoopId) return;
+
+      const scan = () => {
+        if (!this.modal || !this.modal.classList.contains("active")) {
+          this.gamepadLoopId = null;
+          return;
+        }
+
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        let gp = null;
+        for (let i = 0; i < gamepads.length; i++) {
+          if (gamepads[i] && gamepads[i].connected) {
+            gp = gamepads[i];
+            break;
+          }
+        }
+
+        const gpBadge = document.getElementById("rv-gp-badge");
+        const gpNameEl = document.getElementById("rv-gp-name");
+
+        if (gp) {
+          const id = (gp.id || "").toLowerCase();
+          let brand = "Manette Connectée";
+          if (id.includes("dualsense") || id.includes("054c") || id.includes("ps5") || (id.includes("wireless controller") && !id.includes("xbox"))) {
+            brand = "PS5 DualSense";
+          } else if (id.includes("dualshock") || id.includes("ps4") || id.includes("playstation")) {
+            brand = "PlayStation";
+          } else if (id.includes("xbox") || id.includes("x-box") || id.includes("045e")) {
+            brand = "Xbox";
+          } else if (id.includes("switch") || id.includes("pro controller") || id.includes("joy-con")) {
+            brand = "Switch Pro";
+          } else if (gp.id.length > 20) {
+            brand = gp.id.substring(0, 18) + "...";
+          }
+
+          if (gpBadge && gpNameEl) {
+            gpBadge.classList.add("connected");
+            gpNameEl.textContent = brand;
+          }
+
+          if (brand !== this.lastGamepadBrand) {
+            this.lastGamepadBrand = brand;
+            const status = document.getElementById("rv-status");
+            if (status) {
+              status.textContent = `🎮 Manette physique détectée : ${brand} (Prête à jouer)`;
+              status.style.color = "#34d399";
+            }
+          }
+
+          // Si le focus est sur la fenêtre principale et qu'un jeu DS tourne dans l'iframe:
+          // Transférer les inputs manette à l'iframe pour pallier la restriction de focus de Chrome!
+          if (this.jeuEnCoursType === "nds") {
+            const frame = document.getElementById("rv-nds-frame");
+            if (frame && frame.contentWindow && document.hasFocus() && document.activeElement !== frame) {
+              const b = {};
+              if (gp.buttons) {
+                for (let bi = 0; bi < gp.buttons.length; bi++) {
+                  b[bi] = !!(gp.buttons[bi] && gp.buttons[bi].pressed);
+                }
+              }
+              const ax = gp.axes ? [gp.axes[0] || 0, gp.axes[1] || 0, gp.axes[2] || 0, gp.axes[3] || 0] : [0, 0, 0, 0];
+              try {
+                frame.contentWindow.postMessage({
+                  type: "GAMEPAD_FRAME",
+                  gamepad: { id: gp.id, connected: true, buttons: b, axes: ax }
+                }, "*");
+              } catch(e) {}
+            }
+          }
+        } else {
+          if (gpBadge && gpNameEl) {
+            gpBadge.classList.remove("connected");
+            gpNameEl.textContent = "Aucune manette";
+          }
+          this.lastGamepadBrand = "";
+        }
+
+        this.gamepadLoopId = requestAnimationFrame(scan);
+      };
+
+      this.gamepadLoopId = requestAnimationFrame(scan);
+    }
+
+    arreterGamepadLoop() {
+      if (this.gamepadLoopId) {
+        cancelAnimationFrame(this.gamepadLoopId);
+        this.gamepadLoopId = null;
       }
     }
 
@@ -1726,6 +2006,8 @@
       window.addEventListener("keydown", this.boundKeyHandler);
       window.addEventListener("keyup", this.boundKeyHandler);
 
+      this.appliquerVolume(this.volumeActuel, false);
+      this.demarrerGamepadLoop();
       this.rendreGrille();
 
       if (bootFile) {
@@ -1752,6 +2034,7 @@
         try { this.partieEnCours.pause(); } catch (e) {}
       }
 
+      this.arreterGamepadLoop();
       this.pendingNdsRom = null;
 
       const activeFrame = document.getElementById("rv-nds-frame");

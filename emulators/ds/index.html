@@ -45,7 +45,8 @@
     .ds-brand {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .ds-title {
@@ -58,10 +59,124 @@
       text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
     }
 
+    .ds-status-bar {
+      font-size: 0.8rem;
+      color: #a8b8ad;
+      max-width: 320px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Badge Manette Physique */
+    .ds-gp-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #0e1d14;
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: #a8b8ad;
+      transition: all 0.2s ease;
+    }
+
+    .ds-gp-badge.connected {
+      border-color: rgba(52, 211, 153, 0.65);
+      color: #34d399;
+      background: #0d2218;
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
+    }
+
+    .ds-gp-icon {
+      font-size: 0.88rem;
+    }
+
     .ds-tools {
       display: flex;
       align-items: center;
       gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Contrôle Volume */
+    .ds-vol-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #0e1d14;
+      border: 1px solid rgba(212, 175, 55, 0.45);
+      border-radius: 4px;
+      padding: 3px 8px;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .ds-vol-wrap:hover, .ds-vol-wrap:focus-within {
+      border-color: #d4af37;
+      background: #14281c;
+    }
+
+    .ds-vol-btn {
+      background: none;
+      border: none;
+      color: #d4af37;
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      line-height: 1;
+      transition: transform 0.1s ease;
+    }
+
+    .ds-vol-btn:hover {
+      transform: scale(1.15);
+    }
+
+    .ds-vol-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 60px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(212, 175, 55, 0.3);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .ds-vol-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #d4af37;
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(212, 175, 55, 0.6);
+      transition: transform 0.1s ease;
+    }
+
+    .ds-vol-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .ds-vol-slider::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #d4af37;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(212, 175, 55, 0.6);
+    }
+
+    .ds-vol-val {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #d4af37;
+      min-width: 28px;
     }
 
     .ds-lang-wrap {
@@ -143,18 +258,6 @@
       background: #0d2218 !important;
       box-shadow: 0 0 10px rgba(52, 211, 153, 0.3) !important;
     }
-      background: #14281c;
-      color: #fff;
-    }
-
-    .ds-status-bar {
-      font-size: 0.8rem;
-      color: #a8b8ad;
-      max-width: 400px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
 
     /* Zone d'affichage des écrans */
     .ds-stage {
@@ -216,9 +319,18 @@
     <div class="ds-brand">
       <span style="font-size: 1.1rem;">🔮</span>
       <h1 class="ds-title">Nintendo DS Sanctuaire</h1>
+      <div class="ds-gp-badge" id="ds-gp-badge" title="État de détection de la manette physique (PS5 / Xbox / Switch)">
+        <span class="ds-gp-icon">🎮</span>
+        <span id="ds-gp-name">Aucune manette</span>
+      </div>
       <span class="ds-status-bar" id="ds-status">Prêt — Déposez une ROM (.nds)</span>
     </div>
     <div class="ds-tools">
+      <div class="ds-vol-wrap" title="Volume sonore de la Nintendo DS">
+        <button class="ds-vol-btn" id="ds-vol-mute" title="Couper / Rétablir le son" aria-label="Couper ou rétablir le son">🔊</button>
+        <input type="range" class="ds-vol-slider" id="ds-vol-slider" min="0" max="1" step="0.02" value="0.8" aria-label="Contrôle du volume sonore">
+        <span class="ds-vol-val" id="ds-vol-val">80%</span>
+      </div>
       <div class="ds-lang-wrap" title="Langue de la console Nintendo DS (Micrologiciel)">
         <label for="ds-lang" class="ds-lang-label">🌐</label>
         <select id="ds-lang" class="ds-select" aria-label="Langue de la console Nintendo DS">
@@ -243,11 +355,11 @@
     <div class="ds-drop-hint" id="drop-hint">
       <div style="font-size: 2.2rem;">📥</div>
       <div class="ds-drop-title">Déposer la relique Nintendo DS (.nds)</div>
-      <div class="ds-drop-sub">Le moteur DeSmuME WebAssembly lancera immédiatement la cartouche.</div>
+      <div class="ds-drop-sub">Le moteur DeSmuME WebAssembly lancera immédiatement la cartouche à 60 FPS.</div>
     </div>
   </div>
 
-  <script src="desmond.min.js"></script>
+  <script src="desmond.min.js?v=8.5"></script>
   <script>
     (function() {
       const player = document.querySelector("desmond-player");
@@ -259,6 +371,11 @@
       const btnReset = document.getElementById("btn-restart");
       const langSelect = document.getElementById("ds-lang");
       const btnToggleAnalog = document.getElementById("btn-toggle-analog");
+      const gpBadge = document.getElementById("ds-gp-badge");
+      const gpNameEl = document.getElementById("ds-gp-name");
+      const volSlider = document.getElementById("ds-vol-slider");
+      const volBtn = document.getElementById("ds-vol-mute");
+      const volVal = document.getElementById("ds-vol-val");
 
       let currentLanguage = 2; // Français par défaut (0: JP, 1: EN, 2: FR, 3: DE, 4: IT, 5: ES)
       let fwLangOffset = -1;
@@ -287,7 +404,127 @@
         langSelect.value = String(currentLanguage);
       }
 
-      // Localisation dynamique de l'offset CommonSettings.fwConfig.language dans le HEAP WASM
+      // ====================================================================
+      // GESTION DU VOLUME SONORE (DeSmuME WebAudio GainNode)
+      // ====================================================================
+      let currentVol = 0.8;
+      let previousVol = 0.8;
+
+      try {
+        const savedVol = localStorage.getItem("rv_volume");
+        if (savedVol !== null) {
+          const parsed = parseFloat(savedVol);
+          if (!isNaN(parsed) && parsed >= 0 && parsed <= 1) currentVol = parsed;
+        }
+      } catch (e) {}
+
+      function applyVolume(val, save = true) {
+        currentVol = Math.max(0, Math.min(1, Number(val)));
+        if (volSlider) volSlider.value = String(currentVol);
+        if (volVal) volVal.textContent = Math.round(currentVol * 100) + "%";
+        if (volBtn) volBtn.textContent = currentVol === 0 ? "🔇" : "🔊";
+
+        if (typeof window.setDsVolume === "function") {
+          window.setDsVolume(currentVol);
+        }
+        if (save) {
+          try { localStorage.setItem("rv_volume", String(currentVol)); } catch(e) {}
+        }
+      }
+
+      if (volSlider) {
+        volSlider.addEventListener("input", (e) => {
+          applyVolume(parseFloat(e.target.value));
+        });
+      }
+
+      if (volBtn) {
+        volBtn.addEventListener("click", () => {
+          if (currentVol > 0) {
+            previousVol = currentVol;
+            applyVolume(0);
+          } else {
+            applyVolume(previousVol > 0 ? previousVol : 0.8);
+          }
+        });
+      }
+
+      applyVolume(currentVol, false);
+
+      // Déverrouillage automatique du son dans Google Chrome sur tout premier geste utilisateur
+      const unlockAudio = () => {
+        if (window.tryInitSound) {
+          try { window.tryInitSound(); } catch(e) {}
+        }
+        if (window.audioContext && window.audioContext.state === "suspended") {
+          window.audioContext.resume().catch(() => {});
+        }
+      };
+      ["pointerdown", "mousedown", "touchstart", "keydown"].forEach((evt) => {
+        window.addEventListener(evt, unlockAudio, { passive: true, capture: true });
+      });
+
+      // ====================================================================
+      // DÉTECTION AVANCÉE DE MANETTE (PS5 DUALSENSE, XBOX, SWITCH)
+      // ====================================================================
+      function getGamepadBrandName(gp) {
+        if (!gp || !gp.id) return "Manette active";
+        const id = gp.id.toLowerCase();
+        if (id.includes("dualsense") || id.includes("054c") || id.includes("ps5") || (id.includes("wireless controller") && !id.includes("xbox"))) {
+          return "PS5 DualSense";
+        }
+        if (id.includes("dualshock") || id.includes("ps4") || id.includes("playstation")) {
+          return "PlayStation";
+        }
+        if (id.includes("xbox") || id.includes("x-box") || id.includes("045e")) {
+          return "Xbox";
+        }
+        if (id.includes("switch") || id.includes("pro controller") || id.includes("joy-con")) {
+          return "Switch Pro";
+        }
+        return gp.id.length > 22 ? gp.id.substring(0, 20) + "..." : gp.id;
+      }
+
+      let lastGamepadBrand = "";
+
+      function updateGamepadBadge(gp) {
+        if (!gpBadge || !gpNameEl) return;
+        if (gp && gp.connected) {
+          const brand = getGamepadBrandName(gp);
+          gpBadge.classList.add("connected");
+          gpNameEl.textContent = brand;
+          if (brand !== lastGamepadBrand) {
+            lastGamepadBrand = brand;
+            setStatus("🎮 " + brand + " connectée (Contrôles actifs)", "#34d399");
+          }
+        } else {
+          gpBadge.classList.remove("connected");
+          gpNameEl.textContent = "Aucune manette";
+          lastGamepadBrand = "";
+        }
+      }
+
+      window.onDsGamepadDetected = function(gp) {
+        updateGamepadBadge(gp);
+        unlockAudio();
+      };
+
+      window.onDsGamepadDisconnected = function() {
+        updateGamepadBadge(null);
+      };
+
+      window.addEventListener("gamepadconnected", (e) => {
+        updateGamepadBadge(e.gamepad);
+        unlockAudio();
+      });
+
+      window.addEventListener("gamepaddisconnected", () => {
+        updateGamepadBadge(null);
+      });
+
+      // ====================================================================
+      // CONFIGURATION LANGUE FIRMWARE DS
+      // ====================================================================
       function getFwLanguageOffset() {
         if (typeof Module === "undefined" || !Module.HEAPU8) return -1;
         const heap = Module.HEAPU8;
@@ -322,7 +559,6 @@
           Module.HEAPU8[offset] = code;
         }
 
-        // Si la console est déjà en cours d'exécution, patcher aussi le bloc userSettings dans la RAM principale
         try {
           if (typeof Module !== "undefined" && Module._getSymbol) {
             const ramBase = Module._getSymbol(7);
@@ -333,7 +569,6 @@
         } catch(err) {}
       }
 
-      // Appliquer la langue dès que le runtime WASM est prêt
       function ensureLanguageApplied() {
         if (typeof Module !== "undefined" && Module.HEAPU8) {
           applyFirmwareLanguage(currentLanguage);
@@ -357,7 +592,7 @@
       }
 
       // ====================================================================
-      // PONT ANALOGIQUE 360° GAMEPAD -> ÉCRAN TACTILE DS (Solution 1)
+      // PONT ANALOGIQUE 360° GAMEPAD -> ÉCRAN TACTILE DS
       // Conçu pour Super Mario 64 DS & contrôles analogiques continus
       // ====================================================================
       const DSAnalogBridge = (function() {
@@ -370,7 +605,6 @@
         let enabled = true;
         let isUserPhysicalTouch = false;
 
-        // Arbitrage prioritaire : si l'utilisateur utilise la souris ou le doigt
         window.addEventListener("pointerdown", () => { isUserPhysicalTouch = true; }, true);
         window.addEventListener("pointerup",   () => { isUserPhysicalTouch = false; }, true);
         window.addEventListener("pointercancel", () => { isUserPhysicalTouch = false; }, true);
@@ -386,8 +620,6 @@
 
           process(gamepad) {
             if (!enabled || !gamepad) return false;
-
-            // Priorité absolue au vrai toucher souris/stylet
             if (isUserPhysicalTouch) return false;
 
             const ax0 = gamepad.axes[0] || 0;
@@ -398,11 +630,9 @@
 
             if (mag > DEADZONE) {
               stickActive = true;
-              // Normalisation radiale continue (0.0 -> 1.0)
               const normalizedMag = Math.min(1.0, (mag - DEADZONE) / (1.0 - DEADZONE));
               const angle = Math.atan2(ax1, ax0);
 
-              // Coordonnées directes dans l'espace natif DS 256x192
               const targetX = CENTER_X + Math.cos(angle) * (normalizedMag * MAX_RADIUS);
               const targetY = CENTER_Y + Math.sin(angle) * (normalizedMag * MAX_RADIUS);
 
@@ -415,13 +645,13 @@
               }
             }
 
-            // Mappage de la caméra sur le Stick Droit (axes[2])
-            if (gamepad.axes && gamepad.axes.length >= 3 && typeof emuKeyState !== "undefined" && typeof keyNameToKeyId !== "undefined") {
+            // Mappage caméra stick droit (axes[2])
+            if (gamepad.axes && gamepad.axes.length >= 3 && window.emuKeyState && window.keyNameToKeyId) {
               const rightX = gamepad.axes[2] || 0;
               if (rightX < -CAM_THRESHOLD) {
-                emuKeyState[keyNameToKeyId.left] = true;
+                window.emuKeyState[window.keyNameToKeyId.left] = true;
               } else if (rightX > CAM_THRESHOLD) {
-                emuKeyState[keyNameToKeyId.right] = true;
+                window.emuKeyState[window.keyNameToKeyId.right] = true;
               }
             }
 
@@ -455,41 +685,44 @@
         });
       }
 
-      // Surcharge de processGamepadInput pour injecter le pont analogique 360°
+      // ====================================================================
+      // BOUCLE GAMEPAD PRINCIPALE
+      // ====================================================================
       const defaultProcessGamepadInput = window.processGamepadInput;
 
       window.processGamepadInput = function() {
         const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
         let gp = null;
-        if (typeof currentConnectedGamepad !== "undefined" && currentConnectedGamepad >= 0 && gamepads[currentConnectedGamepad]) {
-          gp = gamepads[currentConnectedGamepad];
-        } else {
-          for (let i = 0; i < gamepads.length; i++) {
-            if (gamepads[i]) { gp = gamepads[i]; break; }
+        for (let i = 0; i < gamepads.length; i++) {
+          if (gamepads[i] && gamepads[i].connected) {
+            gp = gamepads[i];
+            break;
           }
         }
 
+        updateGamepadBadge(gp);
+
         if (gp) {
-          // Exécuter d'abord le traitement natif des boutons
+          // Exécuter le mapping natif complet des touches (Cross=B, Circle=A, Square=Y, Triangle=X, L1, R1, Options=Start, Share=Select)
           if (typeof defaultProcessGamepadInput === "function") {
             defaultProcessGamepadInput();
           }
 
-          // Traitement analogique 360° vers écran tactile DS
+          // Traitement analogique 360° pour Mario 64 DS
           if (DSAnalogBridge.isEnabled()) {
             const stickActive = DSAnalogBridge.process(gp);
 
-            // Neutraliser le D-Pad digital s'il est généré par le stick gauche
-            if (stickActive && typeof emuKeyState !== "undefined" && typeof keyNameToKeyId !== "undefined") {
+            // Si le stick analogique est actif, préserver les vrais boutons de la croix directionnelle D-Pad
+            if (stickActive && window.emuKeyState && window.keyNameToKeyId) {
               const btnUp = gp.buttons[12] && gp.buttons[12].pressed;
               const btnDown = gp.buttons[13] && gp.buttons[13].pressed;
               const btnLeft = gp.buttons[14] && gp.buttons[14].pressed;
               const btnRight = gp.buttons[15] && gp.buttons[15].pressed;
 
-              emuKeyState[keyNameToKeyId.up] = !!btnUp;
-              emuKeyState[keyNameToKeyId.down] = !!btnDown;
-              emuKeyState[keyNameToKeyId.left] = !!btnLeft;
-              emuKeyState[keyNameToKeyId.right] = !!btnRight;
+              window.emuKeyState[window.keyNameToKeyId.up] = !!btnUp;
+              window.emuKeyState[window.keyNameToKeyId.down] = !!btnDown;
+              window.emuKeyState[window.keyNameToKeyId.left] = !!btnLeft;
+              window.emuKeyState[window.keyNameToKeyId.right] = !!btnRight;
             }
           }
         } else if (typeof defaultProcessGamepadInput === "function") {
@@ -497,7 +730,7 @@
         }
       };
 
-      // Injecter le style Dark Fantasy à l'intérieur du shadowRoot de desmond-player
+      // Style Dark Fantasy dans le Shadow DOM du player Desmond
       if (player && player.shadowRoot) {
         const shadowStyle = document.createElement("style");
         shadowStyle.textContent = `
@@ -549,6 +782,8 @@
         lastLoadedName = name || blob.name || "relique.nds";
         applyFirmwareLanguage(currentLanguage);
 
+        unlockAudio();
+
         const isSM64 = lastLoadedName.toLowerCase().includes("mario 64") || lastLoadedName.toLowerCase().includes("mario64");
         if (isSM64) {
           DSAnalogBridge.setEnabled(true);
@@ -560,6 +795,7 @@
           const url = URL.createObjectURL(blob);
           if (player && typeof player.loadURL === "function") {
             player.loadURL(url, function() {
+              unlockAudio();
               if (isSM64) {
                 setStatus("🎮 " + lastLoadedName + " | 🕹️ Stick 360° ACTIF (Mode Tactile conseillé dans Options SM64DS)", "#34d399");
               } else {
@@ -658,19 +894,20 @@
 
       // Mappage direct clavier pour le jeu DS (standalone)
       window.addEventListener("keydown", (e) => {
+        unlockAudio();
         if (e.code === "KeyB") {
-          if (typeof emuKeyState !== "undefined") emuKeyState[5] = true; // Start
+          if (window.emuKeyState) window.emuKeyState[5] = true; // Start
           e.preventDefault();
         } else if (e.code === "KeyV") {
-          if (typeof emuKeyState !== "undefined") emuKeyState[4] = true; // Select
+          if (window.emuKeyState) window.emuKeyState[4] = true; // Select
           e.preventDefault();
         }
       });
       window.addEventListener("keyup", (e) => {
         if (e.code === "KeyB") {
-          if (typeof emuKeyState !== "undefined") emuKeyState[5] = false;
+          if (window.emuKeyState) window.emuKeyState[5] = false;
         } else if (e.code === "KeyV") {
-          if (typeof emuKeyState !== "undefined") emuKeyState[4] = false;
+          if (window.emuKeyState) window.emuKeyState[4] = false;
         }
       });
 
@@ -680,19 +917,38 @@
 
         if (e.data.type === "LOAD_ROM" && e.data.blob) {
           loadRomBlob(e.data.blob, e.data.name);
+        } else if (e.data.type === "SET_VOLUME") {
+          const vol = parseFloat(e.data.volume);
+          if (!isNaN(vol)) {
+            applyVolume(vol, false);
+          }
         } else if (e.data.type === "KEY_STATE") {
           const btn = (e.data.btn || "").toLowerCase();
           const isDown = !!e.data.isDown;
           const idx = dsKeyMap[btn];
-          if (typeof emuKeyState !== "undefined" && idx !== undefined) {
-            emuKeyState[idx] = isDown;
+          if (window.emuKeyState && idx !== undefined) {
+            window.emuKeyState[idx] = isDown;
           }
-          const kCode = dsKeyCodeMap[btn] || e.data.keyCode;
-          if (kCode) {
-            window.dispatchEvent(new KeyboardEvent(isDown ? "keydown" : "keyup", {
-              keyCode: kCode,
-              bubbles: true
-            }));
+          unlockAudio();
+        } else if (e.data.type === "GAMEPAD_FRAME" && e.data.gamepad) {
+          // Manette transférée depuis la fenêtre parente
+          const gp = e.data.gamepad;
+          updateGamepadBadge(gp);
+          if (window.emuKeyState && window.keyNameToKeyId) {
+            const ks = window.emuKeyState;
+            const b = gp.buttons || {};
+            if (b[0] !== undefined) ks[window.keyNameToKeyId.b] = !!b[0];
+            if (b[1] !== undefined) ks[window.keyNameToKeyId.a] = !!b[1];
+            if (b[2] !== undefined) ks[window.keyNameToKeyId.y] = !!b[2];
+            if (b[3] !== undefined) ks[window.keyNameToKeyId.x] = !!b[3];
+            if (b[4] !== undefined || b[6] !== undefined) ks[window.keyNameToKeyId.l] = !!(b[4] || b[6]);
+            if (b[5] !== undefined || b[7] !== undefined) ks[window.keyNameToKeyId.r] = !!(b[5] || b[7]);
+            if (b[8] !== undefined || b[17] !== undefined) ks[window.keyNameToKeyId.select] = !!(b[8] || b[17]);
+            if (b[9] !== undefined || b[16] !== undefined) ks[window.keyNameToKeyId.start] = !!(b[9] || b[16]);
+            if (b[12] !== undefined) ks[window.keyNameToKeyId.up] = !!b[12];
+            if (b[13] !== undefined) ks[window.keyNameToKeyId.down] = !!b[13];
+            if (b[14] !== undefined) ks[window.keyNameToKeyId.left] = !!b[14];
+            if (b[15] !== undefined) ks[window.keyNameToKeyId.right] = !!b[15];
           }
         } else if (e.data.type === "SET_LANGUAGE") {
           const code = parseInt(e.data.lang, 10);
