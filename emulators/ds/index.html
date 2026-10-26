@@ -137,6 +137,16 @@
       color: #fff;
     }
 
+    .ds-btn-active {
+      color: #34d399 !important;
+      border-color: rgba(52, 211, 153, 0.5) !important;
+      background: #0d2218 !important;
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.3) !important;
+    }
+      background: #14281c;
+      color: #fff;
+    }
+
     .ds-status-bar {
       font-size: 0.8rem;
       color: #a8b8ad;
@@ -220,6 +230,7 @@
           <option value="5">🇪🇸 Español</option>
         </select>
       </div>
+      <button class="ds-btn ds-btn-secondary ds-btn-active" id="btn-toggle-analog" title="Activer / Désactiver le stick analogique 360° (Pour Super Mario 64 DS en Mode Tactile)">🕹️ 360° : ACTIF</button>
       <button class="ds-btn" id="btn-open-rom">📁 Insérer ROM</button>
       <button class="ds-btn ds-btn-secondary" id="btn-save-dsv" title="Télécharger le fichier de sauvegarde DSV">💾 Sauvegarder</button>
       <button class="ds-btn ds-btn-secondary" id="btn-restart" title="Redémarrer la console">🔄 Reset</button>
@@ -247,6 +258,7 @@
       const btnSave = document.getElementById("btn-save-dsv");
       const btnReset = document.getElementById("btn-restart");
       const langSelect = document.getElementById("ds-lang");
+      const btnToggleAnalog = document.getElementById("btn-toggle-analog");
 
       let currentLanguage = 2; // Français par défaut (0: JP, 1: EN, 2: FR, 3: DE, 4: IT, 5: ES)
       let fwLangOffset = -1;
@@ -344,6 +356,147 @@
         });
       }
 
+      // ====================================================================
+      // PONT ANALOGIQUE 360° GAMEPAD -> ÉCRAN TACTILE DS (Solution 1)
+      // Conçu pour Super Mario 64 DS & contrôles analogiques continus
+      // ====================================================================
+      const DSAnalogBridge = (function() {
+        const CENTER_X = 128;       // Centre écran tactile DS (256 / 2)
+        const CENTER_Y = 96;        // Centre écran tactile DS (192 / 2)
+        const MAX_RADIUS = 38;      // Rayon maximal de l'anneau tactile SM64DS
+        const DEADZONE = 0.15;      // Deadzone circulaire
+        const CAM_THRESHOLD = 0.45; // Seuil rotation caméra stick droit
+
+        let enabled = true;
+        let isUserPhysicalTouch = false;
+
+        // Arbitrage prioritaire : si l'utilisateur utilise la souris ou le doigt
+        window.addEventListener("pointerdown", () => { isUserPhysicalTouch = true; }, true);
+        window.addEventListener("pointerup",   () => { isUserPhysicalTouch = false; }, true);
+        window.addEventListener("pointercancel", () => { isUserPhysicalTouch = false; }, true);
+        window.addEventListener("mousedown",   () => { isUserPhysicalTouch = true; }, true);
+        window.addEventListener("mouseup",     () => { isUserPhysicalTouch = false; }, true);
+        window.addEventListener("touchstart",  () => { isUserPhysicalTouch = true; }, true);
+        window.addEventListener("touchend",    () => { isUserPhysicalTouch = false; }, true);
+
+        return {
+          isEnabled() { return enabled; },
+          setEnabled(val) { enabled = !!val; },
+          toggle() { enabled = !enabled; return enabled; },
+
+          process(gamepad) {
+            if (!enabled || !gamepad) return false;
+
+            // Priorité absolue au vrai toucher souris/stylet
+            if (isUserPhysicalTouch) return false;
+
+            const ax0 = gamepad.axes[0] || 0;
+            const ax1 = gamepad.axes[1] || 0;
+            const mag = Math.sqrt(ax0 * ax0 + ax1 * ax1);
+
+            let stickActive = false;
+
+            if (mag > DEADZONE) {
+              stickActive = true;
+              // Normalisation radiale continue (0.0 -> 1.0)
+              const normalizedMag = Math.min(1.0, (mag - DEADZONE) / (1.0 - DEADZONE));
+              const angle = Math.atan2(ax1, ax0);
+
+              // Coordonnées directes dans l'espace natif DS 256x192
+              const targetX = CENTER_X + Math.cos(angle) * (normalizedMag * MAX_RADIUS);
+              const targetY = CENTER_Y + Math.sin(angle) * (normalizedMag * MAX_RADIUS);
+
+              window.touched = 1;
+              window.touchX = Math.max(0, Math.min(255, Math.round(targetX)));
+              window.touchY = Math.max(0, Math.min(191, Math.round(targetY)));
+            } else {
+              if (window.touched === 1) {
+                window.touched = 0;
+              }
+            }
+
+            // Mappage de la caméra sur le Stick Droit (axes[2])
+            if (gamepad.axes && gamepad.axes.length >= 3 && typeof emuKeyState !== "undefined" && typeof keyNameToKeyId !== "undefined") {
+              const rightX = gamepad.axes[2] || 0;
+              if (rightX < -CAM_THRESHOLD) {
+                emuKeyState[keyNameToKeyId.left] = true;
+              } else if (rightX > CAM_THRESHOLD) {
+                emuKeyState[keyNameToKeyId.right] = true;
+              }
+            }
+
+            return stickActive;
+          }
+        };
+      })();
+      window.DSAnalogBridge = DSAnalogBridge;
+
+      function updateAnalogBtnState() {
+        if (!btnToggleAnalog) return;
+        const active = DSAnalogBridge.isEnabled();
+        btnToggleAnalog.textContent = active ? "🕹️ 360° : ACTIF" : "🕹️ 360° : OFF";
+        if (active) {
+          btnToggleAnalog.classList.add("ds-btn-active");
+        } else {
+          btnToggleAnalog.classList.remove("ds-btn-active");
+        }
+      }
+
+      if (btnToggleAnalog) {
+        btnToggleAnalog.addEventListener("click", () => {
+          const isNowActive = DSAnalogBridge.toggle();
+          updateAnalogBtnState();
+          setStatus(
+            isNowActive
+              ? "🕹️ Stick 360° ACTIF (Requis : réglez SM64DS sur Mode Tactile dans Options)"
+              : "🕹️ Stick 360° DÉSACTIVÉ (Croix D-Pad classique)",
+            isNowActive ? "#34d399" : "#d4af37"
+          );
+        });
+      }
+
+      // Surcharge de processGamepadInput pour injecter le pont analogique 360°
+      const defaultProcessGamepadInput = window.processGamepadInput;
+
+      window.processGamepadInput = function() {
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        let gp = null;
+        if (typeof currentConnectedGamepad !== "undefined" && currentConnectedGamepad >= 0 && gamepads[currentConnectedGamepad]) {
+          gp = gamepads[currentConnectedGamepad];
+        } else {
+          for (let i = 0; i < gamepads.length; i++) {
+            if (gamepads[i]) { gp = gamepads[i]; break; }
+          }
+        }
+
+        if (gp) {
+          // Exécuter d'abord le traitement natif des boutons
+          if (typeof defaultProcessGamepadInput === "function") {
+            defaultProcessGamepadInput();
+          }
+
+          // Traitement analogique 360° vers écran tactile DS
+          if (DSAnalogBridge.isEnabled()) {
+            const stickActive = DSAnalogBridge.process(gp);
+
+            // Neutraliser le D-Pad digital s'il est généré par le stick gauche
+            if (stickActive && typeof emuKeyState !== "undefined" && typeof keyNameToKeyId !== "undefined") {
+              const btnUp = gp.buttons[12] && gp.buttons[12].pressed;
+              const btnDown = gp.buttons[13] && gp.buttons[13].pressed;
+              const btnLeft = gp.buttons[14] && gp.buttons[14].pressed;
+              const btnRight = gp.buttons[15] && gp.buttons[15].pressed;
+
+              emuKeyState[keyNameToKeyId.up] = !!btnUp;
+              emuKeyState[keyNameToKeyId.down] = !!btnDown;
+              emuKeyState[keyNameToKeyId.left] = !!btnLeft;
+              emuKeyState[keyNameToKeyId.right] = !!btnRight;
+            }
+          }
+        } else if (typeof defaultProcessGamepadInput === "function") {
+          defaultProcessGamepadInput();
+        }
+      };
+
       // Injecter le style Dark Fantasy à l'intérieur du shadowRoot de desmond-player
       if (player && player.shadowRoot) {
         const shadowStyle = document.createElement("style");
@@ -395,12 +548,23 @@
         lastLoadedBlob = blob;
         lastLoadedName = name || blob.name || "relique.nds";
         applyFirmwareLanguage(currentLanguage);
+
+        const isSM64 = lastLoadedName.toLowerCase().includes("mario 64") || lastLoadedName.toLowerCase().includes("mario64");
+        if (isSM64) {
+          DSAnalogBridge.setEnabled(true);
+          updateAnalogBtnState();
+        }
+
         setStatus("⏳ Invocation de " + lastLoadedName + " (Langue : " + (dsLangNames[currentLanguage] || "FR") + ")...");
         try {
           const url = URL.createObjectURL(blob);
           if (player && typeof player.loadURL === "function") {
             player.loadURL(url, function() {
-              setStatus("🎮 En cours : " + lastLoadedName + " (Langue : " + (dsLangNames[currentLanguage] || "FR") + " — Stylet actif)", "#34d399");
+              if (isSM64) {
+                setStatus("🎮 " + lastLoadedName + " | 🕹️ Stick 360° ACTIF (Mode Tactile conseillé dans Options SM64DS)", "#34d399");
+              } else {
+                setStatus("🎮 En cours : " + lastLoadedName + " (Langue : " + (dsLangNames[currentLanguage] || "FR") + " — Stylet actif)", "#34d399");
+              }
             });
           }
         } catch (err) {
@@ -408,6 +572,7 @@
           setStatus("❌ Erreur : " + err.message, "#ef4444");
         }
       }
+      window.loadRomBlob = loadRomBlob;
 
       // Gestion des boutons
       btnOpen.addEventListener("click", () => fileInput.click());

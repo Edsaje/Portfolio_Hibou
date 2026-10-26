@@ -13,6 +13,12 @@
 
   const VAULT_ROMS = [
     {
+      nom: "Super Mario 64 DS (Europe) (En,Fr,De,Es,It).nds",
+      titre: "Super Mario 64 DS",
+      console: "nds",
+      desc: "L'épopée 3D culte de la Nintendo DS avec Mario, Yoshi, Luigi et Wario (contrôles 360° actifs)."
+    },
+    {
       nom: "Super Mario World (Europe) (Rev 1).sfc",
       titre: "Super Mario World",
       console: "snes",
@@ -55,16 +61,46 @@
       desc: "Le sommet technique et ludique de la NES 8-bit (1988)."
     },
     {
+      nom: "Super Mario Bros. 2 (USA) (Rev 1).nes",
+      titre: "Super Mario Bros. 2",
+      console: "nes",
+      desc: "L'aventure onirique de Subcon avec Mario, Luigi, Peach et Toad (1988)."
+    },
+    {
+      nom: "Dragon Warrior 4 (U).nes",
+      titre: "Dragon Quest IV : Chapters of the Chosen",
+      console: "nes",
+      desc: "L'épopée en cinq chapitres narratifs de Chunsoft et Yuji Horii sur NES (1990)."
+    },
+    {
       nom: "Dragon Warrior 3 (U) [T-Port1.1].nes",
       titre: "Dragon Quest III : Soshite Densetsu e...",
       console: "nes",
       desc: "Le mythe fondateur du J-RPG sur Famicom / NES (1988)."
     },
     {
+      nom: "Dragon Warrior 2 (U).nes",
+      titre: "Dragon Quest II : Akuryo no Kamigami",
+      console: "nes",
+      desc: "La suite légendaire et le périple des trois descendants de Roto (1987)."
+    },
+    {
       nom: "dq.nes",
       titre: "Dragon Quest I (Dragon Warrior)",
       console: "nes",
       desc: "La légende qui a tout commencé par Yuji Horii (1986)."
+    },
+    {
+      nom: "Legend of Zelda, The (USA) (Rev 1).nes",
+      titre: "The Legend of Zelda",
+      console: "nes",
+      desc: "Le commencement mythique de la quête d'Hyrule par Shigeru Miyamoto (1986)."
+    },
+    {
+      nom: "Zelda II - The Adventure of Link (USA).nes",
+      titre: "Zelda II : The Adventure of Link",
+      console: "nes",
+      desc: "L'aventure action-RPG culte et exigeante en vue de profil (1987)."
     },
     {
       nom: "console-nds-launcher",
