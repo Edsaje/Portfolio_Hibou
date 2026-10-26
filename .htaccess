@@ -22,9 +22,11 @@ Options -Indexes
   </IfModule>
 </FilesMatch>
 
-# Types MIME modernes pour les polices WOFF2
+# Types MIME modernes pour les polices WOFF2 et WebAssembly
 <IfModule mod_mime.c>
   AddType font/woff2 .woff2
+  AddType application/wasm .wasm
+  AddType application/octet-stream .data
 </IfModule>
 
 # Compression Gzip / Deflate

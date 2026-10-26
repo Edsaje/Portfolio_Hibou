@@ -95,7 +95,7 @@
 
   class RetroVault {
     constructor() {
-      this.version = "6.0-native-nds";
+      this.version = "7.0-local-emulators";
       this.modal = null;
       this.partieEnCours = null;
       this.jeuEnCoursNom = "";
@@ -1297,46 +1297,30 @@
         const container = document.getElementById("rv-game-container");
 
         if (cType === "nds") {
-          let romBlob = customBlob;
-          if (!romBlob) {
-            status.textContent = "🎮 Nintendo DS : Sélectionnez ou glissez votre cartouche .nds pour démarrer !";
-            status.style.color = "#fda4af";
-            document.getElementById("rv-file-input").click();
-            return;
+          const isLauncher = nomFichier.includes("console-nds-launcher");
+          container.innerHTML = `
+            <div style="width: 100%; height: 600px; max-height: 80vh; display: flex; flex-direction: column; background: #000; position: relative;">
+              <div style="position: absolute; top: 8px; right: 8px; z-index: 10;">
+                <a href="emulators/ds/index.html" target="_blank" class="rv-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
+              </div>
+              <iframe id="rv-nds-frame" class="rv-embedded-frame" src="emulators/ds/index.html" allow="autoplay; fullscreen; gamepad"></iframe>
+            </div>
+          `;
+          const frame = document.getElementById("rv-nds-frame");
+          if (frame && customBlob) {
+            frame.onload = () => {
+              setTimeout(() => {
+                try {
+                  frame.contentWindow.postMessage({ type: "LOAD_ROM", blob: customBlob, name: nomFichier }, "*");
+                } catch (e) {}
+              }, 500);
+            };
           }
-
-          status.textContent = `⏳ Invocation de la cartouche DS "${nomFichier}" (Moteur WebAssembly natif)...`;
+          status.textContent = isLauncher
+            ? "🎮 Console Nintendo DS (DeSmuME Local) prête | Cliquez sur 'Choose File' ou glissez votre jeu .nds !"
+            : `🎮 Relique DS : "${nomFichier}". Émulateur local démarré avec stylet tactile !`;
           status.style.color = "#fda4af";
-
-          // Charger le runner natif DeSmuME Wasm 100% auto-hébergé
-          if (typeof DesmumePlayer === "undefined") {
-            await new Promise((resolve, reject) => {
-              const s = document.createElement("script");
-              s.src = "js/desmume/desmume-player.js?v=3.0";
-              s.onload = resolve;
-              s.onerror = reject;
-              document.head.appendChild(s);
-            });
-          }
-
           this.jeuEnCoursNom = nomFichier;
-          await DesmumePlayer.launch(romBlob, container);
-          this.partieEnCours = DesmumePlayer;
-
-          try {
-            const saveInfo = await this.loadStateDB(this.jeuEnCoursNom);
-            if (saveInfo && saveInfo.state) {
-              DesmumePlayer.loadState(new Uint8Array(saveInfo.state));
-              status.textContent = `🎮 En cours : ${nomFichier} (Nintendo DS) | 💾 Sauvegarde restaurée !`;
-              status.style.color = "#34d399";
-            } else {
-              status.textContent = `🎮 En cours : ${nomFichier} (Nintendo DS) | Stylet tactile prêt sur l'écran inférieur !`;
-              status.style.color = "#fda4af";
-            }
-          } catch (e) {
-            status.textContent = `🎮 En cours : ${nomFichier} (Nintendo DS) | Bon jeu !`;
-          }
-
           this.rendreGrille();
           return;
         }
@@ -1344,13 +1328,16 @@
         if (cType === "psp") {
           const isLauncher = nomFichier.includes("console-psp-launcher");
           container.innerHTML = `
-            <div style="width: 100%; height: 540px; max-height: 75vh; display: flex; flex-direction: column; background: #000; position: relative;">
-              <iframe id="rv-psp-frame" class="rv-embedded-frame" src="https://root-hunter.github.io/ppsspp-web/" allow="autoplay; fullscreen; gamepad"></iframe>
+            <div style="width: 100%; height: 560px; max-height: 78vh; display: flex; flex-direction: column; background: #000; position: relative;">
+              <div style="position: absolute; top: 8px; right: 8px; z-index: 10;">
+                <a href="emulators/psp/index.html" target="_blank" class="rv-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
+              </div>
+              <iframe id="rv-psp-frame" class="rv-embedded-frame" src="emulators/psp/index.html" allow="autoplay; fullscreen; gamepad"></iframe>
             </div>
           `;
           status.textContent = isLauncher
-            ? "🎮 Console PlayStation Portable (PPSSPP Wasm) active | Glissez votre ISO/CSO dans l'écran ci-dessus."
-            : `🎮 Image PSP : "${nomFichier}". Glissez-la dans la console ci-dessus pour lancer le jeu !`;
+            ? "🎮 Console PlayStation Portable (PPSSPP Local) prête | Glissez votre ISO/CSO ou utilisez le menu PPSSPP."
+            : `🎮 Image PSP : "${nomFichier}". Console locale active !`;
           status.style.color = "#7dd3fc";
           this.jeuEnCoursNom = nomFichier;
           this.rendreGrille();
@@ -1598,7 +1585,7 @@
         DesmumePlayer.exit();
       }
 
-      const activeFrame = document.getElementById("rv-psp-frame");
+      const activeFrame = document.getElementById("rv-nds-frame") || document.getElementById("rv-psp-frame");
       if (activeFrame) {
         activeFrame.src = "about:blank";
       }
