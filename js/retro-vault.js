@@ -864,8 +864,8 @@
             <div class="rv-pad-top-bar">
               <button class="rv-pad-shoulder rv-pad-l" data-btn="l" data-code="Numpad7" data-key="7" id="rv-touch-l">L</button>
               <div class="rv-pad-menu-cluster">
-                <button class="rv-pad-pill" data-btn="select" data-code="Numpad0" data-key="0">SELECT</button>
-                <button class="rv-pad-pill" data-btn="start" data-code="NumpadEnter" data-key="Enter">START</button>
+                <button class="rv-pad-pill" data-btn="select" data-code="KeyV" data-key="v">SELECT</button>
+                <button class="rv-pad-pill" data-btn="start" data-code="KeyB" data-key="b">START</button>
               </div>
               <button class="rv-pad-shoulder rv-pad-r" data-btn="r" data-code="Numpad9" data-key="9" id="rv-touch-r">R</button>
             </div>
@@ -915,8 +915,8 @@
               </div>
               <div class="rv-ctrl-box">
                 <span class="rv-ctrl-lbl">⏯️ :</span>
-                <span>Start : <span class="rv-kbd">Entrée</span></span>
-                <span>Select : <span class="rv-kbd">0</span></span>
+                <span>Start : <span class="rv-kbd">B</span></span>
+                <span>Select : <span class="rv-kbd">V</span></span>
               </div>
             </div>
             <div class="rv-tip">
@@ -1461,7 +1461,7 @@
 
         this.jeuEnCoursNom = nomFichier;
 
-        // Configuration RetroArch ergonomique (ZSQD + Pavé Numérique 8546)
+        // Configuration RetroArch ergonomique (ZSQD + Pavé Numérique 8546 + Start B / Select V)
         const retroConfig = {
           input_player1_up: "w",
           input_player1_down: "s",
@@ -1473,8 +1473,13 @@
           input_player1_x: "num8",
           input_player1_l: "num7",
           input_player1_r: "num9",
-          input_player1_start: "kp_enter",
-          input_player1_select: "num0"
+          input_player1_start: "b",
+          input_player1_select: "v",
+          input_load_state_key: "f4",
+          input_save_state_key: "f2",
+          input_load_state_btn: "nul",
+          input_save_state_btn: "nul",
+          input_reset_key: "nul"
         };
 
         const canvasEl = document.getElementById("rv-canvas");
@@ -1625,12 +1630,19 @@
         return;
       }
 
+      // Désactiver le comportement par défaut d'Entrée pour éviter de déclencher les boutons ou recharger la sauvegarde
+      if (e.code === "Enter" || e.code === "NumpadEnter") {
+        e.preventDefault();
+        return;
+      }
+
       let btn = null;
       let targetCode = null;
       let targetKey = null;
 
-      if (e.code === "Enter") { btn = "start"; targetCode = "NumpadEnter"; targetKey = "Enter"; }
-      else if (e.code === "Space") { btn = "select"; targetCode = "Numpad0"; targetKey = "0"; }
+      // Touches Start (B) et Select (V)
+      if (e.code === "KeyB") { btn = "start"; targetCode = "KeyB"; targetKey = "b"; }
+      else if (e.code === "KeyV") { btn = "select"; targetCode = "KeyV"; targetKey = "v"; }
       else if (e.code === "ArrowUp" || e.code === "KeyW") { btn = "up"; targetCode = "KeyW"; targetKey = "w"; }
       else if (e.code === "ArrowDown" || e.code === "KeyS") { btn = "down"; targetCode = "KeyS"; targetKey = "s"; }
       else if (e.code === "ArrowLeft" || e.code === "KeyA") { btn = "left"; targetCode = "KeyA"; targetKey = "a"; }
@@ -1643,7 +1655,6 @@
       else if (e.code === "Numpad6" || e.code === "Digit6") { btn = "a"; targetCode = "Numpad6"; targetKey = "6"; }
       else if (e.code === "Numpad7" || e.code === "Digit7") { btn = "l"; targetCode = "Numpad7"; targetKey = "7"; }
       else if (e.code === "Numpad9" || e.code === "Digit9") { btn = "r"; targetCode = "Numpad9"; targetKey = "9"; }
-      else if (e.code === "Numpad0" || e.code === "Digit0") { btn = "select"; targetCode = "Numpad0"; targetKey = "0"; }
       else if ((e.code === "Numpad4" || e.code === "Digit4") && ["nes", "gb", "pce"].includes(this.jeuEnCoursType)) {
         btn = "b";
         targetCode = "Numpad5";
@@ -1651,7 +1662,7 @@
       }
 
       if (btn) {
-        if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+        if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyB", "KeyV"].includes(e.code)) {
           e.preventDefault();
         }
 

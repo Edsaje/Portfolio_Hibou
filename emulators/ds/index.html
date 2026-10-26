@@ -646,8 +646,8 @@
         left: 37,
         down: 40,
         up: 38,
-        select: 16,
-        start: 13,
+        select: 86, // Touche V
+        start: 66,  // Touche B
         b: 90,
         a: 88,
         y: 65,
@@ -655,6 +655,24 @@
         l: 81,
         r: 87
       };
+
+      // Mappage direct clavier pour le jeu DS (standalone)
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "KeyB") {
+          if (typeof emuKeyState !== "undefined") emuKeyState[5] = true; // Start
+          e.preventDefault();
+        } else if (e.code === "KeyV") {
+          if (typeof emuKeyState !== "undefined") emuKeyState[4] = true; // Select
+          e.preventDefault();
+        }
+      });
+      window.addEventListener("keyup", (e) => {
+        if (e.code === "KeyB") {
+          if (typeof emuKeyState !== "undefined") emuKeyState[5] = false;
+        } else if (e.code === "KeyV") {
+          if (typeof emuKeyState !== "undefined") emuKeyState[4] = false;
+        }
+      });
 
       // Écoute des ordres envoyés depuis la fenêtre parente (RetroVault)
       window.addEventListener("message", (e) => {
