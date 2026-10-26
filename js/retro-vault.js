@@ -74,6 +74,8 @@
     gb: { label: "Game Boy / GBC", core: "gambatte", tag: "tag-gb", hasExtra: false },
     nes: { label: "NES 8-bit", core: "fceumm", tag: "tag-nes", hasExtra: false },
     megadrive: { label: "Mega Drive", core: "genesis_plus_gx", tag: "tag-md", hasExtra: true },
+    ps1: { label: "PlayStation 1", core: "pcsx_rearmed", tag: "tag-ps1", hasExtra: true },
+    pce: { label: "PC Engine", core: "mednafen_pce_fast", tag: "tag-pce", hasExtra: false },
     arcade: { label: "Arcade", core: "fbneo", tag: "tag-arcade", hasExtra: true }
   };
 
@@ -137,7 +139,9 @@
       if (["sfc", "smc"].includes(ext)) return "snes";
       if (["gba"].includes(ext)) return "gba";
       if (["gb", "gbc"].includes(ext)) return "gb";
-      if (["md", "bin", "gen"].includes(ext)) return "megadrive";
+      if (["iso", "cue", "chd", "pbp", "img"].includes(ext)) return "ps1";
+      if (["md", "bin", "gen", "smd", "sms", "gg"].includes(ext)) return "megadrive";
+      if (["pce"].includes(ext)) return "pce";
       if (["zip"].includes(ext)) return "arcade";
       return "nes";
     }
@@ -623,6 +627,8 @@
         .tag-gb { background: rgba(132, 204, 22, 0.2); color: #a3e635; border: 1px solid rgba(132, 204, 22, 0.4); }
         .tag-nes { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
         .tag-md { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+        .tag-ps1 { background: rgba(59, 130, 246, 0.25); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.5); }
+        .tag-pce { background: rgba(249, 115, 22, 0.25); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.5); }
         .tag-arcade { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.4); }
         .rv-save-badge {
           font-size: 0.7rem;
@@ -714,7 +720,7 @@
                 <button class="rv-btn" id="rv-btn-pad-toggle">🎮 Manette</button>
                 <button class="rv-btn" id="rv-btn-crt">📺 CRT</button>
                 <button class="rv-btn" id="rv-btn-fullscreen">⛶ Plein Écran</button>
-                <input type="file" id="rv-file-input" style="display: none;" accept=".nes,.sfc,.smc,.gba,.gb,.gbc,.md,.bin,.gen,.zip">
+                <input type="file" id="rv-file-input" style="display: none;" accept=".nes,.sfc,.smc,.gba,.gb,.gbc,.md,.bin,.gen,.zip,.iso,.cue,.chd,.pbp,.img,.pce">
                 <button class="rv-btn" id="rv-btn-upload">📁 Insérer ROM</button>
               </div>
             </div>
@@ -790,10 +796,13 @@
             <div class="rv-lib-title">📚 Reliques Conservées</div>
             <div class="rv-tabs">
               <button class="rv-tab active" data-filter="all">TOUTES</button>
+              <button class="rv-tab" data-filter="ps1">PLAYSTATION</button>
               <button class="rv-tab" data-filter="snes">SUPER NINTENDO</button>
+              <button class="rv-tab" data-filter="megadrive">MEGA DRIVE</button>
               <button class="rv-tab" data-filter="gba">GBA</button>
               <button class="rv-tab" data-filter="gb">GAME BOY</button>
               <button class="rv-tab" data-filter="nes">NES</button>
+              <button class="rv-tab" data-filter="pce">PC ENGINE</button>
             </div>
           </div>
           <div class="rv-grid" id="rv-grid"></div>
@@ -952,7 +961,7 @@
         if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
         const file = e.dataTransfer.files[0];
         const ext = file.name.split(".").pop().toLowerCase();
-        if (["nes", "sfc", "smc", "gba", "gb", "gbc", "md", "bin", "gen", "zip"].includes(ext)) {
+        if (["nes", "sfc", "smc", "gba", "gb", "gbc", "md", "bin", "gen", "zip", "iso", "cue", "chd", "pbp", "img", "pce"].includes(ext)) {
           e.preventDefault();
           this.tousLesJeux.unshift({
             nom: file.name,
@@ -981,6 +990,12 @@
           if (badgeTriggers) badgeTriggers.style.display = "none";
           badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
           badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : A';
+        } else if (consoleType === "pce") {
+          if (badgeY) badgeY.style.display = "none";
+          if (badgeX) badgeX.style.display = "none";
+          if (badgeTriggers) badgeTriggers.style.display = "none";
+          badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : II';
+          badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : I';
         } else if (consoleType === "gba") {
           if (badgeY) badgeY.style.display = "none";
           if (badgeX) badgeX.style.display = "none";
@@ -999,6 +1014,21 @@
           if (badgeTriggers) badgeTriggers.style.display = "none";
           badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
           badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : C';
+        } else if (consoleType === "ps1") {
+          if (badgeY) {
+            badgeY.style.display = "inline";
+            badgeY.innerHTML = '<span class="rv-kbd">4</span> : □ Carré';
+          }
+          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : ✕ Croix';
+          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : ○ Rond';
+          if (badgeX) {
+            badgeX.style.display = "inline";
+            badgeX.innerHTML = '<span class="rv-kbd">8</span> : △ Triangle';
+          }
+          if (badgeTriggers) {
+            badgeTriggers.style.display = "inline";
+            badgeTriggers.innerHTML = '<span class="rv-kbd">7</span> L1 / <span class="rv-kbd">9</span> R1';
+          }
         } else {
           // SNES & Arcade
           if (badgeY) {
@@ -1021,10 +1051,19 @@
       // 2. Boutons de la manette tactile
       const touchX = document.getElementById("rv-touch-x");
       const touchY = document.getElementById("rv-touch-y");
+      const touchB = document.getElementById("rv-touch-b");
+      const touchA = document.getElementById("rv-touch-a");
       const touchL = document.getElementById("rv-touch-l");
       const touchR = document.getElementById("rv-touch-r");
 
-      if (consoleType === "nes" || consoleType === "gb") {
+      if (touchX) touchX.textContent = consoleType === "ps1" ? "△" : "X";
+      if (touchY) touchY.textContent = consoleType === "ps1" ? "□" : (consoleType === "megadrive" ? "A" : "Y");
+      if (touchB) touchB.textContent = consoleType === "ps1" ? "✕" : (consoleType === "pce" ? "II" : "B");
+      if (touchA) touchA.textContent = consoleType === "ps1" ? "○" : (consoleType === "pce" ? "I" : (consoleType === "megadrive" ? "C" : "A"));
+      if (touchL) touchL.textContent = consoleType === "ps1" ? "L1" : "L";
+      if (touchR) touchR.textContent = consoleType === "ps1" ? "R1" : "R";
+
+      if (consoleType === "nes" || consoleType === "gb" || consoleType === "pce") {
         if (touchX) touchX.style.opacity = "0.15";
         if (touchY) touchY.style.opacity = "0.15";
         if (touchL) touchL.style.opacity = "0.15";
@@ -1034,6 +1073,11 @@
         if (touchY) touchY.style.opacity = "0.15";
         if (touchL) touchL.style.opacity = "1";
         if (touchR) touchR.style.opacity = "1";
+      } else if (consoleType === "megadrive") {
+        if (touchX) touchX.style.opacity = "0.15";
+        if (touchY) touchY.style.opacity = "1";
+        if (touchL) touchL.style.opacity = "0.15";
+        if (touchR) touchR.style.opacity = "0.15";
       } else {
         if (touchX) touchX.style.opacity = "1";
         if (touchY) touchY.style.opacity = "1";
@@ -1135,18 +1179,24 @@
 
         const canvasEl = document.getElementById("rv-canvas");
 
+        const romFile = romBlob instanceof File ? romBlob : new File([romBlob], nomFichier);
+
         if (cType === "snes") {
-          this.partieEnCours = await Nostalgist.snes({ element: canvasEl, rom: romBlob, retroarchConfig: retroConfig });
+          this.partieEnCours = await Nostalgist.snes({ element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
         } else if (cType === "gba") {
-          this.partieEnCours = await Nostalgist.gba({ element: canvasEl, rom: romBlob, retroarchConfig: retroConfig });
+          this.partieEnCours = await Nostalgist.gba({ element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
         } else if (cType === "gb") {
-          this.partieEnCours = await Nostalgist.gbc({ element: canvasEl, rom: romBlob, retroarchConfig: retroConfig });
+          this.partieEnCours = await Nostalgist.gbc({ element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
         } else if (cType === "megadrive") {
-          this.partieEnCours = await Nostalgist.megadrive({ element: canvasEl, rom: romBlob, retroarchConfig: retroConfig });
+          this.partieEnCours = await Nostalgist.megadrive({ element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
         } else if (cType === "nes") {
-          this.partieEnCours = await Nostalgist.nes({ element: canvasEl, rom: romBlob, retroarchConfig: retroConfig });
+          this.partieEnCours = await Nostalgist.nes({ element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
+        } else if (cType === "ps1") {
+          this.partieEnCours = await Nostalgist.launch({ core: "pcsx_rearmed", element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
+        } else if (cType === "pce") {
+          this.partieEnCours = await Nostalgist.launch({ core: "mednafen_pce_fast", element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
         } else {
-          this.partieEnCours = await Nostalgist.launch({ core: conf.core, element: canvasEl, rom: romBlob, retroarchConfig: retroConfig });
+          this.partieEnCours = await Nostalgist.launch({ core: conf.core, element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
         }
 
         const saveInfo = await this.loadStateDB(this.jeuEnCoursNom);
@@ -1254,7 +1304,7 @@
       else if (e.code === "Digit0") { targetCode = "Numpad0"; targetKey = "0"; }
       else if (e.code === "KeyZ") { targetCode = "KeyW"; targetKey = "w"; }
       else if (e.code === "KeyQ") { targetCode = "KeyA"; targetKey = "a"; }
-      else if ((e.code === "Numpad4" || e.code === "Digit4") && ["nes", "gb"].includes(this.jeuEnCoursType)) {
+      else if ((e.code === "Numpad4" || e.code === "Digit4") && ["nes", "gb", "pce"].includes(this.jeuEnCoursType)) {
         targetCode = "Numpad5";
         targetKey = "5";
       }
