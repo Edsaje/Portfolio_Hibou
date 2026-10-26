@@ -28,7 +28,35 @@
       this.bindKeyboardSecrets();
       this.bindTouchSecrets();
       this.bindCartridgeDrop();
+      this.checkUrlHashSecret();
       this.logConsoleHint();
+    }
+
+    checkUrlHashSecret() {
+      const checkHash = async () => {
+        const rawHash = (window.location.hash || "").replace(/^#/, "").trim().toLowerCase();
+        if (!rawHash) return;
+        try {
+          const msgUint8 = new TextEncoder().encode(rawHash);
+          const hashBuf = await crypto.subtle.digest("SHA-256", msgUint8);
+          const hashHex = Array.from(new Uint8Array(hashBuf))
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+
+          if (hashHex === this.vaultSha256) {
+            // Nettoyer discrètement l'URL sans recharger la page
+            try {
+              history.replaceState(null, document.title, window.location.pathname + window.location.search);
+            } catch (e) {
+              window.location.hash = "";
+            }
+            this.openRetroVault();
+          }
+        } catch (e) {}
+      };
+
+      checkHash();
+      window.addEventListener("hashchange", checkHash);
     }
 
     logConsoleHint() {

@@ -2,7 +2,9 @@
  * ====================================================================
  * ARCHIVES SECRÈTES DU HIBOU — MOTEUR D'ÉMULATION RÉTRO MULTI-CONSOLES
  * Déclenchement furtif : Mot secret cryptographique (SHA-256)
+ *                      OU URL Hash (#hibouemulator)
  *                      OU Drag & Drop d'un fichier ROM
+ * Mode Mobile First : Manette tactile virtuelle intégrée & Haptique
  * Respect strict de la charte Dark Fantasy / Grimoire & Hardware Rétro
  * ====================================================================
  */
@@ -95,7 +97,7 @@
       if (this.db) return this.db;
       return new Promise((resolve, reject) => {
         const req = indexedDB.open(this.dbName, 1);
-        req.onupgradeneeded = e => {
+        req.onupgradeneeded = (e) => {
           const db = e.target.result;
           if (!db.objectStoreNames.contains(this.storeName)) {
             db.createObjectStore(this.storeName);
@@ -151,13 +153,13 @@
           display: none;
           position: fixed;
           top: 0; left: 0; width: 100vw; height: 100vh;
-          background: rgba(5, 10, 7, 0.94);
+          background: rgba(5, 10, 7, 0.95);
           backdrop-filter: blur(14px);
           -webkit-backdrop-filter: blur(14px);
           z-index: 999999;
           overflow-y: auto;
           overflow-x: hidden;
-          padding: 20px 14px 40px;
+          padding: 16px 12px 40px;
           box-sizing: border-box;
           color: #f0f4f1;
           font-family: var(--font-body, 'Outfit', sans-serif);
@@ -177,7 +179,7 @@
           border: 1px solid rgba(212, 175, 55, 0.35);
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 40px rgba(42, 90, 58, 0.25);
           border-radius: 4px;
-          padding: 24px;
+          padding: 20px;
           position: relative;
         }
         .rv-header {
@@ -185,8 +187,8 @@
           justify-content: space-between;
           align-items: center;
           border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-          padding-bottom: 16px;
-          margin-bottom: 20px;
+          padding-bottom: 14px;
+          margin-bottom: 16px;
         }
         .rv-title-wrap {
           display: flex;
@@ -200,7 +202,7 @@
         }
         .rv-title {
           font-family: var(--font-heading, 'Cinzel', serif);
-          font-size: 1.4rem;
+          font-size: 1.35rem;
           font-weight: 700;
           color: #d4af37;
           letter-spacing: 2px;
@@ -236,7 +238,7 @@
           display: flex;
           flex-direction: column;
           align-items: center;
-          margin: 0 auto 18px;
+          margin: 0 auto 12px;
         }
         #rv-game-container {
           position: relative;
@@ -248,13 +250,15 @@
           display: flex;
           justify-content: center;
           align-items: center;
-          min-width: 320px;
-          min-height: 240px;
+          width: 100%;
+          max-width: 760px;
+          min-height: 220px;
         }
         #rv-game-container canvas {
           display: block !important;
           margin: 0 auto !important;
-          width: min(85vw, 760px) !important;
+          width: 100% !important;
+          max-width: 760px !important;
           height: auto !important;
           aspect-ratio: 4 / 3;
           image-rendering: pixelated;
@@ -276,27 +280,27 @@
           flex-wrap: wrap;
           justify-content: space-between;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
           width: 100%;
           max-width: 760px;
-          margin-top: 12px;
+          margin-top: 10px;
           background: #0e1d14;
           border: 1px solid rgba(255, 255, 255, 0.08);
-          padding: 8px 14px;
+          padding: 8px 12px;
           border-radius: 3px;
         }
         .rv-tool-group {
           display: flex;
           flex-wrap: wrap;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
         }
         .rv-btn {
           background: #14281c;
           border: 1px solid rgba(212, 175, 55, 0.25);
           color: #f0f4f1;
           padding: 6px 12px;
-          font-size: 0.8rem;
+          font-size: 0.78rem;
           font-weight: 600;
           cursor: pointer;
           border-radius: 3px;
@@ -304,6 +308,7 @@
           display: inline-flex;
           align-items: center;
           gap: 5px;
+          touch-action: manipulation;
         }
         .rv-btn:hover {
           background: rgba(212, 175, 55, 0.15);
@@ -316,21 +321,190 @@
         .rv-btn-load:hover { background: #0369a1; }
         .rv-status {
           font-family: monospace;
-          font-size: 0.85rem;
+          font-size: 0.82rem;
           color: #d4af37;
           min-height: 20px;
-          margin-top: 8px;
+          margin-top: 6px;
           text-align: center;
         }
-        /* Guide des touches ZSQD + 8546 */
+
+        /* ========================================================
+           MANETTE TACTILE VIRTUELLE (MOBILE FIRST)
+           ======================================================== */
+        .rv-gamepad {
+          width: 100%;
+          max-width: 580px;
+          margin: 10px auto 14px;
+          padding: 12px 14px;
+          background: #09130d;
+          border: 1px solid rgba(212, 175, 55, 0.35);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+          border-radius: 4px;
+          user-select: none;
+          -webkit-user-select: none;
+          touch-action: none;
+          display: block;
+        }
+        .rv-gamepad.force-hidden { display: none !important; }
+
+        .rv-pad-top-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .rv-pad-shoulder {
+          background: #14281c;
+          border: 1px solid rgba(212, 175, 55, 0.35);
+          color: #d4af37;
+          font-family: var(--font-heading, 'Cinzel', serif);
+          font-weight: 700;
+          font-size: 0.95rem;
+          padding: 8px 22px;
+          border-radius: 3px;
+          cursor: pointer;
+          touch-action: none;
+          transition: all 0.1s;
+        }
+        .rv-pad-shoulder:active, .rv-pad-shoulder.pressed {
+          background: #d4af37;
+          color: #050a07;
+          transform: translateY(1px);
+        }
+        .rv-pad-menu-cluster {
+          display: flex;
+          gap: 12px;
+        }
+        .rv-pad-pill {
+          background: #0e1d14;
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #a8b8ad;
+          font-size: 0.72rem;
+          font-weight: 700;
+          letter-spacing: 1px;
+          padding: 6px 14px;
+          border-radius: 3px;
+          cursor: pointer;
+          touch-action: none;
+          transition: all 0.1s;
+        }
+        .rv-pad-pill:active, .rv-pad-pill.pressed {
+          background: #d4af37;
+          color: #050a07;
+        }
+
+        .rv-pad-main-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 20px;
+          padding: 4px 6px;
+        }
+
+        /* D-PAD */
+        .rv-dpad {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          touch-action: none;
+        }
+        .rv-dpad-mid {
+          display: flex;
+          align-items: center;
+        }
+        .rv-dpad-btn {
+          width: 50px;
+          height: 50px;
+          background: #14281c;
+          border: 1px solid rgba(212, 175, 55, 0.35);
+          color: #d4af37;
+          font-size: 1.15rem;
+          font-weight: bold;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          touch-action: none;
+          -webkit-user-select: none;
+          user-select: none;
+          transition: all 0.08s;
+        }
+        .rv-dpad-u { border-radius: 4px 4px 0 0; }
+        .rv-dpad-d { border-radius: 0 0 4px 4px; }
+        .rv-dpad-l { border-radius: 4px 0 0 4px; }
+        .rv-dpad-r { border-radius: 0 4px 4px 0; }
+        .rv-dpad-core {
+          width: 50px;
+          height: 50px;
+          background: #0e1d14;
+          border-top: 1px solid rgba(212, 175, 55, 0.1);
+          border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+        }
+        .rv-dpad-btn:active, .rv-dpad-btn.pressed {
+          background: #d4af37;
+          color: #050a07;
+          box-shadow: 0 0 12px rgba(212, 175, 55, 0.6);
+        }
+
+        /* CLUSTER D'ACTIONS */
+        .rv-actions {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          touch-action: none;
+        }
+        .rv-act-mid {
+          display: flex;
+          align-items: center;
+          gap: 26px;
+          margin: 4px 0;
+        }
+        .rv-act-btn {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          font-family: var(--font-heading, 'Cinzel', serif);
+          font-size: 1.05rem;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          touch-action: none;
+          -webkit-user-select: none;
+          user-select: none;
+          transition: all 0.08s;
+        }
+        .rv-act-b, .rv-act-a {
+          background: rgba(212, 175, 55, 0.2);
+          border: 2px solid #d4af37;
+          color: #f3e5ab;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+        .rv-act-y, .rv-act-x {
+          background: rgba(42, 90, 58, 0.35);
+          border: 2px solid rgba(42, 90, 58, 0.8);
+          color: #a8b8ad;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+        .rv-act-btn:active, .rv-act-btn.pressed {
+          background: #d4af37 !important;
+          color: #050a07 !important;
+          transform: scale(0.92);
+          box-shadow: 0 0 14px rgba(212, 175, 55, 0.7);
+        }
+
+        /* Guide des touches physique (clavier ordi) */
         .rv-controls-guide {
           background: rgba(6, 15, 9, 0.8);
           border: 1px solid rgba(212, 175, 55, 0.15);
           border-radius: 3px;
-          padding: 12px 16px;
-          margin: 12px auto 22px;
+          padding: 10px 14px;
+          margin: 10px auto 18px;
           max-width: 930px;
-          font-size: 0.82rem;
+          font-size: 0.8rem;
         }
         .rv-ctrl-row {
           display: flex;
@@ -367,6 +541,7 @@
           padding-top: 6px;
           border-top: 1px dashed rgba(255, 255, 255, 0.06);
         }
+
         /* Bibliothèque de jeux */
         .rv-library-head {
           display: flex;
@@ -474,6 +649,33 @@
           border-top: 1px solid rgba(255, 255, 255, 0.05);
           padding-top: 8px;
         }
+
+        /* ========================================================
+           RESPONSIVE MOBILE FIRST
+           ======================================================== */
+        @media (max-width: 768px) {
+          #retro-vault-modal { padding: 8px 6px 30px; }
+          .rv-container { padding: 12px 8px; }
+          .rv-title { font-size: 1.05rem; letter-spacing: 1px; }
+          .rv-subtitle { font-size: 0.68rem; }
+          .rv-toolbar { justify-content: center; gap: 5px; padding: 6px 8px; }
+          .rv-btn { padding: 5px 8px; font-size: 0.72rem; }
+          .rv-controls-guide { display: none; }
+          .rv-dpad-btn, .rv-dpad-core { width: 44px; height: 44px; }
+          .rv-act-btn { width: 44px; height: 44px; font-size: 0.95rem; }
+          .rv-act-mid { gap: 16px; }
+          .rv-pad-shoulder { padding: 6px 14px; font-size: 0.85rem; }
+          .rv-pad-pill { padding: 5px 10px; font-size: 0.68rem; }
+          .rv-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-height: 520px) and (orientation: landscape) {
+          #retro-vault-modal { padding: 4px; }
+          .rv-header { margin-bottom: 6px; padding-bottom: 6px; }
+          .rv-screen-wrapper { margin-bottom: 6px; }
+          .rv-gamepad { max-width: 100%; margin: 6px auto; padding: 6px 10px; }
+          .rv-controls-guide { display: none; }
+        }
       `;
       document.head.appendChild(styles);
 
@@ -509,7 +711,8 @@
                 <button class="rv-btn" id="rv-btn-reset">🔄 Reset</button>
               </div>
               <div class="rv-tool-group">
-                <button class="rv-btn" id="rv-btn-crt">📺 CRT : ON</button>
+                <button class="rv-btn" id="rv-btn-pad-toggle">🎮 Manette</button>
+                <button class="rv-btn" id="rv-btn-crt">📺 CRT</button>
                 <button class="rv-btn" id="rv-btn-fullscreen">⛶ Plein Écran</button>
                 <input type="file" id="rv-file-input" style="display: none;" accept=".nes,.sfc,.smc,.gba,.gb,.gbc,.md,.bin,.gen,.zip">
                 <button class="rv-btn" id="rv-btn-upload">📁 Insérer ROM</button>
@@ -517,11 +720,46 @@
             </div>
           </div>
 
-          <!-- Guide des touches ZSQD + 8546 -->
+          <!-- Manette Tactile Virtuelle Rétro (Mobile First) -->
+          <div class="rv-gamepad" id="rv-gamepad">
+            <div class="rv-pad-top-bar">
+              <button class="rv-pad-shoulder rv-pad-l" data-code="Numpad7" data-key="7" id="rv-touch-l">L</button>
+              <div class="rv-pad-menu-cluster">
+                <button class="rv-pad-pill" data-code="Numpad0" data-key="0">SELECT</button>
+                <button class="rv-pad-pill" data-code="NumpadEnter" data-key="Enter">START</button>
+              </div>
+              <button class="rv-pad-shoulder rv-pad-r" data-code="Numpad9" data-key="9" id="rv-touch-r">R</button>
+            </div>
+
+            <div class="rv-pad-main-row">
+              <!-- D-Pad Directionnel tactile (Gauche) -->
+              <div class="rv-dpad" id="rv-dpad">
+                <button class="rv-dpad-btn rv-dpad-u" data-code="KeyW" data-key="w" aria-label="Haut">▲</button>
+                <div class="rv-dpad-mid">
+                  <button class="rv-dpad-btn rv-dpad-l" data-code="KeyA" data-key="a" aria-label="Gauche">◀</button>
+                  <div class="rv-dpad-core"></div>
+                  <button class="rv-dpad-btn rv-dpad-r" data-code="KeyD" data-key="d" aria-label="Droite">▶</button>
+                </div>
+                <button class="rv-dpad-btn rv-dpad-d" data-code="KeyS" data-key="s" aria-label="Bas">▼</button>
+              </div>
+
+              <!-- Cluster d'actions en losange (Droite) -->
+              <div class="rv-actions" id="rv-actions">
+                <button class="rv-act-btn rv-act-x" data-code="Numpad8" data-key="8" id="rv-touch-x">X</button>
+                <div class="rv-act-mid">
+                  <button class="rv-act-btn rv-act-y" data-code="Numpad4" data-key="4" id="rv-touch-y">Y</button>
+                  <button class="rv-act-btn rv-act-a" data-code="Numpad6" data-key="6" id="rv-touch-a">A</button>
+                </div>
+                <button class="rv-act-btn rv-act-b" data-code="Numpad5" data-key="5" id="rv-touch-b">B</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Guide des touches physique (clavier ordi) -->
           <div class="rv-controls-guide">
             <div class="rv-ctrl-row">
               <div class="rv-ctrl-box">
-                <span class="rv-ctrl-lbl">🕹️ Déplacement :</span>
+                <span class="rv-ctrl-lbl">🕹️ Clavier :</span>
                 <span><span class="rv-kbd">Z</span> Haut</span>
                 <span><span class="rv-kbd">Q</span> Gauche</span>
                 <span><span class="rv-kbd">S</span> Bas</span>
@@ -529,22 +767,21 @@
                 <span style="color:#778; font-size:0.75rem;">(ou Flèches)</span>
               </div>
               <div class="rv-ctrl-box" id="rv-ctrl-actions">
-                <span class="rv-ctrl-lbl">🎮 Actions (Pavé Num.) :</span>
-                <span id="rv-badge-y"><span class="rv-kbd">4</span> Y (Course)</span>
-                <span id="rv-badge-b"><span class="rv-kbd rv-kbd-pri">5</span> B (Saut / Valider)</span>
-                <span id="rv-badge-a"><span class="rv-kbd rv-kbd-pri">6</span> A (Action)</span>
+                <span class="rv-ctrl-lbl">🎮 Actions :</span>
+                <span id="rv-badge-y"><span class="rv-kbd">4</span> Y</span>
+                <span id="rv-badge-b"><span class="rv-kbd rv-kbd-pri">5</span> B</span>
+                <span id="rv-badge-a"><span class="rv-kbd rv-kbd-pri">6</span> A</span>
                 <span id="rv-badge-x"><span class="rv-kbd">8</span> X</span>
                 <span id="rv-badge-triggers"><span class="rv-kbd">7</span> L / <span class="rv-kbd">9</span> R</span>
               </div>
               <div class="rv-ctrl-box">
-                <span class="rv-ctrl-lbl">⏯️ Menus :</span>
+                <span class="rv-ctrl-lbl">⏯️ :</span>
                 <span>Start : <span class="rv-kbd">Entrée</span></span>
-                <span>Select : <span class="rv-kbd">0</span> / <span class="rv-kbd">Espace</span></span>
+                <span>Select : <span class="rv-kbd">0</span></span>
               </div>
             </div>
             <div class="rv-tip">
-              💡 <strong>Ergonomie :</strong> Main gauche sur <strong>Z S Q D</strong> pour bouger, main droite sur <strong>8 5 4 6</strong> (pavé numérique en losange).<br>
-              <em>Activez la touche <strong>Verr Num</strong>. Sur ordinateur portable sans pavé numérique, les chiffres <strong>8, 5, 4, 6</strong> du haut fonctionnent aussi.</em>
+              💡 <em>Sur ordinateur, jouez à deux mains : main gauche sur ZSQD, main droite sur 8 5 4 6.</em>
             </div>
           </div>
 
@@ -565,6 +802,99 @@
       document.body.appendChild(modal);
       this.modal = modal;
       this.bindModalEvents();
+      this.bindVirtualGamepad();
+    }
+
+    bindVirtualGamepad() {
+      const triggerKey = (code, key, isDown) => {
+        const canvas = document.getElementById("rv-canvas");
+        if (!canvas) return;
+        if (isDown && navigator.vibrate) {
+          try { navigator.vibrate(12); } catch (e) {}
+        }
+        const synth = new KeyboardEvent(isDown ? "keydown" : "keyup", {
+          code: code,
+          key: key,
+          bubbles: true,
+          cancelable: true
+        });
+        synth._isRvBridge = true;
+        canvas.dispatchEvent(synth);
+      };
+
+      const bindBtn = (el) => {
+        if (!el) return;
+        const code = el.getAttribute("data-code");
+        const key = el.getAttribute("data-key");
+
+        const onStart = (e) => {
+          e.preventDefault();
+          el.classList.add("pressed");
+          triggerKey(code, key, true);
+        };
+
+        const onEnd = (e) => {
+          e.preventDefault();
+          el.classList.remove("pressed");
+          triggerKey(code, key, false);
+        };
+
+        el.addEventListener("touchstart", onStart, { passive: false });
+        el.addEventListener("touchend", onEnd, { passive: false });
+        el.addEventListener("touchcancel", onEnd, { passive: false });
+        el.addEventListener("mousedown", onStart);
+        el.addEventListener("mouseup", onEnd);
+        el.addEventListener("mouseleave", onEnd);
+      };
+
+      document.querySelectorAll("#rv-gamepad button").forEach(bindBtn);
+
+      // Gestion fluide du glissement continu sur le D-Pad
+      const dpad = document.getElementById("rv-dpad");
+      if (dpad) {
+        let currentDpadBtn = null;
+
+        dpad.addEventListener("touchmove", (e) => {
+          e.preventDefault();
+          if (!e.touches || e.touches.length === 0) return;
+          const touch = e.touches[0];
+          const target = document.elementFromPoint(touch.clientX, touch.clientY);
+
+          if (target && target.classList.contains("rv-dpad-btn")) {
+            if (target !== currentDpadBtn) {
+              if (currentDpadBtn) {
+                currentDpadBtn.classList.remove("pressed");
+                triggerKey(currentDpadBtn.getAttribute("data-code"), currentDpadBtn.getAttribute("data-key"), false);
+              }
+              currentDpadBtn = target;
+              currentDpadBtn.classList.add("pressed");
+              triggerKey(currentDpadBtn.getAttribute("data-code"), currentDpadBtn.getAttribute("data-key"), true);
+            }
+          } else if (currentDpadBtn) {
+            currentDpadBtn.classList.remove("pressed");
+            triggerKey(currentDpadBtn.getAttribute("data-code"), currentDpadBtn.getAttribute("data-key"), false);
+            currentDpadBtn = null;
+          }
+        }, { passive: false });
+
+        dpad.addEventListener("touchend", () => {
+          if (currentDpadBtn) {
+            currentDpadBtn.classList.remove("pressed");
+            triggerKey(currentDpadBtn.getAttribute("data-code"), currentDpadBtn.getAttribute("data-key"), false);
+            currentDpadBtn = null;
+          }
+        });
+      }
+
+      // Bouton pour afficher/masquer la manette
+      const padToggleBtn = document.getElementById("rv-btn-pad-toggle");
+      const gamepadEl = document.getElementById("rv-gamepad");
+      if (padToggleBtn && gamepadEl) {
+        padToggleBtn.addEventListener("click", () => {
+          gamepadEl.classList.toggle("force-hidden");
+          padToggleBtn.textContent = gamepadEl.classList.contains("force-hidden") ? "🎮 Manette : OFF" : "🎮 Manette : ON";
+        });
+      }
     }
 
     bindModalEvents() {
@@ -588,10 +918,10 @@
         btn.textContent = crt.classList.contains("disabled") ? "📺 CRT : OFF" : "📺 CRT : ON";
       });
 
-      // Upload manuel
+      // Upload manuel (fonctionne sur ordinateur ET smartphones iOS/Android)
       const fileInput = document.getElementById("rv-file-input");
       document.getElementById("rv-btn-upload").addEventListener("click", () => fileInput.click());
-      fileInput.addEventListener("change", e => {
+      fileInput.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (file) {
           this.tousLesJeux.unshift({
@@ -606,9 +936,9 @@
       });
 
       // Filtres par console
-      document.querySelectorAll(".rv-tab").forEach(tab => {
+      document.querySelectorAll(".rv-tab").forEach((tab) => {
         tab.addEventListener("click", () => {
-          document.querySelectorAll(".rv-tab").forEach(t => t.classList.remove("active"));
+          document.querySelectorAll(".rv-tab").forEach((t) => t.classList.remove("active"));
           tab.classList.add("active");
           this.filtreActuel = tab.getAttribute("data-filter");
           this.rendreGrille();
@@ -617,8 +947,8 @@
       });
 
       // Glisser-déposer interne dans la modale
-      this.modal.addEventListener("dragover", e => e.preventDefault());
-      this.modal.addEventListener("drop", e => {
+      this.modal.addEventListener("dragover", (e) => e.preventDefault());
+      this.modal.addEventListener("drop", (e) => {
         if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
         const file = e.dataTransfer.files[0];
         const ext = file.name.split(".").pop().toLowerCase();
@@ -637,53 +967,78 @@
     }
 
     adapterAideTouches(consoleType) {
+      // 1. Guide textuel
       const badgeY = document.getElementById("rv-badge-y");
       const badgeB = document.getElementById("rv-badge-b");
       const badgeA = document.getElementById("rv-badge-a");
       const badgeX = document.getElementById("rv-badge-x");
       const badgeTriggers = document.getElementById("rv-badge-triggers");
-      if (!badgeB || !badgeA) return;
+
+      if (badgeB && badgeA) {
+        if (consoleType === "nes" || consoleType === "gb") {
+          if (badgeY) badgeY.style.display = "none";
+          if (badgeX) badgeX.style.display = "none";
+          if (badgeTriggers) badgeTriggers.style.display = "none";
+          badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
+          badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : A';
+        } else if (consoleType === "gba") {
+          if (badgeY) badgeY.style.display = "none";
+          if (badgeX) badgeX.style.display = "none";
+          if (badgeTriggers) {
+            badgeTriggers.style.display = "inline";
+            badgeTriggers.innerHTML = '<span class="rv-kbd">7</span> L / <span class="rv-kbd">9</span> R';
+          }
+          badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
+          badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : A';
+        } else if (consoleType === "megadrive") {
+          if (badgeY) {
+            badgeY.style.display = "inline";
+            badgeY.innerHTML = '<span class="rv-kbd">4</span> : A';
+          }
+          if (badgeX) badgeX.style.display = "none";
+          if (badgeTriggers) badgeTriggers.style.display = "none";
+          badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
+          badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : C';
+        } else {
+          // SNES & Arcade
+          if (badgeY) {
+            badgeY.style.display = "inline";
+            badgeY.innerHTML = '<span class="rv-kbd">4</span> : Y';
+          }
+          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
+          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : A';
+          if (badgeX) {
+            badgeX.style.display = "inline";
+            badgeX.innerHTML = '<span class="rv-kbd">8</span> : X';
+          }
+          if (badgeTriggers) {
+            badgeTriggers.style.display = "inline";
+            badgeTriggers.innerHTML = '<span class="rv-kbd">7</span> L / <span class="rv-kbd">9</span> R';
+          }
+        }
+      }
+
+      // 2. Boutons de la manette tactile
+      const touchX = document.getElementById("rv-touch-x");
+      const touchY = document.getElementById("rv-touch-y");
+      const touchL = document.getElementById("rv-touch-l");
+      const touchR = document.getElementById("rv-touch-r");
 
       if (consoleType === "nes" || consoleType === "gb") {
-        if (badgeY) badgeY.style.display = "none";
-        if (badgeX) badgeX.style.display = "none";
-        if (badgeTriggers) badgeTriggers.style.display = "none";
-        badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> (ou <span class="rv-kbd">4</span>) : B';
-        badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : A';
+        if (touchX) touchX.style.opacity = "0.15";
+        if (touchY) touchY.style.opacity = "0.15";
+        if (touchL) touchL.style.opacity = "0.15";
+        if (touchR) touchR.style.opacity = "0.15";
       } else if (consoleType === "gba") {
-        if (badgeY) badgeY.style.display = "none";
-        if (badgeX) badgeX.style.display = "none";
-        if (badgeTriggers) {
-          badgeTriggers.style.display = "inline";
-          badgeTriggers.innerHTML = '<span class="rv-kbd">7</span> L / <span class="rv-kbd">9</span> R';
-        }
-        badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
-        badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : A';
-      } else if (consoleType === "megadrive") {
-        if (badgeY) {
-          badgeY.style.display = "inline";
-          badgeY.innerHTML = '<span class="rv-kbd">4</span> : A';
-        }
-        if (badgeX) badgeX.style.display = "none";
-        if (badgeTriggers) badgeTriggers.style.display = "none";
-        badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
-        badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : C';
+        if (touchX) touchX.style.opacity = "0.15";
+        if (touchY) touchY.style.opacity = "0.15";
+        if (touchL) touchL.style.opacity = "1";
+        if (touchR) touchR.style.opacity = "1";
       } else {
-        // SNES & Arcade
-        if (badgeY) {
-          badgeY.style.display = "inline";
-          badgeY.innerHTML = '<span class="rv-kbd">4</span> : Y (Course)';
-        }
-        if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B (Saut / Valider)';
-        if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : A (Action)';
-        if (badgeX) {
-          badgeX.style.display = "inline";
-          badgeX.innerHTML = '<span class="rv-kbd">8</span> : X';
-        }
-        if (badgeTriggers) {
-          badgeTriggers.style.display = "inline";
-          badgeTriggers.innerHTML = '<span class="rv-kbd">7</span> L / <span class="rv-kbd">9</span> R';
-        }
+        if (touchX) touchX.style.opacity = "1";
+        if (touchY) touchY.style.opacity = "1";
+        if (touchL) touchL.style.opacity = "1";
+        if (touchR) touchR.style.opacity = "1";
       }
     }
 
@@ -694,7 +1049,7 @@
 
       const liste = this.filtreActuel === "all"
         ? this.tousLesJeux
-        : this.tousLesJeux.filter(j => j.console === this.filtreActuel);
+        : this.tousLesJeux.filter((j) => j.console === this.filtreActuel);
 
       for (const jeu of liste) {
         const card = document.createElement("div");
@@ -730,7 +1085,7 @@
     async lancerPartie(nomFichier, customBlob = null) {
       if (typeof Nostalgist === "undefined") {
         document.getElementById("rv-status").textContent = "⏳ Chargement du moteur WebAssembly...";
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise((r) => setTimeout(r, 600));
       }
 
       const status = document.getElementById("rv-status");
