@@ -659,6 +659,74 @@
           display: block;
           background: #000;
         }
+        .rv-nds-layout {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+          background: #060e08;
+          border: 2px solid rgba(212, 175, 55, 0.4);
+          border-radius: 6px;
+          padding: 14px 10px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(0, 0, 0, 0.9);
+          max-width: 440px;
+          width: 100%;
+          margin: 0 auto;
+        }
+        .rv-nds-screen-wrap {
+          position: relative;
+          background: #000;
+          border: 1px solid rgba(212, 175, 55, 0.25);
+          border-radius: 4px;
+          overflow: hidden;
+          width: 100%;
+          max-width: 320px;
+          aspect-ratio: 256 / 192;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+        }
+        .rv-nds-screen-wrap canvas {
+          width: 100% !important;
+          height: 100% !important;
+          display: block !important;
+          image-rendering: pixelated;
+          image-rendering: crisp-edges;
+        }
+        .rv-nds-bottom-wrap canvas {
+          cursor: crosshair;
+        }
+        .rv-nds-badge {
+          position: absolute;
+          top: 4px;
+          left: 6px;
+          font-size: 0.62rem;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          color: #d4af37;
+          background: rgba(5, 10, 7, 0.8);
+          padding: 1px 6px;
+          border-radius: 2px;
+          pointer-events: none;
+          z-index: 5;
+        }
+        .rv-nds-hinge {
+          width: 80px;
+          height: 5px;
+          background: rgba(212, 175, 55, 0.25);
+          border-radius: 3px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .rv-nds-led {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #10b981;
+          box-shadow: 0 0 8px #10b981;
+        }
         .rv-save-badge {
           font-size: 0.7rem;
           color: #34d399;
@@ -847,11 +915,33 @@
 
     bindVirtualGamepad() {
       const triggerKey = (code, key, isDown) => {
-        const canvas = document.getElementById("rv-canvas");
-        if (!canvas) return;
         if (isDown && navigator.vibrate) {
           try { navigator.vibrate(12); } catch (e) {}
         }
+
+        // Si le moteur natif DeSmuME est actif
+        if (this.jeuEnCoursType === "nds" && typeof DesmumePlayer !== "undefined" && DesmumePlayer.isRunning) {
+          let bit = -1;
+          if (code === "KeyD") bit = 0;
+          else if (code === "KeyA" || code === "KeyQ") bit = 1;
+          else if (code === "KeyS") bit = 2;
+          else if (code === "KeyW" || code === "KeyZ") bit = 3;
+          else if (code === "Numpad0") bit = 4;
+          else if (code === "NumpadEnter") bit = 5;
+          else if (code === "Numpad5") bit = 6; // B
+          else if (code === "Numpad6") bit = 7; // A
+          else if (code === "Numpad4") bit = 8; // Y
+          else if (code === "Numpad8") bit = 9; // X
+          else if (code === "Numpad7") bit = 10; // L
+          else if (code === "Numpad9") bit = 11; // R
+          if (bit >= 0) {
+            DesmumePlayer.setKeyBit(bit, isDown);
+            return;
+          }
+        }
+
+        const canvas = document.getElementById("rv-canvas");
+        if (!canvas) return;
         const synth = new KeyboardEvent(isDown ? "keydown" : "keyup", {
           code: code,
           key: key,
@@ -1196,17 +1286,46 @@
         const container = document.getElementById("rv-game-container");
 
         if (cType === "nds") {
-          const isLauncher = nomFichier.includes("console-nds-launcher");
-          container.innerHTML = `
-            <div style="width: 100%; height: 580px; max-height: 78vh; display: flex; flex-direction: column; background: #000; position: relative;">
-              <iframe id="rv-nds-frame" class="rv-embedded-frame" src="https://ds.44670.org/" allow="autoplay; fullscreen; gamepad"></iframe>
-            </div>
-          `;
-          status.textContent = isLauncher
-            ? "🎮 Console Nintendo DS (DeSmuME Wasm) active | Glissez votre jeu .nds ou cliquez sur 'Choose File'."
-            : `🎮 Relique Nintendo DS : "${nomFichier}". Glissez-la dans l'écran DS pour jouer avec stylet tactile !`;
+          let romBlob = customBlob;
+          if (!romBlob) {
+            status.textContent = "🎮 Nintendo DS : Sélectionnez ou glissez votre cartouche .nds pour démarrer !";
+            status.style.color = "#fda4af";
+            document.getElementById("rv-file-input").click();
+            return;
+          }
+
+          status.textContent = `⏳ Invocation de la cartouche DS "${nomFichier}" (Moteur WebAssembly natif)...`;
           status.style.color = "#fda4af";
+
+          // Charger le runner natif DeSmuME Wasm 100% auto-hébergé
+          if (typeof DesmumePlayer === "undefined") {
+            await new Promise((resolve, reject) => {
+              const s = document.createElement("script");
+              s.src = "js/desmume/desmume-player.js";
+              s.onload = resolve;
+              s.onerror = reject;
+              document.head.appendChild(s);
+            });
+          }
+
           this.jeuEnCoursNom = nomFichier;
+          await DesmumePlayer.launch(romBlob, container);
+          this.partieEnCours = DesmumePlayer;
+
+          try {
+            const saveInfo = await this.loadStateDB(this.jeuEnCoursNom);
+            if (saveInfo && saveInfo.state) {
+              DesmumePlayer.loadState(new Uint8Array(saveInfo.state));
+              status.textContent = `🎮 En cours : ${nomFichier} (Nintendo DS) | 💾 Sauvegarde restaurée !`;
+              status.style.color = "#34d399";
+            } else {
+              status.textContent = `🎮 En cours : ${nomFichier} (Nintendo DS) | Stylet tactile prêt sur l'écran inférieur !`;
+              status.style.color = "#fda4af";
+            }
+          } catch (e) {
+            status.textContent = `🎮 En cours : ${nomFichier} (Nintendo DS) | Bon jeu !`;
+          }
+
           this.rendreGrille();
           return;
         }
@@ -1300,18 +1419,29 @@
     async sauvegarderPartie() {
       if (!this.partieEnCours) {
         const status = document.getElementById("rv-status");
-        status.textContent = "💡 Sauvegarde intégrée dans le menu de la console (DS / PSP).";
+        status.textContent = "💡 Sauvegarde intégrée dans le menu de la console.";
         status.style.color = "#d4af37";
         return;
       }
       const status = document.getElementById("rv-status");
       status.textContent = "⏳ Sauvegarde de l'état...";
       try {
-        const res = await this.partieEnCours.saveState();
-        await this.saveStateDB(this.jeuEnCoursNom, res.state);
-        status.textContent = `✅ Sauvegarde réussie (${new Date().toLocaleTimeString()}) !`;
-        status.style.color = "#34d399";
-        this.rendreGrille();
+        let stateObj;
+        if (this.jeuEnCoursType === "nds" && typeof DesmumePlayer !== "undefined" && DesmumePlayer.isRunning) {
+          stateObj = DesmumePlayer.saveState();
+        } else {
+          const res = await this.partieEnCours.saveState();
+          stateObj = res.state;
+        }
+        if (stateObj) {
+          await this.saveStateDB(this.jeuEnCoursNom, stateObj);
+          status.textContent = `✅ Sauvegarde réussie (${new Date().toLocaleTimeString()}) !`;
+          status.style.color = "#34d399";
+          this.rendreGrille();
+        } else {
+          status.textContent = "⚠️ Sauvegarde automatique active dans le jeu.";
+          status.style.color = "#fbbf24";
+        }
       } catch (e) {
         status.textContent = "❌ Erreur de sauvegarde : " + e.message;
         status.style.color = "#ef4444";
@@ -1321,7 +1451,7 @@
     async chargerPartie() {
       if (!this.partieEnCours) {
         const status = document.getElementById("rv-status");
-        status.textContent = "💡 Chargement de sauvegarde intégré dans le menu de la console (DS / PSP).";
+        status.textContent = "💡 Chargement de sauvegarde intégré dans le menu de la console.";
         status.style.color = "#d4af37";
         return;
       }
@@ -1333,7 +1463,11 @@
           status.style.color = "#fbbf24";
           return;
         }
-        await this.partieEnCours.loadState(data.state);
+        if (this.jeuEnCoursType === "nds" && typeof DesmumePlayer !== "undefined" && DesmumePlayer.isRunning) {
+          DesmumePlayer.loadState(new Uint8Array(data.state));
+        } else {
+          await this.partieEnCours.loadState(data.state);
+        }
         status.textContent = `📂 Sauvegarde restaurée ! (${data.date})`;
         status.style.color = "#34d399";
       } catch (e) {
@@ -1449,7 +1583,11 @@
         this.partieEnCours.pause();
       }
 
-      const activeFrame = document.getElementById("rv-nds-frame") || document.getElementById("rv-psp-frame");
+      if (typeof DesmumePlayer !== "undefined" && DesmumePlayer.isRunning) {
+        DesmumePlayer.exit();
+      }
+
+      const activeFrame = document.getElementById("rv-psp-frame");
       if (activeFrame) {
         activeFrame.src = "about:blank";
       }

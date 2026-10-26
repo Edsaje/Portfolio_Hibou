@@ -186,7 +186,7 @@
         });
 
       loadScript("nostalgist-script", "https://cdn.jsdelivr.net/npm/nostalgist/dist/nostalgist.umd.js")
-        .then(() => loadScript("retro-vault-script", "js/retro-vault.js?v=3.0"))
+        .then(() => loadScript("retro-vault-script", "js/retro-vault.js?v=4.0"))
         .then(() => {
           if (window.RetroVaultEngine) {
             window.RetroVaultEngine.open(bootFile);
