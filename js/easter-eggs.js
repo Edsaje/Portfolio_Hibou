@@ -150,13 +150,13 @@
       });
 
       window.addEventListener("drop", (e) => {
+        e.preventDefault();
         if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
         const file = e.dataTransfer.files[0];
         const ext = file.name.split(".").pop().toLowerCase();
         const validExtensions = ["nes", "sfc", "smc", "gba", "gb", "gbc", "md", "bin", "gen", "zip", "iso", "cue", "chd", "pbp", "img", "pce", "nds", "cso"];
 
         if (validExtensions.includes(ext)) {
-          e.preventDefault();
           this.openRetroVault(file);
         }
       });
@@ -186,7 +186,7 @@
         });
 
       loadScript("nostalgist-script", "https://cdn.jsdelivr.net/npm/nostalgist/dist/nostalgist.umd.js")
-        .then(() => loadScript("retro-vault-script", "js/retro-vault.js?v=4.0"))
+        .then(() => loadScript("retro-vault-script", "js/retro-vault.js?v=5.0"))
         .then(() => {
           if (window.RetroVaultEngine) {
             window.RetroVaultEngine.open(bootFile);

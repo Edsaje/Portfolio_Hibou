@@ -47,25 +47,30 @@
       }
 
       return new Promise((resolve, reject) => {
-        window.Module = {
-          locateFile: (path) => "js/desmume/" + path,
-          print: (t) => console.log("[DeSmuME]", t),
-          printErr: (e) => console.warn("[DeSmuME ERR]", e),
-          onAbort: (msg) => reject(new Error("DeSmuME Wasm abort: " + msg))
-        };
-
-        window.wasmReady = () => {
+        let resolved = false;
+        const onReady = () => {
+          if (resolved) return;
+          resolved = true;
           this.isLoaded = true;
           try {
-            if (window.Module._setSampleRate) {
+            if (window.Module && window.Module._setSampleRate) {
               window.Module._setSampleRate(48000);
             }
           } catch (e) {}
           resolve();
         };
 
+        window.wasmReady = onReady;
+        window.Module = {
+          locateFile: (path) => "js/desmume/" + path,
+          onRuntimeInitialized: onReady,
+          print: (t) => console.log("[DeSmuME]", t),
+          printErr: (e) => console.warn("[DeSmuME ERR]", e),
+          onAbort: (msg) => reject(new Error("DeSmuME Wasm abort: " + msg))
+        };
+
         const script = document.createElement("script");
-        script.src = "js/desmume/nds.js";
+        script.src = "js/desmume/nds.js?v=2.0";
         script.onerror = () => reject(new Error("Impossible de charger js/desmume/nds.js"));
         document.head.appendChild(script);
       });

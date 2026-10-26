@@ -1079,11 +1079,11 @@
       // Glisser-déposer interne dans la modale
       this.modal.addEventListener("dragover", (e) => e.preventDefault());
       this.modal.addEventListener("drop", (e) => {
+        e.preventDefault();
         if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
         const file = e.dataTransfer.files[0];
         const ext = file.name.split(".").pop().toLowerCase();
         if (["nes", "sfc", "smc", "gba", "gb", "gbc", "md", "bin", "gen", "zip", "iso", "cue", "chd", "pbp", "img", "pce", "nds", "cso"].includes(ext)) {
-          e.preventDefault();
           this.tousLesJeux.unshift({
             nom: file.name,
             titre: file.name.replace(/\.[^/.]+$/, ""),
@@ -1301,7 +1301,7 @@
           if (typeof DesmumePlayer === "undefined") {
             await new Promise((resolve, reject) => {
               const s = document.createElement("script");
-              s.src = "js/desmume/desmume-player.js";
+              s.src = "js/desmume/desmume-player.js?v=2.0";
               s.onload = resolve;
               s.onerror = reject;
               document.head.appendChild(s);
