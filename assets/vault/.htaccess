@@ -1,0 +1,13 @@
+# Interdire le listage du dossier secret
+Options -Indexes
+
+# Empêcher toute indexation SEO par les moteurs de recherche
+<IfModule mod_headers.c>
+  Header set X-Robots-Tag "noindex, nofollow, noarchive"
+</IfModule>
+
+# Caching des ROMs
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 1 month"
+</IfModule>
