@@ -71,12 +71,6 @@
       titre: "Nintendo DS — Double Écran Tactile",
       console: "nds",
       desc: "Moteur DeSmuME WebAssembly mono-thread avec écran tactile stylet. Glissez ou insérez un fichier .nds."
-    },
-    {
-      nom: "console-psp-launcher",
-      titre: "PlayStation Portable — 3D WebAssembly",
-      console: "psp",
-      desc: "Moteur PPSSPP WebAssembly haute performance avec support WebGL et contrôles PS. Glissez ou insérez un fichier .iso/.cso."
     }
   ];
 
@@ -87,7 +81,6 @@
     nes: { label: "NES 8-bit", core: "fceumm", tag: "tag-nes", hasExtra: false },
     megadrive: { label: "Mega Drive", core: "genesis_plus_gx", tag: "tag-md", hasExtra: true },
     ps1: { label: "PlayStation 1", core: "pcsx_rearmed", tag: "tag-ps1", hasExtra: true },
-    psp: { label: "PlayStation Portable", core: "ppsspp", tag: "tag-psp", hasExtra: true },
     nds: { label: "Nintendo DS", core: "desmume", tag: "tag-nds", hasExtra: true },
     pce: { label: "PC Engine", core: "mednafen_pce_fast", tag: "tag-pce", hasExtra: false },
     arcade: { label: "Arcade", core: "fbneo", tag: "tag-arcade", hasExtra: true }
@@ -152,17 +145,13 @@
     identifierConsole(nom) {
       const ext = nom.split(".").pop().toLowerCase();
       if (["nds"].includes(ext) || nom.includes("console-nds-launcher")) return "nds";
-      if (["cso"].includes(ext) || nom.includes("console-psp-launcher")) return "psp";
       if (["sfc", "smc"].includes(ext)) return "snes";
       if (["gba"].includes(ext)) return "gba";
       if (["gb", "gbc"].includes(ext)) return "gb";
       if (["md", "bin", "gen", "smd", "sms", "gg"].includes(ext)) return "megadrive";
       if (["pce"].includes(ext)) return "pce";
       if (["zip"].includes(ext)) return "arcade";
-      if (["iso", "cue", "chd", "pbp", "img"].includes(ext)) {
-        if (this.filtreActuel === "psp") return "psp";
-        return "ps1";
-      }
+      if (["iso", "cue", "chd", "pbp", "img"].includes(ext)) return "ps1";
       return "nes";
     }
 
@@ -905,7 +894,6 @@
             <div class="rv-tabs">
               <button class="rv-tab active" data-filter="all">TOUTES</button>
               <button class="rv-tab" data-filter="nds">NINTENDO DS</button>
-              <button class="rv-tab" data-filter="psp">PSP</button>
               <button class="rv-tab" data-filter="ps1">PLAYSTATION 1</button>
               <button class="rv-tab" data-filter="snes">SUPER NINTENDO</button>
               <button class="rv-tab" data-filter="megadrive">MEGA DRIVE</button>
@@ -1325,25 +1313,6 @@
           return;
         }
 
-        if (cType === "psp") {
-          const isLauncher = nomFichier.includes("console-psp-launcher");
-          container.innerHTML = `
-            <div style="width: 100%; height: 560px; max-height: 78vh; display: flex; flex-direction: column; background: #000; position: relative;">
-              <div style="position: absolute; top: 8px; right: 8px; z-index: 10;">
-                <a href="emulators/psp/index.html" target="_blank" class="rv-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
-              </div>
-              <iframe id="rv-psp-frame" class="rv-embedded-frame" src="emulators/psp/index.html" allow="autoplay; fullscreen; gamepad"></iframe>
-            </div>
-          `;
-          status.textContent = isLauncher
-            ? "🎮 Console PlayStation Portable (PPSSPP Local) prête | Glissez votre ISO/CSO ou utilisez le menu PPSSPP."
-            : `🎮 Image PSP : "${nomFichier}". Console locale active !`;
-          status.style.color = "#7dd3fc";
-          this.jeuEnCoursNom = nomFichier;
-          this.rendreGrille();
-          return;
-        }
-
         container.innerHTML = `
           <div class="rv-crt-overlay" id="rv-crt"></div>
           <canvas id="rv-canvas"></canvas>
@@ -1585,7 +1554,7 @@
         DesmumePlayer.exit();
       }
 
-      const activeFrame = document.getElementById("rv-nds-frame") || document.getElementById("rv-psp-frame");
+      const activeFrame = document.getElementById("rv-nds-frame");
       if (activeFrame) {
         activeFrame.src = "about:blank";
       }
