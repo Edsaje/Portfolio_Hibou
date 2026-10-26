@@ -70,7 +70,7 @@
         };
 
         const script = document.createElement("script");
-        script.src = "js/desmume/nds.js?v=2.0";
+        script.src = "js/desmume/nds.js?v=3.0";
         script.onerror = () => reject(new Error("Impossible de charger js/desmume/nds.js"));
         document.head.appendChild(script);
       });

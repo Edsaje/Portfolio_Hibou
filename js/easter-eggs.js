@@ -170,23 +170,40 @@
         window.audioManager.play("coin");
       }
 
-      if (window.RetroVaultEngine) {
+      if (window.RetroVaultEngine && window.RetroVaultEngine.version === "6.0-native-nds") {
         window.RetroVaultEngine.open(bootFile);
         return;
       }
 
+      // Si une instance obsolète existe en mémoire, la détruire proprement
+      if (window.RetroVaultEngine) {
+        try {
+          if (typeof window.RetroVaultEngine.close === "function") {
+            window.RetroVaultEngine.close();
+          }
+        } catch (e) {}
+        const oldModal = document.getElementById("retro-vault-modal");
+        if (oldModal) oldModal.remove();
+        window.RetroVaultEngine = null;
+      }
+
+      const oldScript = document.getElementById("retro-vault-script");
+      if (oldScript) oldScript.remove();
+
       const loadScript = (id, src) =>
-        new Promise((resolve) => {
-          if (document.getElementById(id)) return resolve();
+        new Promise((resolve, reject) => {
+          const old = document.getElementById(id);
+          if (old) old.remove();
           const s = document.createElement("script");
           s.id = id;
           s.src = src;
           s.onload = resolve;
+          s.onerror = reject;
           document.head.appendChild(s);
         });
 
       loadScript("nostalgist-script", "https://cdn.jsdelivr.net/npm/nostalgist/dist/nostalgist.umd.js")
-        .then(() => loadScript("retro-vault-script", "js/retro-vault.js?v=5.0"))
+        .then(() => loadScript("retro-vault-script", "js/retro-vault.js?v=6.0"))
         .then(() => {
           if (window.RetroVaultEngine) {
             window.RetroVaultEngine.open(bootFile);

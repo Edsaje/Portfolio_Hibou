@@ -95,6 +95,7 @@
 
   class RetroVault {
     constructor() {
+      this.version = "6.0-native-nds";
       this.modal = null;
       this.partieEnCours = null;
       this.jeuEnCoursNom = "";
@@ -167,7 +168,16 @@
 
     // --- Injection HTML & CSS ---
     injectDOM() {
-      if (document.getElementById("retro-vault-modal")) return;
+      const existing = document.getElementById("retro-vault-modal");
+      if (existing) {
+        if (existing.getAttribute("data-vault-version") === this.version) {
+          this.modal = existing;
+          return;
+        }
+        existing.remove();
+        const oldStyle = document.getElementById("retro-vault-styles");
+        if (oldStyle) oldStyle.remove();
+      }
 
       const styles = document.createElement("style");
       styles.id = "retro-vault-styles";
@@ -784,6 +794,7 @@
 
       const modal = document.createElement("div");
       modal.id = "retro-vault-modal";
+      modal.setAttribute("data-vault-version", this.version);
       modal.innerHTML = `
         <div class="rv-container">
           <div class="rv-header">
@@ -1301,7 +1312,7 @@
           if (typeof DesmumePlayer === "undefined") {
             await new Promise((resolve, reject) => {
               const s = document.createElement("script");
-              s.src = "js/desmume/desmume-player.js?v=2.0";
+              s.src = "js/desmume/desmume-player.js?v=3.0";
               s.onload = resolve;
               s.onerror = reject;
               document.head.appendChild(s);
