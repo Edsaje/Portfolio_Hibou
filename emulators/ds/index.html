@@ -820,10 +820,23 @@
       });
 
       btnSave.addEventListener("click", () => {
+        let savedLocally = false;
+        if (typeof window.getDsSaveData === "function") {
+          const data = window.getDsSaveData();
+          if (data && data.length > 0 && window.parent && window.parent !== window) {
+            window.parent.postMessage({
+              type: "DS_SAVE_DATA",
+              name: lastLoadedName,
+              data: Array.from(data)
+            }, "*");
+            savedLocally = true;
+            setStatus("💾 Sauvegarde enregistrée dans le Sanctuaire !", "#34d399");
+          }
+        }
         if (typeof uiSaveBackup === "function") {
           uiSaveBackup();
-          setStatus("💾 Fichier de sauvegarde .dsv exporté", "#34d399");
-        } else {
+          if (!savedLocally) setStatus("💾 Fichier de sauvegarde .dsv exporté", "#34d399");
+        } else if (!savedLocally) {
           setStatus("⚠️ Sauvegarde non disponible pour le moment", "#fda4af");
         }
       });
@@ -926,29 +939,31 @@
           const btn = (e.data.btn || "").toLowerCase();
           const isDown = !!e.data.isDown;
           const idx = dsKeyMap[btn];
-          if (window.emuKeyState && idx !== undefined) {
-            window.emuKeyState[idx] = isDown;
+          if (idx !== undefined) {
+            window.virtualKeyState = window.virtualKeyState || new Array(14).fill(false);
+            window.virtualKeyState[idx] = isDown;
+            if (window.emuKeyState) window.emuKeyState[idx] = isDown;
           }
           unlockAudio();
         } else if (e.data.type === "GAMEPAD_FRAME" && e.data.gamepad) {
-          // Manette transférée depuis la fenêtre parente
+          // Manette transférée depuis la fenêtre parente (isolée sur gamepadKeyState)
           const gp = e.data.gamepad;
           updateGamepadBadge(gp);
-          if (window.emuKeyState && window.keyNameToKeyId) {
-            const ks = window.emuKeyState;
+          const gks = window.gamepadKeyState || (window.gamepadKeyState = new Array(14).fill(false));
+          if (window.keyNameToKeyId) {
             const b = gp.buttons || {};
-            if (b[0] !== undefined) ks[window.keyNameToKeyId.b] = !!b[0];
-            if (b[1] !== undefined) ks[window.keyNameToKeyId.a] = !!b[1];
-            if (b[2] !== undefined) ks[window.keyNameToKeyId.y] = !!b[2];
-            if (b[3] !== undefined) ks[window.keyNameToKeyId.x] = !!b[3];
-            if (b[4] !== undefined || b[6] !== undefined) ks[window.keyNameToKeyId.l] = !!(b[4] || b[6]);
-            if (b[5] !== undefined || b[7] !== undefined) ks[window.keyNameToKeyId.r] = !!(b[5] || b[7]);
-            if (b[8] !== undefined || b[17] !== undefined) ks[window.keyNameToKeyId.select] = !!(b[8] || b[17]);
-            if (b[9] !== undefined || b[16] !== undefined) ks[window.keyNameToKeyId.start] = !!(b[9] || b[16]);
-            if (b[12] !== undefined) ks[window.keyNameToKeyId.up] = !!b[12];
-            if (b[13] !== undefined) ks[window.keyNameToKeyId.down] = !!b[13];
-            if (b[14] !== undefined) ks[window.keyNameToKeyId.left] = !!b[14];
-            if (b[15] !== undefined) ks[window.keyNameToKeyId.right] = !!b[15];
+            gks[window.keyNameToKeyId.b] = !!b[0];
+            gks[window.keyNameToKeyId.a] = !!b[1];
+            gks[window.keyNameToKeyId.y] = !!b[2];
+            gks[window.keyNameToKeyId.x] = !!b[3];
+            gks[window.keyNameToKeyId.l] = !!(b[4] || b[6]);
+            gks[window.keyNameToKeyId.r] = !!(b[5] || b[7]);
+            gks[window.keyNameToKeyId.select] = !!(b[8] || b[17]);
+            gks[window.keyNameToKeyId.start] = !!(b[9] || b[16]);
+            gks[window.keyNameToKeyId.up] = !!b[12];
+            gks[window.keyNameToKeyId.down] = !!b[13];
+            gks[window.keyNameToKeyId.left] = !!b[14];
+            gks[window.keyNameToKeyId.right] = !!b[15];
           }
         } else if (e.data.type === "SET_LANGUAGE") {
           const code = parseInt(e.data.lang, 10);
@@ -968,13 +983,66 @@
             return;
           }
           location.reload();
-        } else if (e.data.type === "SAVE_STATE") {
-          if (typeof uiSaveBackup === "function") {
+        } else if (e.data.type === "REQUEST_DS_SAVE" || e.data.type === "SAVE_STATE") {
+          let saved = false;
+          if (typeof window.getDsSaveData === "function") {
+            const data = window.getDsSaveData();
+            if (data && data.length > 0 && window.parent && window.parent !== window) {
+              try {
+                window.parent.postMessage({
+                  type: "DS_SAVE_DATA",
+                  name: lastLoadedName,
+                  data: Array.from(data)
+                }, "*");
+                saved = true;
+                setStatus("💾 Sauvegarde DS transmise au Sanctuaire !", "#34d399");
+              } catch(err) {}
+            }
+          }
+          if (!saved && e.data.type === "SAVE_STATE" && typeof uiSaveBackup === "function") {
             uiSaveBackup();
             setStatus("💾 Fichier de sauvegarde .dsv exporté", "#34d399");
           }
+        } else if (e.data.type === "LOAD_DS_SAVE" && e.data.data) {
+          const uint8 = new Uint8Array(e.data.data);
+          window.pendingSaveData = uint8;
+          if (typeof window.loadDsSaveData === "function") {
+            window.loadDsSaveData(uint8);
+          }
+          setStatus("📂 Sauvegarde locale DS injectée", "#34d399");
         }
       });
+
+      // Synchronisation automatique des sauvegardes DS vers le Sanctuaire parent
+      window.onDsSaveUpdated = function(uint8Arr, gId) {
+        if (window.parent && window.parent !== window && uint8Arr) {
+          try {
+            window.parent.postMessage({
+              type: "DS_AUTO_SAVE",
+              name: lastLoadedName,
+              gameID: gId,
+              data: Array.from(uint8Arr)
+            }, "*");
+          } catch(err) {}
+        }
+      };
+
+      const flushDsSave = () => {
+        if (typeof window.getDsSaveData === "function") {
+          const data = window.getDsSaveData();
+          if (data && data.length > 0 && window.parent && window.parent !== window) {
+            try {
+              window.parent.postMessage({
+                type: "DS_AUTO_SAVE",
+                name: lastLoadedName,
+                data: Array.from(data)
+              }, "*");
+            } catch(err) {}
+          }
+        }
+      };
+      window.addEventListener("pagehide", flushDsSave);
+      window.addEventListener("beforeunload", flushDsSave);
 
       // Notifier le Sanctuaire parent que la console DS est prête
       try {

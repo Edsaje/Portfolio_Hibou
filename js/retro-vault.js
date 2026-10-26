@@ -124,7 +124,7 @@
 
   class RetroVault {
     constructor() {
-      this.version = "8.4-mario64-analog";
+      this.version = "8.5-ds-saves-gamepad-fix";
       this.modal = null;
       this.partieEnCours = null;
       this.jeuEnCoursNom = "";
@@ -138,6 +138,7 @@
       this.boundKeyHandler = this.bridgeClavier.bind(this);
       this.volumeActuel = 0.8;
       this.volumePrecedent = 0.8;
+      this.pendingNdsSave = null;
       try {
         const sv = localStorage.getItem("rv_volume");
         if (sv !== null) {
@@ -147,6 +148,41 @@
       } catch(e) {}
       this.gamepadLoopId = null;
       this.lastGamepadBrand = "";
+
+      // Écoute des messages DS pour sauvegarde et synchronisation
+      window.addEventListener("message", async (e) => {
+        if (!e.data) return;
+        if (e.data.type === "DS_SAVE_DATA" || e.data.type === "DS_AUTO_SAVE") {
+          const saveBytes = e.data.data;
+          const gameName = e.data.name || this.jeuEnCoursNom;
+          if (saveBytes && gameName) {
+            try {
+              const uint8 = new Uint8Array(saveBytes);
+              await this.saveStateDB(gameName, uint8);
+              const status = document.getElementById("rv-status");
+              if (status && e.data.type === "DS_SAVE_DATA") {
+                status.textContent = `💾 Sauvegarde DS enregistrée dans le Sanctuaire (${new Date().toLocaleTimeString()}) !`;
+                status.style.color = "#34d399";
+              }
+              this.rendreGrille();
+            } catch (err) {
+              console.warn("Failed to persist DS save to IndexedDB:", err);
+            }
+          }
+        } else if (e.data.type === "NDS_READY") {
+          if (this.pendingNdsSave) {
+            const frame = document.getElementById("rv-nds-frame");
+            if (frame && frame.contentWindow) {
+              try {
+                frame.contentWindow.postMessage({
+                  type: "LOAD_DS_SAVE",
+                  data: Array.from(this.pendingNdsSave)
+                }, "*");
+              } catch(err) {}
+            }
+          }
+        }
+      });
     }
 
     // --- Initialisation de la Base IndexedDB ---
@@ -973,12 +1009,12 @@
           <!-- Manette Tactile Virtuelle Rétro (Mobile First) -->
           <div class="rv-gamepad" id="rv-gamepad">
             <div class="rv-pad-top-bar">
-              <button class="rv-pad-shoulder rv-pad-l" data-btn="l" data-code="Numpad7" data-key="7" id="rv-touch-l">L</button>
+              <button class="rv-pad-shoulder rv-pad-l" data-btn="l" data-code="KeyU" data-key="u" id="rv-touch-l">L</button>
               <div class="rv-pad-menu-cluster">
                 <button class="rv-pad-pill" data-btn="select" data-code="KeyV" data-key="v">SELECT</button>
                 <button class="rv-pad-pill" data-btn="start" data-code="KeyB" data-key="b">START</button>
               </div>
-              <button class="rv-pad-shoulder rv-pad-r" data-btn="r" data-code="Numpad9" data-key="9" id="rv-touch-r">R</button>
+              <button class="rv-pad-shoulder rv-pad-r" data-btn="r" data-code="KeyP" data-key="p" id="rv-touch-r">R</button>
             </div>
 
             <div class="rv-pad-main-row">
@@ -995,12 +1031,12 @@
 
               <!-- Cluster d'actions en losange (Droite) -->
               <div class="rv-actions" id="rv-actions">
-                <button class="rv-act-btn rv-act-x" data-btn="x" data-code="Numpad8" data-key="8" id="rv-touch-x">X</button>
+                <button class="rv-act-btn rv-act-x" data-btn="x" data-code="KeyO" data-key="o" id="rv-touch-x">X</button>
                 <div class="rv-act-mid">
-                  <button class="rv-act-btn rv-act-y" data-btn="y" data-code="Numpad4" data-key="4" id="rv-touch-y">Y</button>
-                  <button class="rv-act-btn rv-act-a" data-btn="a" data-code="Numpad6" data-key="6" id="rv-touch-a">A</button>
+                  <button class="rv-act-btn rv-act-y" data-btn="y" data-code="KeyI" data-key="i" id="rv-touch-y">Y</button>
+                  <button class="rv-act-btn rv-act-a" data-btn="a" data-code="KeyL" data-key="l" id="rv-touch-a">A</button>
                 </div>
-                <button class="rv-act-btn rv-act-b" data-btn="b" data-code="Numpad5" data-key="5" id="rv-touch-b">B</button>
+                <button class="rv-act-btn rv-act-b" data-btn="b" data-code="KeyK" data-key="k" id="rv-touch-b">B</button>
               </div>
             </div>
           </div>
@@ -1121,6 +1157,7 @@
         let isDown = false;
 
         const press = (e) => {
+          if (e && e.cancelable) e.preventDefault();
           if (isDown) return;
           isDown = true;
           el.classList.add("pressed");
@@ -1128,40 +1165,31 @@
         };
 
         const release = (e) => {
+          if (e && e.cancelable) e.preventDefault();
           if (!isDown) return;
           isDown = false;
           el.classList.remove("pressed");
           triggerKey(btn, code, key, false);
         };
 
-        // Pointer Events (Touch, Mouse, Stylet) avec capture pour éviter de perdre le bouton
+        // Pointer Events (Touch, Mouse, Stylet) avec capture pour maintenir l'appui même si le doigt bouge
         el.addEventListener("pointerdown", (e) => {
-          e.preventDefault();
           try { el.setPointerCapture(e.pointerId); } catch(err) {}
           press(e);
         });
         el.addEventListener("pointerup", (e) => {
-          e.preventDefault();
           try { el.releasePointerCapture(e.pointerId); } catch(err) {}
           release(e);
         });
-        el.addEventListener("pointercancel", () => release());
-        el.addEventListener("pointerleave", (e) => {
-          if (!el.hasPointerCapture || !el.hasPointerCapture(e.pointerId)) {
-            release();
-          }
+        el.addEventListener("pointercancel", (e) => {
+          try { el.releasePointerCapture(e.pointerId); } catch(err) {}
+          release(e);
         });
 
-        // Événements tactiles directs (fallbacks)
-        el.addEventListener("touchstart", (e) => {
-          e.preventDefault();
-          press(e);
-        }, { passive: false });
-        el.addEventListener("touchend", (e) => {
-          e.preventDefault();
-          release(e);
-        }, { passive: false });
-        el.addEventListener("touchcancel", (e) => release(), { passive: false });
+        // Événements tactiles directs de secours (mobile)
+        el.addEventListener("touchstart", press, { passive: false });
+        el.addEventListener("touchend", release, { passive: false });
+        el.addEventListener("touchcancel", release, { passive: false });
       };
 
       document.querySelectorAll("#rv-gamepad button").forEach(bindBtn);
@@ -1567,6 +1595,14 @@
           const frame = document.getElementById("rv-nds-frame");
           this.pendingNdsRom = romBlob ? { blob: romBlob, name: nomFichier } : null;
 
+          // Charger la sauvegarde locale existante depuis IndexedDB
+          try {
+            const existingSave = await this.loadStateDB(nomFichier);
+            this.pendingNdsSave = (existingSave && existingSave.state) ? existingSave.state : null;
+          } catch(e) {
+            this.pendingNdsSave = null;
+          }
+
           if (frame) {
             const sendRomAndVolume = () => {
               try {
@@ -1575,6 +1611,12 @@
                     type: "SET_VOLUME",
                     volume: this.volumeActuel
                   }, "*");
+                  if (this.pendingNdsSave) {
+                    frame.contentWindow.postMessage({
+                      type: "LOAD_DS_SAVE",
+                      data: Array.from(this.pendingNdsSave)
+                    }, "*");
+                  }
                   if (this.pendingNdsRom) {
                     frame.contentWindow.postMessage({
                       type: "LOAD_ROM",
@@ -1617,12 +1659,12 @@
           input_player1_down: "s",
           input_player1_left: "a",
           input_player1_right: "d",
-          input_player1_b: "num5",
-          input_player1_a: "num6",
-          input_player1_y: "num4",
-          input_player1_x: "num8",
-          input_player1_l: "num7",
-          input_player1_r: "num9",
+          input_player1_b: "k",
+          input_player1_a: "l",
+          input_player1_y: "i",
+          input_player1_x: "o",
+          input_player1_l: "u",
+          input_player1_r: "p",
           input_player1_start: "b",
           input_player1_select: "v",
           input_load_state_key: "f4",
@@ -1808,10 +1850,10 @@
         const frame = document.getElementById("rv-nds-frame");
         if (frame && frame.contentWindow) {
           try {
-            frame.contentWindow.postMessage({ type: "SAVE_STATE" }, "*");
+            frame.contentWindow.postMessage({ type: "REQUEST_DS_SAVE" }, "*");
             if (status) {
-              status.textContent = "💾 Sauvegarde DSV exportée depuis la console Nintendo DS";
-              status.style.color = "#34d399";
+              status.textContent = "⏳ Sauvegarde de la cartouche DS vers le Sanctuaire...";
+              status.style.color = "#d4af37";
             }
           } catch (e) {}
         }
@@ -1847,9 +1889,31 @@
     async chargerPartie() {
       const status = document.getElementById("rv-status");
       if (this.jeuEnCoursType === "nds") {
-        if (status) {
-          status.textContent = "💡 Les cartouches DS gèrent automatiquement leur fichier de sauvegarde (.dsv).";
-          status.style.color = "#d4af37";
+        try {
+          const data = await this.loadStateDB(this.jeuEnCoursNom);
+          if (!data || !data.state) {
+            if (status) {
+              status.textContent = "⚠️ Aucune sauvegarde trouvée pour cette cartouche DS dans le Sanctuaire.";
+              status.style.color = "#fbbf24";
+            }
+            return;
+          }
+          const frame = document.getElementById("rv-nds-frame");
+          if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage({
+              type: "LOAD_DS_SAVE",
+              data: Array.from(data.state)
+            }, "*");
+            if (status) {
+              status.textContent = `📂 Sauvegarde DS restaurée ! (${data.date})`;
+              status.style.color = "#34d399";
+            }
+          }
+        } catch (e) {
+          if (status) {
+            status.textContent = "❌ Échec du chargement DS : " + e.message;
+            status.style.color = "#ef4444";
+          }
         }
         return;
       }
@@ -1929,16 +1993,16 @@
       else if (e.code === "ArrowRight" || e.code === "KeyD") { btn = "right"; targetCode = "KeyD"; targetKey = "d"; }
       else if (e.code === "KeyZ") { btn = "up"; targetCode = "KeyW"; targetKey = "w"; } // AZERTY Z
       else if (e.code === "KeyQ") { btn = "left"; targetCode = "KeyA"; targetKey = "a"; } // AZERTY Q
-      else if (e.code === "Numpad8" || e.code === "Digit8") { btn = "x"; targetCode = "Numpad8"; targetKey = "8"; }
-      else if (e.code === "Numpad5" || e.code === "Digit5") { btn = "b"; targetCode = "Numpad5"; targetKey = "5"; }
-      else if (e.code === "Numpad4" || e.code === "Digit4") { btn = "y"; targetCode = "Numpad4"; targetKey = "4"; }
-      else if (e.code === "Numpad6" || e.code === "Digit6") { btn = "a"; targetCode = "Numpad6"; targetKey = "6"; }
-      else if (e.code === "Numpad7" || e.code === "Digit7") { btn = "l"; targetCode = "Numpad7"; targetKey = "7"; }
-      else if (e.code === "Numpad9" || e.code === "Digit9") { btn = "r"; targetCode = "Numpad9"; targetKey = "9"; }
-      else if ((e.code === "Numpad4" || e.code === "Digit4") && ["nes", "gb", "pce"].includes(this.jeuEnCoursType)) {
+      else if (e.code === "Numpad8" || e.code === "Digit8" || e.code === "KeyO") { btn = "x"; targetCode = "KeyO"; targetKey = "o"; }
+      else if (e.code === "Numpad5" || e.code === "Digit5" || e.code === "KeyK") { btn = "b"; targetCode = "KeyK"; targetKey = "k"; }
+      else if (e.code === "Numpad4" || e.code === "Digit4" || e.code === "KeyI") { btn = "y"; targetCode = "KeyI"; targetKey = "i"; }
+      else if (e.code === "Numpad6" || e.code === "Digit6" || e.code === "KeyL") { btn = "a"; targetCode = "KeyL"; targetKey = "l"; }
+      else if (e.code === "Numpad7" || e.code === "Digit7" || e.code === "KeyU") { btn = "l"; targetCode = "KeyU"; targetKey = "u"; }
+      else if (e.code === "Numpad9" || e.code === "Digit9" || e.code === "KeyP") { btn = "r"; targetCode = "KeyP"; targetKey = "p"; }
+      else if ((e.code === "Numpad4" || e.code === "Digit4" || e.code === "KeyI") && ["nes", "gb", "pce"].includes(this.jeuEnCoursType)) {
         btn = "b";
-        targetCode = "Numpad5";
-        targetKey = "5";
+        targetCode = "KeyK";
+        targetKey = "k";
       }
 
       if (btn) {
@@ -2037,9 +2101,18 @@
       this.arreterGamepadLoop();
       this.pendingNdsRom = null;
 
+      if (this.jeuEnCoursType === "nds") {
+        const frame = document.getElementById("rv-nds-frame");
+        if (frame && frame.contentWindow) {
+          try { frame.contentWindow.postMessage({ type: "REQUEST_DS_SAVE" }, "*"); } catch (e) {}
+        }
+      }
+
       const activeFrame = document.getElementById("rv-nds-frame");
       if (activeFrame) {
-        activeFrame.src = "about:blank";
+        setTimeout(() => {
+          try { activeFrame.src = "about:blank"; } catch(e) {}
+        }, 250);
       }
 
       window.removeEventListener("keydown", this.boundKeyHandler);
