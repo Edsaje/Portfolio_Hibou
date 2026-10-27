@@ -124,7 +124,7 @@
 
   class RetroVault {
     constructor() {
-      this.version = "8.5-ds-saves-gamepad-fix";
+      this.version = "8.6-flanking-wings-landscape";
       this.modal = null;
       this.partieEnCours = null;
       this.jeuEnCoursNom = "";
@@ -186,6 +186,20 @@
           }
         }
       });
+    }
+
+    setStatus(text, color = "#d4af37") {
+      const status = document.getElementById("rv-status");
+      if (status) {
+        status.textContent = text;
+        status.style.color = color;
+      }
+      const landStatus = document.getElementById("rv-land-status");
+      if (landStatus) {
+        const clean = text.replace(/^[🎮⏳✅⚠️❌💡📂💾☁️🔌]\s*/, "");
+        landStatus.textContent = clean.length > 28 ? clean.substring(0, 26) + "..." : clean;
+        landStatus.style.color = color;
+      }
     }
 
     // --- Initialisation de la Base IndexedDB ---
@@ -1130,32 +1144,76 @@
         }
 
         /* ========================================================
-           MANETTE TACTILE VIRTUELLE (MOBILE FIRST)
+           ZONE DE JEU UNIFIÉE & AILES LATÉRALES (MOBILE FIRST)
            ======================================================== */
-        .rv-gamepad {
+        .rv-play-zone {
+          display: grid;
+          grid-template-areas:
+            "screen screen"
+            "wing-left wing-right";
+          grid-template-columns: 1fr 1fr;
           width: 100%;
-          max-width: 580px;
-          margin: 10px auto 14px;
-          padding: 12px 14px;
+          max-width: 780px;
+          margin: 0 auto 14px;
+          gap: 12px;
+          align-items: start;
+        }
+        .rv-play-zone.force-hidden-wings .rv-wing {
+          display: none !important;
+        }
+        .rv-play-zone.force-hidden-wings {
+          grid-template-areas: "screen" !important;
+          grid-template-columns: 1fr !important;
+        }
+
+        .rv-center-stage {
+          grid-area: screen;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .rv-wing {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
           background: #09130d;
           border: 1px solid rgba(212, 175, 55, 0.35);
           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
           border-radius: 4px;
+          padding: 12px 14px;
           user-select: none;
           -webkit-user-select: none;
           touch-action: none;
-          display: block;
+          gap: 10px;
+          box-sizing: border-box;
         }
-        .rv-gamepad.force-hidden { display: none !important; }
+        .rv-wing-left {
+          grid-area: wing-left;
+        }
+        .rv-wing-right {
+          grid-area: wing-right;
+        }
 
-        .rv-pad-top-bar {
+        .rv-wing-shoulder {
+          width: 100%;
           display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 12px;
-          padding-bottom: 8px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          justify-content: center;
         }
+        .rv-wing-center {
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 125px;
+        }
+        .rv-wing-menu {
+          width: 100%;
+          display: flex;
+          justify-content: center;
+        }
+
         .rv-pad-shoulder {
           background: #14281c;
           border: 1px solid rgba(212, 175, 55, 0.35);
@@ -1163,21 +1221,22 @@
           font-family: var(--font-heading, 'Cinzel', serif);
           font-weight: 700;
           font-size: 0.95rem;
-          padding: 8px 22px;
-          border-radius: 3px;
+          padding: 8px 26px;
+          border-radius: 4px;
           cursor: pointer;
           touch-action: none;
           transition: all 0.1s;
+          user-select: none;
+          -webkit-user-select: none;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
         }
         .rv-pad-shoulder:active, .rv-pad-shoulder.pressed {
-          background: #d4af37;
-          color: #050a07;
+          background: #d4af37 !important;
+          color: #050a07 !important;
           transform: translateY(1px);
+          box-shadow: 0 0 12px rgba(212, 175, 55, 0.6);
         }
-        .rv-pad-menu-cluster {
-          display: flex;
-          gap: 12px;
-        }
+
         .rv-pad-pill {
           background: #0e1d14;
           border: 1px solid rgba(255, 255, 255, 0.15);
@@ -1185,31 +1244,28 @@
           font-size: 0.72rem;
           font-weight: 700;
           letter-spacing: 1px;
-          padding: 6px 14px;
-          border-radius: 3px;
+          padding: 6px 16px;
+          border-radius: 14px;
           cursor: pointer;
           touch-action: none;
           transition: all 0.1s;
+          user-select: none;
+          -webkit-user-select: none;
         }
         .rv-pad-pill:active, .rv-pad-pill.pressed {
-          background: #d4af37;
-          color: #050a07;
+          background: #d4af37 !important;
+          color: #050a07 !important;
+          box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
         }
 
-        .rv-pad-main-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 20px;
-          padding: 4px 6px;
-        }
-
-        /* D-PAD */
+        /* D-PAD DIRECTIONNEL (GAUCHE) */
         .rv-dpad {
           display: flex;
           flex-direction: column;
           align-items: center;
           touch-action: none;
+          user-select: none;
+          -webkit-user-select: none;
         }
         .rv-dpad-mid {
           display: flex;
@@ -1232,10 +1288,10 @@
           user-select: none;
           transition: all 0.08s;
         }
-        .rv-dpad-u { border-radius: 4px 4px 0 0; }
-        .rv-dpad-d { border-radius: 0 0 4px 4px; }
-        .rv-dpad-l { border-radius: 4px 0 0 4px; }
-        .rv-dpad-r { border-radius: 0 4px 4px 0; }
+        .rv-dpad-u { border-radius: 5px 5px 0 0; }
+        .rv-dpad-d { border-radius: 0 0 5px 5px; }
+        .rv-dpad-l { border-radius: 5px 0 0 5px; }
+        .rv-dpad-r { border-radius: 0 5px 5px 0; }
         .rv-dpad-core {
           width: 50px;
           height: 50px;
@@ -1244,22 +1300,24 @@
           border-bottom: 1px solid rgba(212, 175, 55, 0.1);
         }
         .rv-dpad-btn:active, .rv-dpad-btn.pressed {
-          background: #d4af37;
-          color: #050a07;
-          box-shadow: 0 0 12px rgba(212, 175, 55, 0.6);
+          background: #d4af37 !important;
+          color: #050a07 !important;
+          box-shadow: 0 0 14px rgba(212, 175, 55, 0.7);
         }
 
-        /* CLUSTER D'ACTIONS */
+        /* CLUSTER D'ACTIONS EN LOSANGE (DROITE) */
         .rv-actions {
           display: flex;
           flex-direction: column;
           align-items: center;
           touch-action: none;
+          user-select: none;
+          -webkit-user-select: none;
         }
         .rv-act-mid {
           display: flex;
           align-items: center;
-          gap: 26px;
+          gap: 24px;
           margin: 4px 0;
         }
         .rv-act-btn {
@@ -1295,6 +1353,11 @@
           color: #050a07 !important;
           transform: scale(0.92);
           box-shadow: 0 0 14px rgba(212, 175, 55, 0.7);
+        }
+
+        /* BARRE RAPIDE DISCRÈTE (PAYSAGE) */
+        .rv-landscape-bar {
+          display: none;
         }
 
         /* Guide des touches physique (clavier ordi) */
@@ -1532,7 +1595,7 @@
         }
 
         /* ========================================================
-           RESPONSIVE MOBILE FIRST
+           RESPONSIVE MOBILE FIRST & AILES LATÉRALES EN PAYSAGE
            ======================================================== */
         @media (max-width: 768px) {
           #retro-vault-modal { padding: 8px 6px 30px; }
@@ -1550,12 +1613,308 @@
           .rv-grid { grid-template-columns: 1fr; }
         }
 
-        @media (max-height: 520px) and (orientation: landscape) {
-          #retro-vault-modal { padding: 4px; }
-          .rv-header { margin-bottom: 6px; padding-bottom: 6px; }
-          .rv-screen-wrapper { margin-bottom: 6px; }
-          .rv-gamepad { max-width: 100%; margin: 6px auto; padding: 6px 10px; }
-          .rv-controls-guide { display: none; }
+        /* MODE PAYSAGE SUR MOBILE / ÉCRANS RESTREINTS EN HAUTEUR */
+        @media (orientation: landscape) and (max-height: 620px) {
+          #retro-vault-modal {
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: hidden !important;
+            background: #050a07 !important;
+          }
+          .rv-container {
+            width: 100vw !important;
+            max-width: 100vw !important;
+            height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: stretch !important;
+          }
+          .rv-header {
+            display: none !important;
+          }
+          .rv-controls-guide, .rv-catalog-section, .rv-save-indicator {
+            display: none !important;
+          }
+          .rv-play-zone {
+            display: grid !important;
+            grid-template-areas: "wing-left screen wing-right" !important;
+            grid-template-columns: minmax(105px, 16vw) 1fr minmax(105px, 16vw) !important;
+            width: 100vw !important;
+            max-width: 100vw !important;
+            height: 100vh !important;
+            margin: 0 !important;
+            gap: 0 !important;
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 1000000 !important;
+            background: #050a07 !important;
+            align-items: stretch !important;
+            padding-left: max(6px, env(safe-area-inset-left, 0px)) !important;
+            padding-right: max(6px, env(safe-area-inset-right, 0px)) !important;
+            padding-top: max(4px, env(safe-area-inset-top, 0px)) !important;
+            padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+            box-sizing: border-box !important;
+          }
+
+          /* FLANC GAUCHE (Landscape) */
+          .rv-wing-left {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            height: 100% !important;
+            max-height: 100% !important;
+            background: linear-gradient(90deg, rgba(9, 19, 13, 0.98) 0%, rgba(5, 10, 7, 0.88) 100%) !important;
+            border: none !important;
+            border-right: 1px solid rgba(212, 175, 55, 0.25) !important;
+            border-radius: 0 !important;
+            padding: 8px 6px 12px !important;
+            z-index: 20 !important;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.8) !important;
+            box-sizing: border-box !important;
+          }
+          /* FLANC DROIT (Landscape) */
+          .rv-wing-right {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            height: 100% !important;
+            max-height: 100% !important;
+            background: linear-gradient(270deg, rgba(9, 19, 13, 0.98) 0%, rgba(5, 10, 7, 0.88) 100%) !important;
+            border: none !important;
+            border-left: 1px solid rgba(212, 175, 55, 0.25) !important;
+            border-radius: 0 !important;
+            padding: 8px 6px 12px !important;
+            z-index: 20 !important;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.8) !important;
+            box-sizing: border-box !important;
+          }
+
+          /* GÂCHETTES L / R ERGONOMIQUES */
+          .rv-pad-shoulder {
+            width: 90% !important;
+            max-width: 120px !important;
+            padding: 8px 0 !important;
+            font-size: 0.95rem !important;
+            border-radius: 6px !important;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6) !important;
+          }
+
+          /* D-PAD ERGONOMIQUE FLANC GAUCHE */
+          .rv-dpad {
+            margin: auto 0 !important;
+          }
+          .rv-dpad-btn, .rv-dpad-core {
+            width: 44px !important;
+            height: 44px !important;
+          }
+
+          /* ACTIONS ERGONOMIQUES FLANC DROIT */
+          .rv-actions {
+            margin: auto 0 !important;
+          }
+          .rv-act-btn {
+            width: 46px !important;
+            height: 46px !important;
+            font-size: 1.05rem !important;
+          }
+          .rv-act-mid {
+            gap: 18px !important;
+            margin: 2px 0 !important;
+          }
+
+          /* PILL BUTTONS (SELECT & START) */
+          .rv-pad-pill {
+            padding: 6px 14px !important;
+            font-size: 0.72rem !important;
+            letter-spacing: 1px !important;
+            border-radius: 12px !important;
+          }
+
+          /* ZONE CENTRALE (ÉCRAN) */
+          .rv-center-stage {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            height: 100% !important;
+            max-height: 100% !important;
+            position: relative !important;
+            overflow: hidden !important;
+            background: #000 !important;
+          }
+          .rv-screen-wrapper {
+            width: 100% !important;
+            height: 100% !important;
+            max-height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            margin: 0 !important;
+          }
+          #rv-game-container {
+            width: auto !important;
+            height: auto !important;
+            max-width: 100% !important;
+            max-height: calc(100vh - 28px) !important;
+            aspect-ratio: 4 / 3 !important;
+            border-radius: 2px !important;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(212, 175, 55, 0.25) !important;
+          }
+          #rv-game-container canvas {
+            max-height: calc(100vh - 28px) !important;
+            width: auto !important;
+            height: 100% !important;
+          }
+          #rv-game-container > div {
+            height: 100% !important;
+            max-height: calc(100vh - 28px) !important;
+          }
+          .rv-embedded-frame {
+            height: 100% !important;
+            max-height: calc(100vh - 28px) !important;
+          }
+          .rv-toolbar, .rv-status {
+            display: none !important;
+          }
+
+          /* BARRE DISCRÈTE PAYSAGE */
+          .rv-landscape-bar {
+            display: flex !important;
+            position: absolute !important;
+            top: 6px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            z-index: 50 !important;
+            background: rgba(9, 19, 13, 0.88) !important;
+            border: 1px solid rgba(212, 175, 55, 0.35) !important;
+            border-radius: 20px !important;
+            padding: 3px 12px !important;
+            gap: 12px !important;
+            align-items: center !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.8) !important;
+            transition: opacity 0.3s ease !important;
+          }
+          .rv-land-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.76rem;
+            color: #d4af37;
+            font-weight: 600;
+          }
+          .rv-land-tools {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          .rv-land-btn {
+            background: none !important;
+            border: none !important;
+            color: #d4af37 !important;
+            font-size: 0.85rem !important;
+            padding: 2px 4px !important;
+            cursor: pointer !important;
+            line-height: 1 !important;
+            transition: transform 0.1s ease, filter 0.1s ease !important;
+          }
+          .rv-land-btn:hover {
+            filter: brightness(1.3) !important;
+            transform: scale(1.15) !important;
+          }
+          .rv-land-btn:active {
+            transform: scale(0.9) !important;
+          }
+          .rv-land-btn-close {
+            color: #ef4444 !important;
+            font-weight: bold !important;
+            margin-left: 4px !important;
+          }
+        }
+
+        /* MODE PLEIN ÉCRAN UNIFIÉ (NAVIGATEUR) */
+        :fullscreen #rv-play-zone,
+        :-webkit-full-screen #rv-play-zone {
+          display: grid !important;
+          grid-template-areas: "wing-left screen wing-right" !important;
+          grid-template-columns: minmax(110px, 16vw) 1fr minmax(110px, 16vw) !important;
+          width: 100vw !important;
+          max-width: 100vw !important;
+          height: 100vh !important;
+          margin: 0 !important;
+          gap: 0 !important;
+          position: fixed !important;
+          inset: 0 !important;
+          z-index: 1000000 !important;
+          background: #050a07 !important;
+          align-items: stretch !important;
+          padding-left: max(6px, env(safe-area-inset-left, 0px)) !important;
+          padding-right: max(6px, env(safe-area-inset-right, 0px)) !important;
+          padding-top: max(4px, env(safe-area-inset-top, 0px)) !important;
+          padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+          box-sizing: border-box !important;
+        }
+        :fullscreen .rv-wing-left, :-webkit-full-screen .rv-wing-left {
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          height: 100% !important;
+          max-height: 100% !important;
+          background: linear-gradient(90deg, rgba(9, 19, 13, 0.98) 0%, rgba(5, 10, 7, 0.88) 100%) !important;
+          border: none !important;
+          border-right: 1px solid rgba(212, 175, 55, 0.25) !important;
+          padding: 8px 6px 12px !important;
+          z-index: 20 !important;
+          box-sizing: border-box !important;
+        }
+        :fullscreen .rv-wing-right, :-webkit-full-screen .rv-wing-right {
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          height: 100% !important;
+          max-height: 100% !important;
+          background: linear-gradient(270deg, rgba(9, 19, 13, 0.98) 0%, rgba(5, 10, 7, 0.88) 100%) !important;
+          border: none !important;
+          border-left: 1px solid rgba(212, 175, 55, 0.25) !important;
+          padding: 8px 6px 12px !important;
+          z-index: 20 !important;
+          box-sizing: border-box !important;
+        }
+        :fullscreen .rv-center-stage, :-webkit-full-screen .rv-center-stage {
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: center !important;
+          align-items: center !important;
+          height: 100% !important;
+          position: relative !important;
+          overflow: hidden !important;
+          background: #000 !important;
+        }
+        :fullscreen .rv-toolbar, :-webkit-full-screen .rv-toolbar,
+        :fullscreen .rv-status, :-webkit-full-screen .rv-status {
+          display: none !important;
+        }
+        :fullscreen .rv-landscape-bar, :-webkit-full-screen .rv-landscape-bar {
+          display: flex !important;
+        }
+        :fullscreen #rv-game-container, :-webkit-full-screen #rv-game-container {
+          max-height: calc(100vh - 28px) !important;
+          width: auto !important;
+          height: auto !important;
+          aspect-ratio: 4 / 3 !important;
+        }
+        :fullscreen #rv-game-container canvas, :-webkit-full-screen #rv-game-container canvas {
+          max-height: calc(100vh - 28px) !important;
+          width: auto !important;
+          height: 100% !important;
         }
       `;
       document.head.appendChild(styles);
@@ -1576,72 +1935,102 @@
             <button class="rv-close-btn" id="rv-close-btn" title="Fermer le sanctuaire">✕</button>
           </div>
 
-          <!-- Écran de jeu -->
-          <div class="rv-screen-wrapper">
-            <div id="rv-game-container">
-              <div class="rv-crt-overlay" id="rv-crt"></div>
-              <canvas id="rv-canvas"></canvas>
-            </div>
-            <div class="rv-status" id="rv-status">Sélectionnez une relique ou déposez un fichier ROM pour démarrer</div>
-
-            <!-- Barre d'actions -->
-            <div class="rv-toolbar">
-              <div class="rv-tool-group">
-                <button class="rv-btn rv-btn-save" id="rv-btn-save">💾 Sauver (F2)</button>
-                <button class="rv-btn rv-btn-load" id="rv-btn-load">📂 Charger (F4)</button>
-                <button class="rv-btn" id="rv-btn-pause">⏸️ Pause</button>
-                <button class="rv-btn" id="rv-btn-reset">🔄 Reset</button>
+          <!-- Zone de Jeu Unifiée (Écran + Flancs Manette Ailes Latérales) -->
+          <div class="rv-play-zone" id="rv-play-zone">
+            <!-- Flanc Gauche (D-Pad & L) -->
+            <div class="rv-wing rv-wing-left" id="rv-wing-left">
+              <div class="rv-wing-shoulder">
+                <button class="rv-pad-shoulder rv-pad-l" data-btn="l" data-code="KeyU" data-key="u" id="rv-touch-l" aria-label="Gâchette L">L</button>
               </div>
-              <div class="rv-tool-group">
-                <div class="rv-vol-wrap" title="Volume sonore général du sanctuaire">
-                  <button class="rv-btn rv-vol-btn" id="rv-btn-mute" title="Couper / Rétablir le son" aria-label="Couper ou rétablir le son">🔊</button>
-                  <input type="range" class="rv-vol-slider" id="rv-vol-slider" min="0" max="1" step="0.02" value="0.8" aria-label="Contrôle du volume sonore">
-                  <span class="rv-vol-val" id="rv-vol-val">80%</span>
+              <div class="rv-wing-center">
+                <!-- D-Pad Directionnel tactile (Gauche) -->
+                <div class="rv-dpad" id="rv-dpad">
+                  <button class="rv-dpad-btn rv-dpad-u" data-btn="up" data-code="KeyW" data-key="w" aria-label="Haut">▲</button>
+                  <div class="rv-dpad-mid">
+                    <button class="rv-dpad-btn rv-dpad-l" data-btn="left" data-code="KeyA" data-key="a" aria-label="Gauche">◀</button>
+                    <div class="rv-dpad-core"></div>
+                    <button class="rv-dpad-btn rv-dpad-r" data-btn="right" data-code="KeyD" data-key="d" aria-label="Droite">▶</button>
+                  </div>
+                  <button class="rv-dpad-btn rv-dpad-d" data-btn="down" data-code="KeyS" data-key="s" aria-label="Bas">▼</button>
                 </div>
-                <div class="rv-gp-badge" id="rv-gp-badge" title="État de la manette physique (PS5 DualSense / Xbox / Switch)">
-                  <span class="rv-gp-icon">🎮</span>
-                  <span id="rv-gp-name">Aucune manette</span>
-                </div>
-                <button class="rv-btn" id="rv-btn-pad-toggle">📱 Manette Virtuelle</button>
-                <button class="rv-btn" id="rv-btn-crt">📺 CRT</button>
-                <button class="rv-btn" id="rv-btn-fullscreen">⛶ Plein Écran</button>
-                <input type="file" id="rv-file-input" style="display: none;" accept=".nes,.sfc,.smc,.gba,.gb,.gbc,.md,.bin,.gen,.zip,.iso,.cue,.chd,.pbp,.img,.pce,.nds,.cso">
-                <button class="rv-btn" id="rv-btn-upload">📁 Insérer ROM</button>
+              </div>
+              <div class="rv-wing-menu">
+                <button class="rv-pad-pill rv-pad-select" data-btn="select" data-code="KeyV" data-key="v">SELECT</button>
               </div>
             </div>
-          </div>
 
-          <!-- Manette Tactile Virtuelle Rétro (Mobile First) -->
-          <div class="rv-gamepad" id="rv-gamepad">
-            <div class="rv-pad-top-bar">
-              <button class="rv-pad-shoulder rv-pad-l" data-btn="l" data-code="KeyU" data-key="u" id="rv-touch-l">L</button>
-              <div class="rv-pad-menu-cluster">
-                <button class="rv-pad-pill" data-btn="select" data-code="KeyV" data-key="v">SELECT</button>
-                <button class="rv-pad-pill" data-btn="start" data-code="KeyB" data-key="b">START</button>
+            <!-- Scène Centrale (Écran de jeu + Outils) -->
+            <div class="rv-center-stage" id="rv-center-stage">
+              <!-- Barre rapide discrète pour mode paysage -->
+              <div class="rv-landscape-bar" id="rv-landscape-bar">
+                <div class="rv-land-left">
+                  <span class="rv-land-logo">🦉</span>
+                  <span class="rv-land-status" id="rv-land-status">Sanctuaire</span>
+                </div>
+                <div class="rv-land-tools">
+                  <button class="rv-land-btn" id="rv-land-btn-save" title="Sauvegarder l'état">💾</button>
+                  <button class="rv-land-btn" id="rv-land-btn-load" title="Charger l'état">📂</button>
+                  <button class="rv-land-btn" id="rv-land-btn-pause" title="Pause / Reprendre">⏸️</button>
+                  <button class="rv-land-btn" id="rv-land-btn-mute" title="Couper ou rétablir le son">🔊</button>
+                  <button class="rv-land-btn" id="rv-land-btn-fs" title="Plein Écran unifié">⛶</button>
+                  <button class="rv-land-btn rv-land-btn-close" id="rv-land-btn-close" title="Fermer le sanctuaire">✕</button>
+                </div>
               </div>
-              <button class="rv-pad-shoulder rv-pad-r" data-btn="r" data-code="KeyP" data-key="p" id="rv-touch-r">R</button>
+
+              <!-- Écran de jeu -->
+              <div class="rv-screen-wrapper">
+                <div id="rv-game-container">
+                  <div class="rv-crt-overlay" id="rv-crt"></div>
+                  <canvas id="rv-canvas"></canvas>
+                </div>
+                <div class="rv-status" id="rv-status">Sélectionnez une relique ou déposez un fichier ROM pour démarrer</div>
+
+                <!-- Barre d'actions standard (portrait / bureau) -->
+                <div class="rv-toolbar">
+                  <div class="rv-tool-group">
+                    <button class="rv-btn rv-btn-save" id="rv-btn-save">💾 Sauver (F2)</button>
+                    <button class="rv-btn rv-btn-load" id="rv-btn-load">📂 Charger (F4)</button>
+                    <button class="rv-btn" id="rv-btn-pause">⏸️ Pause</button>
+                    <button class="rv-btn" id="rv-btn-reset">🔄 Reset</button>
+                  </div>
+                  <div class="rv-tool-group">
+                    <div class="rv-vol-wrap" title="Volume sonore général du sanctuaire">
+                      <button class="rv-btn rv-vol-btn" id="rv-btn-mute" title="Couper / Rétablir le son" aria-label="Couper ou rétablir le son">🔊</button>
+                      <input type="range" class="rv-vol-slider" id="rv-vol-slider" min="0" max="1" step="0.02" value="0.8" aria-label="Contrôle du volume sonore">
+                      <span class="rv-vol-val" id="rv-vol-val">80%</span>
+                    </div>
+                    <div class="rv-gp-badge" id="rv-gp-badge" title="État de la manette physique (PS5 DualSense / Xbox / Switch)">
+                      <span class="rv-gp-icon">🎮</span>
+                      <span id="rv-gp-name">Aucune manette</span>
+                    </div>
+                    <button class="rv-btn" id="rv-btn-pad-toggle">📱 Manette Virtuelle</button>
+                    <button class="rv-btn" id="rv-btn-crt">📺 CRT</button>
+                    <button class="rv-btn" id="rv-btn-fullscreen">⛶ Plein Écran</button>
+                    <input type="file" id="rv-file-input" style="display: none;" accept=".nes,.sfc,.smc,.gba,.gb,.gbc,.md,.bin,.gen,.zip,.iso,.cue,.chd,.pbp,.img,.pce,.nds,.cso">
+                    <button class="rv-btn" id="rv-btn-upload">📁 Insérer ROM</button>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div class="rv-pad-main-row">
-              <!-- D-Pad Directionnel tactile (Gauche) -->
-              <div class="rv-dpad" id="rv-dpad">
-                <button class="rv-dpad-btn rv-dpad-u" data-btn="up" data-code="KeyW" data-key="w" aria-label="Haut">▲</button>
-                <div class="rv-dpad-mid">
-                  <button class="rv-dpad-btn rv-dpad-l" data-btn="left" data-code="KeyA" data-key="a" aria-label="Gauche">◀</button>
-                  <div class="rv-dpad-core"></div>
-                  <button class="rv-dpad-btn rv-dpad-r" data-btn="right" data-code="KeyD" data-key="d" aria-label="Droite">▶</button>
-                </div>
-                <button class="rv-dpad-btn rv-dpad-d" data-btn="down" data-code="KeyS" data-key="s" aria-label="Bas">▼</button>
+            <!-- Flanc Droit (Actions A/B/X/Y & R) -->
+            <div class="rv-wing rv-wing-right" id="rv-wing-right">
+              <div class="rv-wing-shoulder">
+                <button class="rv-pad-shoulder rv-pad-r" data-btn="r" data-code="KeyP" data-key="p" id="rv-touch-r" aria-label="Gâchette R">R</button>
               </div>
-
-              <!-- Cluster d'actions en losange (Droite) -->
-              <div class="rv-actions" id="rv-actions">
-                <button class="rv-act-btn rv-act-x" data-btn="x" data-code="KeyO" data-key="o" id="rv-touch-x">X</button>
-                <div class="rv-act-mid">
-                  <button class="rv-act-btn rv-act-y" data-btn="y" data-code="KeyI" data-key="i" id="rv-touch-y">Y</button>
-                  <button class="rv-act-btn rv-act-a" data-btn="a" data-code="KeyL" data-key="l" id="rv-touch-a">A</button>
+              <div class="rv-wing-center">
+                <!-- Cluster d'actions en losange (Droite) -->
+                <div class="rv-actions" id="rv-actions">
+                  <button class="rv-act-btn rv-act-x" data-btn="x" data-code="KeyO" data-key="o" id="rv-touch-x">X</button>
+                  <div class="rv-act-mid">
+                    <button class="rv-act-btn rv-act-y" data-btn="y" data-code="KeyI" data-key="i" id="rv-touch-y">Y</button>
+                    <button class="rv-act-btn rv-act-a" data-btn="a" data-code="KeyL" data-key="l" id="rv-touch-a">A</button>
+                  </div>
+                  <button class="rv-act-btn rv-act-b" data-btn="b" data-code="KeyK" data-key="k" id="rv-touch-b">B</button>
                 </div>
-                <button class="rv-act-btn rv-act-b" data-btn="b" data-code="KeyK" data-key="k" id="rv-touch-b">B</button>
+              </div>
+              <div class="rv-wing-menu">
+                <button class="rv-pad-pill rv-pad-start" data-btn="start" data-code="KeyB" data-key="b">START</button>
               </div>
             </div>
           </div>
@@ -1797,72 +2186,202 @@
         el.addEventListener("touchcancel", release, { passive: false });
       };
 
-      document.querySelectorAll("#rv-gamepad button").forEach(bindBtn);
+      // Liaison des boutons de la manette (ailes gauche et droite)
+      document.querySelectorAll(".rv-wing button[data-btn]").forEach(bindBtn);
 
-      // Gestion fluide du glissement continu sur le D-Pad
+      // Gestion haute précision du D-Pad avec support des 8 directions (diagonales) et multi-touch
       const dpad = document.getElementById("rv-dpad");
       if (dpad) {
-        let currentDpadBtn = null;
+        let activeDirs = { up: false, down: false, left: false, right: false };
+        let dpadTouchId = null;
 
-        dpad.addEventListener("touchmove", (e) => {
-          e.preventDefault();
-          if (!e.touches || e.touches.length === 0) return;
-          const touch = e.touches[0];
-          const target = document.elementFromPoint(touch.clientX, touch.clientY);
+        const updateDpadVector = (clientX, clientY) => {
+          const rect = dpad.getBoundingClientRect();
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          const dx = clientX - cx;
+          const dy = clientY - cy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const deadzone = rect.width * 0.16; // 16% de zone morte au centre
 
-          if (target && target.classList.contains("rv-dpad-btn")) {
-            if (target !== currentDpadBtn) {
-              if (currentDpadBtn) {
-                currentDpadBtn.classList.remove("pressed");
+          const newDirs = { up: false, down: false, left: false, right: false };
+
+          if (dist > deadzone) {
+            const angle = Math.atan2(dy, dx) * (180 / Math.PI); // -180 à +180
+
+            // 8 secteurs ergonomiques de 45°
+            if (angle >= -157.5 && angle <= -112.5) {
+              newDirs.up = true; newDirs.left = true;
+            } else if (angle > -112.5 && angle < -67.5) {
+              newDirs.up = true;
+            } else if (angle >= -67.5 && angle <= -22.5) {
+              newDirs.up = true; newDirs.right = true;
+            } else if (angle > -22.5 && angle < 22.5) {
+              newDirs.right = true;
+            } else if (angle >= 22.5 && angle <= 67.5) {
+              newDirs.down = true; newDirs.right = true;
+            } else if (angle > 67.5 && angle < 112.5) {
+              newDirs.down = true;
+            } else if (angle >= 112.5 && angle <= 157.5) {
+              newDirs.down = true; newDirs.left = true;
+            } else {
+              newDirs.left = true;
+            }
+          }
+
+          const btnMap = {
+            up: dpad.querySelector(".rv-dpad-u"),
+            down: dpad.querySelector(".rv-dpad-d"),
+            left: dpad.querySelector(".rv-dpad-l"),
+            right: dpad.querySelector(".rv-dpad-r")
+          };
+
+          for (const d of ["up", "down", "left", "right"]) {
+            if (newDirs[d] !== activeDirs[d]) {
+              activeDirs[d] = newDirs[d];
+              const btnEl = btnMap[d];
+              if (btnEl) {
+                if (newDirs[d]) btnEl.classList.add("pressed");
+                else btnEl.classList.remove("pressed");
                 triggerKey(
-                  (currentDpadBtn.getAttribute("data-btn") || "").toLowerCase(),
-                  currentDpadBtn.getAttribute("data-code") || "",
-                  currentDpadBtn.getAttribute("data-key") || "",
+                  d,
+                  btnEl.getAttribute("data-code") || "",
+                  btnEl.getAttribute("data-key") || "",
+                  newDirs[d]
+                );
+              }
+            }
+          }
+        };
+
+        const releaseDpad = () => {
+          dpadTouchId = null;
+          const btnMap = {
+            up: dpad.querySelector(".rv-dpad-u"),
+            down: dpad.querySelector(".rv-dpad-d"),
+            left: dpad.querySelector(".rv-dpad-l"),
+            right: dpad.querySelector(".rv-dpad-r")
+          };
+          for (const d of ["up", "down", "left", "right"]) {
+            if (activeDirs[d]) {
+              activeDirs[d] = false;
+              const btnEl = btnMap[d];
+              if (btnEl) {
+                btnEl.classList.remove("pressed");
+                triggerKey(
+                  d,
+                  btnEl.getAttribute("data-code") || "",
+                  btnEl.getAttribute("data-key") || "",
                   false
                 );
               }
-              currentDpadBtn = target;
-              currentDpadBtn.classList.add("pressed");
-              triggerKey(
-                (currentDpadBtn.getAttribute("data-btn") || "").toLowerCase(),
-                currentDpadBtn.getAttribute("data-code") || "",
-                currentDpadBtn.getAttribute("data-key") || "",
-                true
-              );
             }
-          } else if (currentDpadBtn) {
-            currentDpadBtn.classList.remove("pressed");
-            triggerKey(
-              (currentDpadBtn.getAttribute("data-btn") || "").toLowerCase(),
-              currentDpadBtn.getAttribute("data-code") || "",
-              currentDpadBtn.getAttribute("data-key") || "",
-              false
-            );
-            currentDpadBtn = null;
+          }
+        };
+
+        dpad.addEventListener("touchstart", (e) => {
+          e.preventDefault();
+          if (e.targetTouches.length > 0) {
+            const t = e.targetTouches[0];
+            dpadTouchId = t.identifier;
+            updateDpadVector(t.clientX, t.clientY);
           }
         }, { passive: false });
 
-        dpad.addEventListener("touchend", () => {
-          if (currentDpadBtn) {
-            currentDpadBtn.classList.remove("pressed");
-            triggerKey(
-              (currentDpadBtn.getAttribute("data-btn") || "").toLowerCase(),
-              currentDpadBtn.getAttribute("data-code") || "",
-              currentDpadBtn.getAttribute("data-key") || "",
-              false
-            );
-            currentDpadBtn = null;
+        dpad.addEventListener("touchmove", (e) => {
+          e.preventDefault();
+          for (let i = 0; i < e.targetTouches.length; i++) {
+            const t = e.targetTouches[i];
+            if (dpadTouchId === null || t.identifier === dpadTouchId) {
+              updateDpadVector(t.clientX, t.clientY);
+              break;
+            }
+          }
+        }, { passive: false });
+
+        dpad.addEventListener("touchend", (e) => {
+          let found = false;
+          for (let i = 0; i < e.targetTouches.length; i++) {
+            if (e.targetTouches[i].identifier === dpadTouchId) {
+              found = true;
+              break;
+            }
+          }
+          if (!found) releaseDpad();
+        }, { passive: false });
+
+        dpad.addEventListener("touchcancel", releaseDpad, { passive: false });
+
+        // Support souris / glissé sur desktop
+        let dpadMouseDown = false;
+        dpad.addEventListener("mousedown", (e) => {
+          dpadMouseDown = true;
+          updateDpadVector(e.clientX, e.clientY);
+        });
+        window.addEventListener("mousemove", (e) => {
+          if (dpadMouseDown) updateDpadVector(e.clientX, e.clientY);
+        });
+        window.addEventListener("mouseup", () => {
+          if (dpadMouseDown) {
+            dpadMouseDown = false;
+            releaseDpad();
           }
         });
       }
 
-      // Bouton pour afficher/masquer la manette
+      // Glissement tactile fluide sur les boutons d'action A / B / X / Y (roulement du pouce)
+      const actionsCluster = document.getElementById("rv-actions");
+      if (actionsCluster) {
+        let currentTouchActBtn = null;
+        actionsCluster.addEventListener("touchmove", (e) => {
+          e.preventDefault();
+          for (let i = 0; i < e.targetTouches.length; i++) {
+            const t = e.targetTouches[i];
+            const target = document.elementFromPoint(t.clientX, t.clientY);
+            const btn = target ? target.closest(".rv-act-btn") : null;
+            if (btn && btn !== currentTouchActBtn) {
+              if (currentTouchActBtn) {
+                currentTouchActBtn.classList.remove("pressed");
+                triggerKey(
+                  (currentTouchActBtn.getAttribute("data-btn") || "").toLowerCase(),
+                  currentTouchActBtn.getAttribute("data-code") || "",
+                  currentTouchActBtn.getAttribute("data-key") || "",
+                  false
+                );
+              }
+              currentTouchActBtn = btn;
+              currentTouchActBtn.classList.add("pressed");
+              triggerKey(
+                (currentTouchActBtn.getAttribute("data-btn") || "").toLowerCase(),
+                currentTouchActBtn.getAttribute("data-code") || "",
+                currentTouchActBtn.getAttribute("data-key") || "",
+                true
+              );
+            }
+          }
+        }, { passive: false });
+
+        actionsCluster.addEventListener("touchend", () => {
+          if (currentTouchActBtn) {
+            currentTouchActBtn.classList.remove("pressed");
+            triggerKey(
+              (currentTouchActBtn.getAttribute("data-btn") || "").toLowerCase(),
+              currentTouchActBtn.getAttribute("data-code") || "",
+              currentTouchActBtn.getAttribute("data-key") || "",
+              false
+            );
+            currentTouchActBtn = null;
+          }
+        });
+      }
+
+      // Bouton pour afficher/masquer la manette (ailes latérales)
       const padToggleBtn = document.getElementById("rv-btn-pad-toggle");
-      const gamepadEl = document.getElementById("rv-gamepad");
-      if (padToggleBtn && gamepadEl) {
+      const playZoneEl = document.getElementById("rv-play-zone");
+      if (padToggleBtn && playZoneEl) {
         padToggleBtn.addEventListener("click", () => {
-          gamepadEl.classList.toggle("force-hidden");
-          padToggleBtn.textContent = gamepadEl.classList.contains("force-hidden") ? "🎮 Manette : OFF" : "🎮 Manette : ON";
+          playZoneEl.classList.toggle("force-hidden-wings");
+          padToggleBtn.textContent = playZoneEl.classList.contains("force-hidden-wings") ? "🎮 Manette : OFF" : "🎮 Manette : ON";
         });
       }
     }
@@ -1883,11 +2402,47 @@
       });
       document.getElementById("rv-btn-save").addEventListener("click", () => this.sauvegarderPartie());
       document.getElementById("rv-btn-load").addEventListener("click", () => this.chargerPartie());
-      document.getElementById("rv-btn-fullscreen").addEventListener("click", () => {
-        const c = document.getElementById("rv-game-container");
-        if (!document.fullscreenElement) c.requestFullscreen().catch(() => {});
-        else document.exitFullscreen().catch(() => {});
-      });
+
+      // Bascule Plein Écran unifié (englobe la zone de jeu ET les commandes virtuelles)
+      const toggleFullscreen = () => {
+        const target = document.getElementById("rv-play-zone") || document.getElementById("rv-game-container") || this.modal;
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          if (target.requestFullscreen) target.requestFullscreen().catch(() => {});
+          else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen().catch(() => {});
+        } else {
+          if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen().catch(() => {});
+        }
+      };
+
+      const fsBtn = document.getElementById("rv-btn-fullscreen");
+      if (fsBtn) fsBtn.addEventListener("click", toggleFullscreen);
+      const landFsBtn = document.getElementById("rv-land-btn-fs");
+      if (landFsBtn) landFsBtn.addEventListener("click", toggleFullscreen);
+
+      const landCloseBtn = document.getElementById("rv-land-btn-close");
+      if (landCloseBtn) landCloseBtn.addEventListener("click", () => this.close());
+
+      const landSaveBtn = document.getElementById("rv-land-btn-save");
+      if (landSaveBtn) landSaveBtn.addEventListener("click", () => this.sauvegarderPartie());
+
+      const landLoadBtn = document.getElementById("rv-land-btn-load");
+      if (landLoadBtn) landLoadBtn.addEventListener("click", () => this.chargerPartie());
+
+      const landPauseBtn = document.getElementById("rv-land-btn-pause");
+      if (landPauseBtn) landPauseBtn.addEventListener("click", () => this.togglePause());
+
+      const landMuteBtn = document.getElementById("rv-land-btn-mute");
+      if (landMuteBtn) {
+        landMuteBtn.addEventListener("click", () => {
+          if (this.volumeActuel > 0) {
+            this.volumePrecedent = this.volumeActuel;
+            this.appliquerVolume(0);
+          } else {
+            this.appliquerVolume(this.volumePrecedent > 0 ? this.volumePrecedent : 0.8);
+          }
+        });
+      }
 
       // Gestion du volume sonore
       const rvVolSlider = document.getElementById("rv-vol-slider");
@@ -2330,6 +2885,8 @@
       if (slider) slider.value = String(this.volumeActuel);
       if (valEl) valEl.textContent = Math.round(this.volumeActuel * 100) + "%";
       if (btnMute) btnMute.textContent = this.volumeActuel === 0 ? "🔇" : "🔊";
+      const landMute = document.getElementById("rv-land-btn-mute");
+      if (landMute) landMute.textContent = this.volumeActuel === 0 ? "🔇" : "🔊";
 
       if (sauvegarder) {
         try { localStorage.setItem("rv_volume", String(this.volumeActuel)); } catch(e) {}
@@ -2710,6 +3267,9 @@
     }
 
     close() {
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch(e) {}
+      }
       if (this.modal) {
         this.modal.classList.remove("active");
       }

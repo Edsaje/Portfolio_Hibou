@@ -272,6 +272,30 @@
       touch-action: none;
     }
 
+    @media (orientation: landscape) and (max-height: 600px) {
+      .ds-header {
+        padding: 4px 10px;
+        gap: 6px;
+      }
+      .ds-title {
+        font-size: 0.84rem;
+      }
+      .ds-status-bar {
+        font-size: 0.72rem;
+        max-width: 180px;
+      }
+      .ds-gp-badge, .ds-vol-wrap, .ds-lang-wrap {
+        padding: 2px 6px;
+      }
+      .ds-btn {
+        padding: 4px 8px;
+        font-size: 0.72rem;
+      }
+      .ds-stage {
+        padding: 2px;
+      }
+    }
+
     desmond-player {
       display: block;
       max-width: 100%;
@@ -761,6 +785,20 @@
           #bottom {
             cursor: crosshair !important;
             border-color: rgba(212, 175, 55, 0.7) !important;
+          }
+          @media (orientation: landscape) and (max-height: 600px) {
+            #player {
+              flex-direction: row !important;
+              gap: 8px !important;
+              height: 100vh !important;
+              max-height: 100vh !important;
+              padding: 2px !important;
+            }
+            canvas {
+              max-height: calc(100vh - 12px) !important;
+              max-width: 48vw !important;
+              width: auto !important;
+            }
           }
         `;
         player.shadowRoot.appendChild(shadowStyle);
