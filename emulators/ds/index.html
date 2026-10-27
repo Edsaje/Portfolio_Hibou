@@ -27,7 +27,27 @@
       user-select: none;
     }
 
-    /* En-tête / Barre d'actions Dark Fantasy */
+    /* Mode Imbriqué (dans le Sanctuaire RetroVault) */
+    body.ds-embedded .ds-header {
+      display: none !important;
+    }
+    body.ds-embedded,
+    body.ds-embedded .ds-stage,
+    body.ds-embedded desmond-player {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100% !important;
+      max-height: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: transparent !important;
+    }
+
+    /* En-tête / Barre d'actions Dark Fantasy (Mode Standalone) */
     .ds-header {
       width: 100%;
       background: linear-gradient(180deg, rgba(9, 19, 13, 0.95) 0%, rgba(5, 10, 7, 0.9) 100%);
@@ -386,6 +406,12 @@
   <script src="desmond.min.js?v=8.5"></script>
   <script>
     (function() {
+      // Détection automatique du mode imbriqué (dans RetroVault)
+      const isEmbedded = (window.parent && window.parent !== window) || new URLSearchParams(window.location.search).has("embedded");
+      if (isEmbedded) {
+        document.body.classList.add("ds-embedded");
+      }
+
       const player = document.querySelector("desmond-player");
       const statusEl = document.getElementById("ds-status");
       const fileInput = document.getElementById("file-input");
@@ -760,44 +786,58 @@
         shadowStyle.textContent = `
           #player {
             display: flex !important;
-            flex-direction: column !important;
             align-items: center !important;
             justify-content: center !important;
-            gap: 6px !important;
+            width: 100% !important;
+            height: 100% !important;
+            box-sizing: border-box !important;
             margin: 0 auto !important;
-            padding: 4px !important;
+            padding: 2px !important;
           }
           canvas {
             image-rendering: pixelated !important;
             image-rendering: -moz-crisp-edges !important;
             image-rendering: crisp-edges !important;
-            width: auto !important;
-            max-width: 95vw !important;
-            height: auto !important;
-            max-height: 42vh !important;
             aspect-ratio: 4 / 3 !important;
             border: 2px solid rgba(212, 175, 55, 0.45) !important;
-            border-radius: 5px !important;
+            border-radius: 4px !important;
             box-shadow: 0 4px 18px rgba(0, 0, 0, 0.85) !important;
             background: #000 !important;
             display: block !important;
+            box-sizing: border-box !important;
           }
           #bottom {
             cursor: crosshair !important;
             border-color: rgba(212, 175, 55, 0.7) !important;
           }
-          @media (orientation: landscape) and (max-height: 600px) {
+          /* Mode Paysage (Côte à côte : Écran haut à gauche, écran tactile à droite) */
+          @media (orientation: landscape), (min-aspect-ratio: 1/1) {
             #player {
               flex-direction: row !important;
               gap: 8px !important;
-              height: 100vh !important;
-              max-height: 100vh !important;
-              padding: 2px !important;
+              height: 100% !important;
+              max-height: 100% !important;
             }
             canvas {
-              max-height: calc(100vh - 12px) !important;
-              max-width: 48vw !important;
+              max-height: calc(100vh - 6px) !important;
+              max-width: calc(50vw - 8px) !important;
               width: auto !important;
+              height: auto !important;
+            }
+          }
+          /* Mode Portrait (Superposé vertical : Écran haut au dessus, tactile en bas) */
+          @media (orientation: portrait) and (max-aspect-ratio: 1/1) {
+            #player {
+              flex-direction: column !important;
+              gap: 4px !important;
+              width: 100% !important;
+              max-width: 100% !important;
+            }
+            canvas {
+              max-width: calc(100vw - 6px) !important;
+              max-height: calc(50vh - 6px) !important;
+              width: auto !important;
+              height: auto !important;
             }
           }
         `;

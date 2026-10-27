@@ -124,7 +124,7 @@
 
   class RetroVault {
     constructor() {
-      this.version = "8.7-save-hardened-fs-fix";
+      this.version = "8.8-ds-landscape-screens-fix";
       this.modal = null;
       this.partieEnCours = null;
       this.jeuEnCoursNom = "";
@@ -1495,6 +1495,16 @@
         .tag-nds { background: rgba(244, 63, 94, 0.25); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.5); }
         .tag-pce { background: rgba(249, 115, 22, 0.25); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.5); }
         .tag-arcade { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.4); }
+        .rv-nds-wrapper {
+          width: 100%;
+          height: 100%;
+          min-height: 200px;
+          position: relative;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: #000;
+        }
         .rv-embedded-frame {
           width: 100%;
           height: 560px;
@@ -1502,6 +1512,13 @@
           border: none;
           display: block;
           background: #000;
+        }
+        #rv-game-container.rv-is-nds {
+          width: 100%;
+          max-width: 520px;
+          height: 580px;
+          max-height: 75vh;
+          aspect-ratio: auto;
         }
         .rv-nds-layout {
           display: flex;
@@ -1768,18 +1785,32 @@
             border-radius: 2px !important;
             box-shadow: 0 0 30px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(212, 175, 55, 0.25) !important;
           }
+          #rv-game-container.rv-is-nds {
+            aspect-ratio: 8 / 3 !important;
+            width: 100% !important;
+            max-width: calc((100vh - 28px) * (8 / 3)) !important;
+            height: 100% !important;
+            max-height: calc(100vh - 28px) !important;
+            background: #000 !important;
+          }
           #rv-game-container canvas {
             max-height: calc(100vh - 28px) !important;
             width: auto !important;
             height: 100% !important;
           }
-          #rv-game-container > div {
+          #rv-game-container > div,
+          .rv-nds-wrapper {
+            width: 100% !important;
             height: 100% !important;
             max-height: calc(100vh - 28px) !important;
           }
           .rv-embedded-frame {
+            width: 100% !important;
             height: 100% !important;
             max-height: calc(100vh - 28px) !important;
+          }
+          .rv-nds-ext-btn-wrap {
+            display: none !important;
           }
           .rv-toolbar, .rv-status {
             display: none !important;
@@ -1913,6 +1944,24 @@
           width: auto !important;
           height: auto !important;
           aspect-ratio: 4 / 3 !important;
+        }
+        :fullscreen #rv-game-container.rv-is-nds, :-webkit-full-screen #rv-game-container.rv-is-nds {
+          aspect-ratio: 8 / 3 !important;
+          width: 100% !important;
+          max-width: calc((100vh - 28px) * (8 / 3)) !important;
+          height: 100% !important;
+          max-height: calc(100vh - 28px) !important;
+        }
+        :fullscreen #rv-game-container.rv-is-nds .rv-nds-wrapper,
+        :-webkit-full-screen #rv-game-container.rv-is-nds .rv-nds-wrapper,
+        :fullscreen #rv-game-container.rv-is-nds .rv-embedded-frame,
+        :-webkit-full-screen #rv-game-container.rv-is-nds .rv-embedded-frame {
+          width: 100% !important;
+          height: 100% !important;
+          max-height: calc(100vh - 28px) !important;
+        }
+        :fullscreen .rv-nds-ext-btn-wrap, :-webkit-full-screen .rv-nds-ext-btn-wrap {
+          display: none !important;
         }
         :fullscreen #rv-game-container canvas, :-webkit-full-screen #rv-game-container canvas {
           max-height: calc(100vh - 28px) !important;
@@ -2734,6 +2783,7 @@
         const container = document.getElementById("rv-game-container");
 
         if (cType === "nds") {
+          container.classList.add("rv-is-nds");
           const isLauncher = nomFichier.includes("console-nds-launcher");
 
           let romBlob = customBlob;
@@ -2747,11 +2797,11 @@
           }
 
           container.innerHTML = `
-            <div style="width: 100%; height: 600px; max-height: 80vh; display: flex; flex-direction: column; background: #000; position: relative;">
-              <div style="position: absolute; top: 8px; right: 8px; z-index: 10;">
-                <a href="emulators/ds/index.html?v=8.5" target="_blank" class="rv-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
+            <div class="rv-nds-wrapper">
+              <div class="rv-nds-ext-btn-wrap" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
+                <a href="emulators/ds/index.html?v=8.8" target="_blank" class="rv-btn rv-nds-ext-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
               </div>
-              <iframe id="rv-nds-frame" class="rv-embedded-frame" src="emulators/ds/index.html?v=8.5" allow="autoplay; fullscreen; gamepad"></iframe>
+              <iframe id="rv-nds-frame" class="rv-embedded-frame" src="emulators/ds/index.html?v=8.8&embedded=1" allow="autoplay; fullscreen; gamepad"></iframe>
             </div>
           `;
 
@@ -2802,6 +2852,7 @@
           return;
         }
 
+        container.classList.remove("rv-is-nds");
         container.innerHTML = `
           <div class="rv-crt-overlay" id="rv-crt"></div>
           <canvas id="rv-canvas"></canvas>
