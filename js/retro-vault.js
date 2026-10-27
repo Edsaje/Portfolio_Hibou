@@ -124,7 +124,7 @@
 
   class RetroVault {
     constructor() {
-      this.version = "8.6-flanking-wings-landscape";
+      this.version = "8.7-save-hardened-fs-fix";
       this.modal = null;
       this.partieEnCours = null;
       this.jeuEnCoursNom = "";
@@ -139,6 +139,9 @@
       this.volumeActuel = 0.8;
       this.volumePrecedent = 0.8;
       this.pendingNdsSave = null;
+      this.isSavingState = false;
+      this.isLoadingState = false;
+      this._landStatusTimer = null;
       try {
         const sv = localStorage.getItem("rv_volume");
         if (sv !== null) {
@@ -2827,11 +2830,14 @@
           input_player1_r: "p",
           input_player1_start: "b",
           input_player1_select: "v",
-          input_load_state_key: "f4",
-          input_save_state_key: "f2",
+          input_load_state_key: "nul",
+          input_save_state_key: "nul",
           input_load_state_btn: "nul",
           input_save_state_btn: "nul",
           input_reset_key: "nul",
+          savestate_thumbnail_enable: false,
+          savestate_auto_save: false,
+          savestate_auto_load: false,
           audio_volume: String(this.volumeActuel === 0 ? -80 : Math.max(-80, Math.min(12, Math.round(20 * Math.log10(this.volumeActuel)))))
         };
 
@@ -3005,101 +3011,201 @@
       }
     }
 
-    // --- Sauvegarde & Restauration rapides ---
-    async sauvegarderPartie() {
+    // --- Statut Unifié (Portrait, Paysage & Plein Écran) ---
+    setStatutMessage(message, color = "#d4af37", tempReset = false) {
       const status = document.getElementById("rv-status");
-      if (this.jeuEnCoursType === "nds") {
-        const frame = document.getElementById("rv-nds-frame");
-        if (frame && frame.contentWindow) {
-          try {
-            frame.contentWindow.postMessage({ type: "REQUEST_DS_SAVE" }, "*");
-            if (status) {
-              status.textContent = "⏳ Sauvegarde de la cartouche DS vers le Sanctuaire...";
-              status.style.color = "#d4af37";
+      if (status) {
+        status.textContent = message;
+        status.style.color = color;
+      }
+      const landStatus = document.getElementById("rv-land-status");
+      if (landStatus) {
+        landStatus.textContent = message;
+        landStatus.style.color = color;
+        if (tempReset) {
+          clearTimeout(this._landStatusTimer);
+          this._landStatusTimer = setTimeout(() => {
+            const ls = document.getElementById("rv-land-status");
+            if (ls) {
+              ls.textContent = "Sanctuaire";
+              ls.style.color = "";
             }
-          } catch (e) {}
+          }, 3500);
         }
-        return;
       }
+    }
 
-      if (!this.partieEnCours) {
-        if (status) {
-          status.textContent = "💡 Sauvegarde intégrée dans le menu de la console.";
-          status.style.color = "#d4af37";
-        }
-        return;
-      }
-      status.textContent = "⏳ Sauvegarde de l'état...";
+    // --- Sauvegarde & Restauration rapides avec Verrouillage Anti-Collision & Secours FS Direct ---
+    async sauvegarderPartie() {
+      if (this.isSavingState) return;
+      this.isSavingState = true;
+
+      const saveBtn = document.getElementById("rv-btn-save");
+      const landSaveBtn = document.getElementById("rv-land-btn-save");
+      if (saveBtn) { saveBtn.style.opacity = "0.5"; saveBtn.style.pointerEvents = "none"; }
+      if (landSaveBtn) { landSaveBtn.style.opacity = "0.5"; landSaveBtn.style.pointerEvents = "none"; }
+
       try {
-        const res = await this.partieEnCours.saveState();
-        const stateObj = res.state;
+        if (this.jeuEnCoursType === "nds") {
+          const frame = document.getElementById("rv-nds-frame");
+          if (frame && frame.contentWindow) {
+            try {
+              frame.contentWindow.postMessage({ type: "REQUEST_DS_SAVE" }, "*");
+              this.setStatutMessage("⏳ Sauvegarde de la cartouche DS vers le Sanctuaire...", "#d4af37");
+            } catch (e) {}
+          }
+          return;
+        }
+
+        if (!this.partieEnCours) {
+          this.setStatutMessage("💡 Sauvegarde intégrée dans le menu de la console.", "#d4af37");
+          return;
+        }
+
+        this.setStatutMessage("⏳ Sauvegarde de l'état...", "#d4af37");
+
+        // Si le jeu était en pause, reprendre temporairement pour permettre au moteur WASM d'écrire l'état
+        const wasPaused = this.estEnPause;
+        if (wasPaused && this.partieEnCours) {
+          try { this.partieEnCours.resume(); } catch (e) {}
+        }
+
+        let stateObj = null;
+        let lastError = null;
+
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const res = await this.partieEnCours.saveState();
+            if (res && res.state) {
+              stateObj = res.state;
+              break;
+            }
+          } catch (err) {
+            lastError = err;
+            // Secours FS Direct : si Nostalgist waitForFile a expiré mais que le fichier a bien été écrit par RetroArch
+            try {
+              const emulator = this.partieEnCours.getEmulator ? this.partieEnCours.getEmulator() : null;
+              if (emulator && emulator.fs && emulator.stateFilePath) {
+                const stats = emulator.fs.stat(emulator.stateFilePath);
+                if (stats && stats.size > 0) {
+                  const buffer = emulator.fs.readFile(emulator.stateFilePath, "binary").buffer;
+                  if (buffer && buffer.byteLength > 0) {
+                    stateObj = new Blob([buffer], { type: "application/octet-stream" });
+                    emulator.clearStateFile();
+                    break;
+                  }
+                }
+              }
+            } catch (fsErr) {}
+
+            if (attempt < 2) {
+              await new Promise((r) => setTimeout(r, 200));
+            }
+          }
+        }
+
+        if (wasPaused && this.partieEnCours) {
+          try { this.partieEnCours.pause(); } catch (e) {}
+        }
+
         if (stateObj) {
           await this.saveStateDB(this.jeuEnCoursNom, stateObj);
-          status.textContent = `✅ Sauvegarde réussie (${new Date().toLocaleTimeString()}) !`;
-          status.style.color = "#34d399";
+          const timeStr = new Date().toLocaleTimeString();
+          this.setStatutMessage(`✅ Sauvegarde réussie (${timeStr}) !`, "#34d399", true);
           this.rendreGrille();
         } else {
-          status.textContent = "⚠️ Sauvegarde automatique active dans le jeu.";
-          status.style.color = "#fbbf24";
+          throw lastError || new Error("Délai de sauvegarde dépassé");
         }
       } catch (e) {
-        status.textContent = "❌ Erreur de sauvegarde : " + e.message;
-        status.style.color = "#ef4444";
+        this.setStatutMessage("❌ Erreur de sauvegarde : " + (e.message || "délai dépassé"), "#ef4444", true);
+      } finally {
+        setTimeout(() => {
+          this.isSavingState = false;
+          if (saveBtn) { saveBtn.style.opacity = ""; saveBtn.style.pointerEvents = ""; }
+          if (landSaveBtn) { landSaveBtn.style.opacity = ""; landSaveBtn.style.pointerEvents = ""; }
+        }, 300);
       }
     }
 
     async chargerPartie() {
-      const status = document.getElementById("rv-status");
-      if (this.jeuEnCoursType === "nds") {
-        try {
-          const data = await this.loadStateDB(this.jeuEnCoursNom);
-          if (!data || !data.state) {
-            if (status) {
-              status.textContent = "⚠️ Aucune sauvegarde trouvée pour cette cartouche DS dans le Sanctuaire.";
-              status.style.color = "#fbbf24";
-            }
-            return;
-          }
-          const frame = document.getElementById("rv-nds-frame");
-          if (frame && frame.contentWindow) {
-            frame.contentWindow.postMessage({
-              type: "LOAD_DS_SAVE",
-              data: Array.from(data.state)
-            }, "*");
-            if (status) {
-              status.textContent = `📂 Sauvegarde DS restaurée ! (${data.date})`;
-              status.style.color = "#34d399";
-            }
-          }
-        } catch (e) {
-          if (status) {
-            status.textContent = "❌ Échec du chargement DS : " + e.message;
-            status.style.color = "#ef4444";
-          }
-        }
-        return;
-      }
+      if (this.isLoadingState) return;
+      this.isLoadingState = true;
 
-      if (!this.partieEnCours) {
-        if (status) {
-          status.textContent = "💡 Chargement de sauvegarde intégré dans le menu de la console.";
-          status.style.color = "#d4af37";
-        }
-        return;
-      }
+      const loadBtn = document.getElementById("rv-btn-load");
+      const landLoadBtn = document.getElementById("rv-land-btn-load");
+      if (loadBtn) { loadBtn.style.opacity = "0.5"; loadBtn.style.pointerEvents = "none"; }
+      if (landLoadBtn) { landLoadBtn.style.opacity = "0.5"; landLoadBtn.style.pointerEvents = "none"; }
+
       try {
-        const data = await this.loadStateDB(this.jeuEnCoursNom);
-        if (!data || !data.state) {
-          status.textContent = "⚠️ Aucune sauvegarde trouvée pour ce jeu.";
-          status.style.color = "#fbbf24";
+        if (this.jeuEnCoursType === "nds") {
+          try {
+            const data = await this.loadStateDB(this.jeuEnCoursNom);
+            if (!data || !data.state) {
+              this.setStatutMessage("⚠️ Aucune sauvegarde trouvée pour cette cartouche DS dans le Sanctuaire.", "#fbbf24", true);
+              return;
+            }
+            const frame = document.getElementById("rv-nds-frame");
+            if (frame && frame.contentWindow) {
+              frame.contentWindow.postMessage({
+                type: "LOAD_DS_SAVE",
+                data: Array.from(data.state)
+              }, "*");
+              this.setStatutMessage(`📂 Sauvegarde DS restaurée ! (${data.date})`, "#34d399", true);
+            }
+          } catch (e) {
+            this.setStatutMessage("❌ Échec du chargement DS : " + e.message, "#ef4444", true);
+          }
           return;
         }
-        await this.partieEnCours.loadState(data.state);
-        status.textContent = `📂 Sauvegarde restaurée ! (${data.date})`;
-        status.style.color = "#34d399";
+
+        if (!this.partieEnCours) {
+          this.setStatutMessage("💡 Chargement de sauvegarde intégré dans le menu de la console.", "#d4af37");
+          return;
+        }
+
+        const data = await this.loadStateDB(this.jeuEnCoursNom);
+        if (!data || !data.state) {
+          this.setStatutMessage("⚠️ Aucune sauvegarde trouvée pour ce jeu.", "#fbbf24", true);
+          return;
+        }
+
+        this.setStatutMessage("⏳ Restauration de l'état...", "#d4af37");
+
+        const wasPaused = this.estEnPause;
+        if (wasPaused && this.partieEnCours) {
+          try { this.partieEnCours.resume(); } catch (e) {}
+        }
+
+        let loaded = false;
+        let lastErr = null;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            await this.partieEnCours.loadState(data.state);
+            loaded = true;
+            break;
+          } catch (err) {
+            lastErr = err;
+            if (attempt < 2) await new Promise((r) => setTimeout(r, 200));
+          }
+        }
+
+        if (wasPaused && this.partieEnCours) {
+          try { this.partieEnCours.pause(); } catch (e) {}
+        }
+
+        if (loaded) {
+          this.setStatutMessage(`📂 Sauvegarde restaurée ! (${data.date})`, "#34d399", true);
+        } else {
+          throw lastErr || new Error("Échec du chargement");
+        }
       } catch (e) {
-        status.textContent = "❌ Échec du chargement : " + e.message;
-        status.style.color = "#ef4444";
+        this.setStatutMessage("❌ Échec du chargement : " + e.message, "#ef4444", true);
+      } finally {
+        setTimeout(() => {
+          this.isLoadingState = false;
+          if (loadBtn) { loadBtn.style.opacity = ""; loadBtn.style.pointerEvents = ""; }
+          if (landLoadBtn) { landLoadBtn.style.opacity = ""; landLoadBtn.style.pointerEvents = ""; }
+        }, 300);
       }
     }
 
@@ -3246,6 +3352,10 @@
       this.appliquerVolume(this.volumeActuel, false);
       this.demarrerGamepadLoop();
       this.rendreGrille();
+
+      if (this.partieEnCours && !this.estEnPause) {
+        try { this.partieEnCours.resume(); } catch (e) {}
+      }
 
       // Synchronisation furtive automatique en arrière-plan si le Cloud est configuré
       if (localStorage.getItem("rv_cloud_token")) {
