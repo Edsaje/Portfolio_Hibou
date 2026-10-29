@@ -12,17 +12,8 @@
   "use strict";
 
   // --- Reliques Publiques (Mode Invité / Sandbox Légal) ---
-  // Aucune ROM propriétaire sous copyright n'est exposée publiquement aux visiteurs ou robots.
-  // Les reliques personnelles sont hébergées dans le coffre VPS privé de l'Archiviste et
-  // ne sont débloquées que sur son compte vérifié.
-  const PUBLIC_ROMS = [
-    {
-      nom: "console-nds-launcher",
-      titre: "Nintendo DS — Double Écran Tactile (Système Nu)",
-      console: "nds",
-      desc: "Environnement d'exécution DeSmuME Desmond WebAssembly avec stylet. Glissez ou insérez un fichier .nds personnel."
-    }
-  ];
+  // En mode non connecté (Invité), aucune ROM ni catalogue n'est exposé.
+  const PUBLIC_ROMS = [];
 
   const CONSOLES_CONF = {
     snes: { label: "Super Nintendo", core: "snes9x", tag: "tag-snes", hasExtra: true },
@@ -38,14 +29,14 @@
 
   class RetroVault {
     constructor() {
-      this.version = "9.1-private-cloud-vault";
+      this.version = "10.0-stealth-sovereign";
       this.modal = null;
       this.partieEnCours = null;
       this.jeuEnCoursNom = "";
       this.jeuEnCoursType = "snes";
       this.filtreActuel = "all";
       this.rechercheTexte = "";
-      this.tousLesJeux = [...PUBLIC_ROMS];
+      this.tousLesJeux = [];
       this.estEnPause = false;
       this.dbName = "HibouRetroVaultDB";
       this.storeName = "saves";
@@ -53,6 +44,15 @@
       this.boundKeyHandler = this.bridgeClavier.bind(this);
       this.volumeActuel = 0.8;
       this.volumePrecedent = 0.8;
+
+      // Nettoyage préventif des anciens jetons et caches résiduels si non connecté
+      if (!localStorage.getItem("rv_vps_token")) {
+        try {
+          localStorage.removeItem("rv_cloud_token");
+          localStorage.removeItem("rv_cached_library");
+          localStorage.removeItem("rv_cloud_gist_id");
+        } catch (e) {}
+      }
       this.pendingNdsSave = null;
       this.isSavingState = false;
       this.isLoadingState = false;
@@ -156,14 +156,14 @@
     }
 
     isCloudConnected() {
-      return !!(localStorage.getItem("rv_vps_token") || localStorage.getItem("rv_cloud_token"));
+      return !!localStorage.getItem("rv_vps_token");
     }
 
     getCloudToken() {
-      return localStorage.getItem("rv_vps_token") || localStorage.getItem("rv_cloud_token") || "";
+      return localStorage.getItem("rv_vps_token") || "";
     }
 
-    // --- Chargement dynamique selon le compte (Invité vs Archiviste) ---
+    // --- Chargement dynamique selon le compte (Invité vs Connecté) ---
     async chargerBibliotheque() {
       if (this.isCloudConnected()) {
         const token = this.getCloudToken();
@@ -178,14 +178,19 @@
               try { localStorage.setItem("rv_cached_library", JSON.stringify(data.roms)); } catch (e) {}
               return;
             }
+          } else if (res.status === 401 || res.status === 403) {
+            // Session révoquée ou expirée -> déconnexion immédiate et purge
+            this.disconnectVPSCloud();
+            this.tousLesJeux = [];
+            return;
           }
         } catch (e) {
           console.warn("[RetroVault] Erreur chargement bibliothèque privée:", e);
         }
 
-        // Repli cache local si déjà connecté précédemment
+        // Repli cache local uniquement si authentifié et valide
         const cached = localStorage.getItem("rv_cached_library");
-        if (cached) {
+        if (cached && this.isCloudConnected()) {
           try {
             const parsed = JSON.parse(cached);
             if (Array.isArray(parsed) && parsed.length > 0) {
@@ -196,11 +201,11 @@
         }
       }
 
-      // Mode Invité / Non authentifié : uniquement les systèmes libres
-      this.tousLesJeux = [...PUBLIC_ROMS];
+      // Si non connecté : zéro relique privée exposée
+      this.tousLesJeux = [];
     }
 
-    // --- Synchronisation visuelle de l'état du Compte (Boutons & Badges) ---
+    // --- Synchronisation visuelle de l'état du Compte (Boutons, Badges & Visibilité Bibliothèque) ---
     mettreAJourInterfaceCompte() {
       const isConnected = this.isCloudConnected();
       const user = localStorage.getItem("rv_vps_user") || "Hibouxe";
@@ -209,11 +214,11 @@
       if (btnAccount) {
         if (isConnected) {
           btnAccount.innerHTML = `🟢 Mon Compte (${user})`;
-          btnAccount.title = `Compte Archiviste connecté (${user}) — Cliquez pour gérer les sauvegardes ou vous déconnecter`;
+          btnAccount.title = `Compte connecté (${user}) — Gérer les sauvegardes ou se déconnecter`;
           btnAccount.classList.add("rv-btn-account-active");
         } else {
-          btnAccount.innerHTML = `🔐 Mon Compte`;
-          btnAccount.title = `Connexion Archiviste — Déverrouiller le coffre-fort privé de reliques`;
+          btnAccount.innerHTML = `🔐 Connexion`;
+          btnAccount.title = `Connexion au compte`;
           btnAccount.classList.remove("rv-btn-account-active");
         }
       }
@@ -221,7 +226,23 @@
       const landAccount = document.getElementById("rv-land-btn-account");
       if (landAccount) {
         landAccount.textContent = isConnected ? "🟢" : "🔐";
-        landAccount.title = isConnected ? `Compte ${user} connecté` : "Connexion Archiviste";
+        landAccount.title = isConnected ? `Compte ${user} connecté` : "Connexion";
+      }
+
+      // Masquer / Afficher le bouton "Changer de jeu" selon la connexion
+      const btnHubNav = document.getElementById("rv-btn-hub-nav");
+      if (btnHubNav) {
+        btnHubNav.style.display = isConnected ? "inline-flex" : "none";
+      }
+
+      // Masquer / Afficher la Sélection des Consoles & Reliques selon la connexion
+      const libHead = document.getElementById("rv-library");
+      if (libHead) {
+        libHead.style.display = isConnected ? "block" : "none";
+      }
+      const grid = document.getElementById("rv-grid");
+      if (grid) {
+        grid.style.display = isConnected ? "grid" : "none";
       }
     }
 
@@ -722,8 +743,7 @@
       localStorage.removeItem("rv_cloud_gist_id");
       localStorage.removeItem("rv_cloud_user");
 
-      // Revenir en Mode Invité public (bac à sable)
-      this.tousLesJeux = [...PUBLIC_ROMS];
+      this.tousLesJeux = [];
       this.mettreAJourInterfaceCompte();
       this.rendreGrille();
       if (!this.partieEnCours) {
@@ -732,7 +752,7 @@
 
       const status = document.getElementById("rv-status");
       if (status) {
-        status.textContent = "🔌 Sceau d'Archiviste rompu. Mode Invité actif.";
+        status.textContent = "🔌 Déconnecté. Mode invité actif.";
         status.style.color = "#a8b8ad";
       }
     }
@@ -760,8 +780,8 @@
             <div class="rv-cloud-title-wrap">
               <span class="rv-cloud-sigil">🦉</span>
               <div>
-                <h3 class="rv-cloud-title">Sceau d'Archiviste</h3>
-                <div class="rv-cloud-subtitle">Cloud VPS Souverain (Cross-Save PC ⇄ Mobile)</div>
+                <h3 class="rv-cloud-title">${isConnected ? "Mon Compte" : "Authentification"}</h3>
+                <div class="rv-cloud-subtitle">${isConnected ? "Gestion des Sauvegardes Cloud" : "Accès Privé"}</div>
               </div>
             </div>
             <button class="rv-cloud-close" id="rv-cloud-close-btn" title="Fermer">✖</button>
@@ -774,17 +794,17 @@
                 <div>
                   <div style="font-weight: 600; color: #34d399;">Sanctuaire Relié au VPS Souverain</div>
                   <div style="font-size: 0.8rem; color: #a8b8ad; margin-top: 2px;">
-                    Archiviste : <strong style="color: #d4af37;">${user}</strong> | Serveur : <code>quentinbeaud.com</code>
+                    Compte : <strong style="color: #d4af37;">${user}</strong> | Serveur : <code>quentinbeaud.com</code>
                   </div>
                   <div style="font-size: 0.76rem; color: #778; margin-top: 2px;">
-                    Dernière synchronisation céleste : ${lastSync}
+                    Dernière synchronisation : ${lastSync}
                   </div>
                 </div>
               </div>
 
               <div style="margin-top: 14px;">
                 <div style="font-size: 0.78rem; color: #d4af37; margin-bottom: 6px; font-weight: 600;">
-                  📦 Reliques archivées sur le VPS :
+                  📦 Sauvegardes archivées sur le VPS :
                 </div>
                 <div id="rv-cloud-saves-list" style="max-height: 160px; overflow-y: auto; background: #050a07; border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; color: #c4d4c8;">
                   <div style="color: #a8b8ad; text-align: center; padding: 6px;">⏳ Consultation du coffre fort...</div>
@@ -792,34 +812,34 @@
               </div>
 
               <p style="font-size: 0.82rem; color: #a8b8ad; line-height: 1.4; margin: 12px 0 16px;">
-                Vos sauvegardes (NDS, PS1, GBA...) sont transférées directement sur votre volume Docker sécurisé. Aucune limite de taille de Gist, latence ultra-faible.
+                Vos sauvegardes (NDS, PS1, GBA, SNES...) sont transférées directement sur votre volume Docker sécurisé.
               </p>
 
               <div class="rv-cloud-actions">
                 <button class="rv-btn rv-btn-gold" id="rv-cloud-btn-sync">🔄 Synchroniser Tout</button>
-                <button class="rv-btn" id="rv-cloud-btn-disconnect" style="color: #f87171; border-color: rgba(248, 113, 113, 0.4);">🔌 Rompre le Sceau</button>
+                <button class="rv-btn" id="rv-cloud-btn-disconnect" style="color: #f87171; border-color: rgba(248, 113, 113, 0.4);">🔌 Se déconnecter</button>
               </div>
             ` : `
               <p style="font-size: 0.86rem; color: #c4d4c8; line-height: 1.5; margin-bottom: 16px;">
-                Bienvenue Quentin. Authentifiez-vous pour lier ce navigateur à votre serveur VPS souverain et retrouver instantanément vos parties commencées sur PC, Mac ou mobile.
+                Veuillez vous authentifier pour déverrouiller vos archives personnelles et synchroniser vos sauvegardes.
               </p>
 
               <div style="margin-bottom: 12px;">
                 <label style="display: block; font-size: 0.78rem; color: #d4af37; margin-bottom: 5px;">
-                  🦉 Identifiant d'Archiviste :
+                  Identifiant :
                 </label>
-                <input type="text" id="rv-cloud-user-input" value="Hibouxe" class="rv-cloud-input" autocomplete="username">
+                <input type="text" id="rv-cloud-user-input" placeholder="Identifiant" class="rv-cloud-input" autocomplete="username">
               </div>
 
               <div style="margin-bottom: 16px;">
                 <label style="display: block; font-size: 0.78rem; color: #d4af37; margin-bottom: 5px;">
-                  🔑 Mot de passe du Sanctuaire :
+                  Mot de passe :
                 </label>
                 <input type="password" id="rv-cloud-pass-input" placeholder="••••••••••••" class="rv-cloud-input" autocomplete="current-password">
               </div>
 
               <div class="rv-cloud-actions">
-                <button class="rv-btn rv-btn-gold" id="rv-cloud-btn-connect">🔮 Desceller les Archives (Liaison VPS)</button>
+                <button class="rv-btn rv-btn-gold" id="rv-cloud-btn-connect">🔮 Se connecter</button>
               </div>
             `}
 
@@ -1017,19 +1037,19 @@
             return;
           }
           btnConnect.disabled = true;
-          btnConnect.textContent = "⏳ Déverrouillage...";
-          feedback.textContent = "Vérification des sceaux sur le VPS...";
+          btnConnect.textContent = "⏳ Connexion...";
+          feedback.textContent = "Vérification des identifiants...";
           feedback.style.color = "#d4af37";
           try {
             const res = await this.connectVPSCloud(uVal, pVal);
-            feedback.textContent = `✅ Sceau brisé avec succès ! Liaison Céleste établie avec ${res.user}.`;
+            feedback.textContent = `✅ Connexion réussie ! Bienvenue ${res.user}.`;
             feedback.style.color = "#34d399";
             setTimeout(() => this.openCloudArchivistModal(), 1200);
           } catch (err) {
             feedback.textContent = `❌ ${err.message}`;
             feedback.style.color = "#ef4444";
             btnConnect.disabled = false;
-            btnConnect.textContent = "🔮 Desceller les Archives (Liaison VPS)";
+            btnConnect.textContent = "🔮 Se connecter";
           }
         };
 
@@ -2380,7 +2400,7 @@
                   <button class="rv-land-btn" id="rv-land-btn-load" title="Charger l'état">📂</button>
                   <button class="rv-land-btn" id="rv-land-btn-pause" title="Pause / Reprendre">⏸️</button>
                   <button class="rv-land-btn" id="rv-land-btn-mute" title="Couper ou rétablir le son">🔊</button>
-                  <button class="rv-land-btn" id="rv-land-btn-account" title="Compte Archiviste / Cloud VPS">🔐</button>
+                  <button class="rv-land-btn" id="rv-land-btn-account" title="Connexion">🔐</button>
                   <button class="rv-land-btn" id="rv-land-btn-fs" title="Plein Écran unifié">⛶</button>
                   <button class="rv-land-btn rv-land-btn-close" id="rv-land-btn-close" title="Fermer le sanctuaire">✕</button>
                 </div>
@@ -2392,13 +2412,13 @@
                   <div class="rv-crt-overlay" id="rv-crt"></div>
                   <canvas id="rv-canvas"></canvas>
                 </div>
-                <div class="rv-status" id="rv-status">Sélectionnez une relique ou déposez un fichier ROM pour démarrer</div>
+                <div class="rv-status" id="rv-status">Insérez une cartouche ou déposez un fichier ROM pour démarrer</div>
 
                 <!-- Barre d'actions standard (portrait / bureau) -->
                 <div class="rv-toolbar">
                   <div class="rv-tool-group">
-                    <button class="rv-btn rv-btn-account" id="rv-btn-account" title="Compte Archiviste / Cloud VPS">🔐 Mon Compte</button>
-                    <button class="rv-btn rv-btn-hub-nav" id="rv-btn-hub-nav" title="Revenir au choix des consoles et des jeux">📚 Changer de jeu</button>
+                    <button class="rv-btn rv-btn-account" id="rv-btn-account" title="Connexion">🔐 Connexion</button>
+                    <button class="rv-btn rv-btn-hub-nav" id="rv-btn-hub-nav" style="display: none;" title="Revenir au choix des jeux">📚 Changer de jeu</button>
                     <button class="rv-btn rv-btn-save" id="rv-btn-save">💾 Sauver (F2)</button>
                     <button class="rv-btn rv-btn-load" id="rv-btn-load">📂 Charger (F4)</button>
                     <button class="rv-btn" id="rv-btn-pause">⏸️ Pause</button>
@@ -2476,12 +2496,12 @@
             </div>
           </div>
 
-          <!-- Hub & Bibliothèque des Consoles -->
-          <div class="rv-library-head" id="rv-library">
+          <!-- Hub & Bibliothèque des Consoles (Uniquement visible si connecté) -->
+          <div class="rv-library-head" id="rv-library" style="display: none;">
             <div class="rv-lib-title-row">
               <div class="rv-lib-title">📚 Sélection des Consoles & Reliques</div>
               <div class="rv-search-wrap">
-                <input type="text" id="rv-search-input" class="rv-search-input" placeholder="🔍 Rechercher un jeu (Zelda, Mario, Tekken, Dragon Quest, MediEvil...)" autocomplete="off" />
+                <input type="text" id="rv-search-input" class="rv-search-input" placeholder="🔍 Rechercher une relique..." autocomplete="off" />
               </div>
             </div>
             <div class="rv-tabs" id="rv-tabs">
@@ -2496,7 +2516,7 @@
               <button class="rv-tab" data-filter="pce">🚀 PC ENGINE</button>
             </div>
           </div>
-          <div class="rv-grid" id="rv-grid"></div>
+          <div class="rv-grid" id="rv-grid" style="display: none;"></div>
         </div>
       `;
       document.body.appendChild(modal);
@@ -3138,8 +3158,20 @@
     }
 
     async rendreGrille() {
+      const isConnected = this.isCloudConnected();
+      const libHead = document.getElementById("rv-library");
       const grid = document.getElementById("rv-grid");
       if (!grid) return;
+
+      if (!isConnected) {
+        if (libHead) libHead.style.display = "none";
+        grid.style.display = "none";
+        grid.innerHTML = "";
+        return;
+      }
+
+      if (libHead) libHead.style.display = "block";
+      grid.style.display = "grid";
       grid.innerHTML = "";
 
       // Mise à jour dynamique des compteurs dans les onglets de consoles
@@ -3219,46 +3251,34 @@
           grid.appendChild(card);
         }
       }
-
-      // En Mode Invité (déconnecté), afficher la carte de déverrouillage du coffre privé
-      if (!this.isCloudConnected()) {
-        const unlockCard = document.createElement("div");
-        unlockCard.className = "rv-card rv-unlock-card";
-        unlockCard.style.cssText = "border: 1px dashed rgba(212, 175, 55, 0.45); background: radial-gradient(circle at center, #102418 0%, #060e09 100%); cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;";
-        unlockCard.innerHTML = `
-          <div>
-            <div class="rv-card-head">
-              <span class="rv-tag" style="background: rgba(212, 175, 55, 0.15); color: #d4af37; border: 1px solid rgba(212, 175, 55, 0.4);">COFFRE PRIVÉ</span>
-            </div>
-            <div class="rv-game-title" style="color: #d4af37; font-size: 1.05rem; margin: 8px 0 6px;">🔐 Coffre-fort de l'Archiviste</div>
-            <div class="rv-game-desc" style="color: #a8b8ad; font-size: 0.8rem; line-height: 1.45;">
-              Vous êtes Quentin ? Connectez-vous à votre compte pour révéler vos reliques personnelles (Mario, Zelda, Pokemon, Dragon Quest...) et synchroniser vos sauvegardes VPS.
-            </div>
-          </div>
-          <div class="rv-card-foot" style="margin-top: 14px;">
-            <span style="color: #d4af37; font-weight: 700;">▶ DÉVERROUILLER MON COMPTE</span>
-          </div>
-        `;
-        unlockCard.onclick = () => this.openCloudArchivistModal();
-        grid.appendChild(unlockCard);
-      }
     }
 
     // --- Téléchargement résilient de ROM (Local ou CDN VPS distant) avec jauge de progression ---
     async fetchRomBlob(nomFichier, onProgress) {
       const token = this.getCloudToken();
-      const tokenParam = token ? `?token=${encodeURIComponent(token)}` : "";
+      if (!token) {
+        throw new Error("Authentification requise pour télécharger cette relique.");
+      }
+      const tokenParam = `?token=${encodeURIComponent(token)}`;
       const urls = [
         `assets/vault/${encodeURI(nomFichier)}${tokenParam}`,
         `https://quentinbeaud.com/assets/vault/${encodeURI(nomFichier)}${tokenParam}`,
         `https://roms.quentinbeaud.com/vault/${encodeURI(nomFichier)}`
       ];
-      const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+      const headers = { "Authorization": `Bearer ${token}` };
 
+      let lastError = null;
       for (const url of urls) {
         try {
           const res = await fetch(url, { headers });
-          if (!res.ok) continue;
+          if (!res.ok) {
+            if (res.status === 401 || res.status === 403) {
+              this.disconnectVPSCloud();
+              throw new Error("Session expirée ou non autorisée. Veuillez vous reconnecter.");
+            }
+            lastError = `Code HTTP ${res.status}`;
+            continue;
+          }
 
           const total = parseInt(res.headers.get("content-length") || "0", 10);
           if (!total || !res.body) {
@@ -3284,10 +3304,13 @@
           if (onProgress) onProgress(received, total);
           return new Blob(chunks);
         } catch (err) {
-          // Si cette URL échoue (ex: CORS ou offline), essayer la suivante
+          if (err.message && err.message.includes("Session expirée")) {
+            throw err;
+          }
+          lastError = err.message || err;
         }
       }
-      throw new Error(`Fichier ROM "${nomFichier}" introuvable dans le Sanctuaire.`);
+      throw new Error(`Échec de récupération de la relique "${nomFichier}" (${lastError || "introuvable"}).`);
     }
 
     // --- Lancement de l'émulateur ---
@@ -3319,6 +3342,11 @@
         let romBlob = customBlob;
 
         if (!romBlob && !isLauncher) {
+          if (!this.isCloudConnected()) {
+            this.openCloudArchivistModal();
+            throw new Error("Veuillez vous connecter pour invoquer cette relique.");
+          }
+
           status.textContent = `⏳ Récupération de la relique : "${nomFichier}"...`;
           status.style.color = "#d4af37";
 
@@ -3975,40 +4003,41 @@
           <div class="rv-hub-standby" id="rv-hub-standby">
             <div class="rv-hub-crest">🦉</div>
             <h3 class="rv-hub-title">Sanctuaire des Reliques Privées</h3>
-            <p class="rv-hub-desc">Bienvenue <strong>${user}</strong>. Votre coffre souverain contient <strong>${totalRoms} reliques</strong> synchronisées avec votre VPS.</p>
+            <p class="rv-hub-desc">Bienvenue <strong>${user}</strong>. Votre coffre contient <strong>${totalRoms} reliques</strong> synchronisées avec votre VPS.</p>
             <div class="rv-hub-badges">
-              <span class="rv-hub-badge-item">👑 Compte ${user} Vérifié</span>
-              <span class="rv-hub-badge-item">⚔️ 7 Systèmes Rétro</span>
+              <span class="rv-hub-badge-item">👑 Compte ${user}</span>
+              <span class="rv-hub-badge-item">⚔️ Multi-Systèmes</span>
               <span class="rv-hub-badge-item">💾 Carte Mémoire Active</span>
               <span class="rv-hub-badge-item">☁️ Cloud VPS Souverain</span>
-              <span class="rv-hub-badge-item">🎮 Manettes PC & Tactile</span>
             </div>
             <div class="rv-hub-actions">
-              <button class="rv-btn rv-btn-gold" id="rv-btn-hub-cloud">⚙️ Coffre & Sauvegardes Cloud</button>
-              <button class="rv-btn" id="rv-btn-hub-upload">📁 Insérer une cartouche externe (.nds, .chd, .sfc...)</button>
+              <button class="rv-btn rv-btn-gold" id="rv-btn-hub-browse">📚 Choisir une relique</button>
+              <button class="rv-btn" id="rv-btn-hub-cloud">⚙️ Coffre & Sauvegardes</button>
+              <button class="rv-btn" id="rv-btn-hub-upload">📁 Insérer une ROM externe</button>
             </div>
           </div>
         `;
+        const btnBrowse = document.getElementById("rv-btn-hub-browse");
+        if (btnBrowse) {
+          btnBrowse.addEventListener("click", () => {
+            const lib = document.getElementById("rv-library");
+            if (lib) lib.scrollIntoView({ behavior: "smooth" });
+          });
+        }
         const btnCloud = document.getElementById("rv-btn-hub-cloud");
         if (btnCloud) {
           btnCloud.addEventListener("click", () => this.openCloudArchivistModal());
         }
-        this.setStatus(`👑 Sanctuaire Privé déverrouillé (${user}) | ${totalRoms} reliques prêtes`, "#34d399");
+        this.setStatus(`👑 Sanctuaire Déverrouillé (${user}) | ${totalRoms} reliques prêtes`, "#34d399");
       } else {
         container.innerHTML = `
           <div class="rv-hub-standby" id="rv-hub-standby">
             <div class="rv-hub-crest">🦉</div>
-            <h3 class="rv-hub-title">Sanctuaire Rétro — Mode Invité</h3>
-            <p class="rv-hub-desc">Console virtuelle & bac à sable local. Aucune relique privée n'est accessible aux visiteurs non autorisés.</p>
-            <div class="rv-hub-badges">
-              <span class="rv-hub-badge-item">🛡️ Mode Invité (Sandbox Local)</span>
-              <span class="rv-hub-badge-item">🎮 7 Moteurs WASM Prêts</span>
-              <span class="rv-hub-badge-item">💾 Sauvegardes Locales</span>
-              <span class="rv-hub-badge-item">⌨️ Clavier & Manettes</span>
-            </div>
+            <h3 class="rv-hub-title">Sanctuaire Rétro WebAssembly</h3>
+            <p class="rv-hub-desc">Glissez-déposez un fichier de jeu ou insérez votre cartouche pour lancer l'émulation.</p>
             <div class="rv-hub-actions">
-              <button class="rv-btn rv-btn-gold" id="rv-btn-hub-login">🔐 Déverrouiller Mon Compte Archiviste</button>
-              <button class="rv-btn" id="rv-btn-hub-upload">📁 Charger ma ROM (.nds, .sfc, .gba, .chd...)</button>
+              <button class="rv-btn rv-btn-gold" id="rv-btn-hub-upload">📁 Insérer une ROM (.nds, .sfc, .gba, .chd...)</button>
+              <button class="rv-btn" id="rv-btn-hub-login">🔐 Connexion</button>
             </div>
           </div>
         `;
@@ -4016,7 +4045,7 @@
         if (btnLogin) {
           btnLogin.addEventListener("click", () => this.openCloudArchivistModal());
         }
-        this.setStatus("🛡️ Mode Invité Actif | Glissez votre fichier ROM ou connectez-vous", "#d4af37");
+        this.setStatus("🎮 Prêt | Glissez un fichier ROM ou insérez une cartouche", "#d4af37");
       }
 
       const btnUpload = document.getElementById("rv-btn-hub-upload");
