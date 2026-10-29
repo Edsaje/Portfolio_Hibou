@@ -172,6 +172,7 @@
       this.jeuEnCoursNom = "";
       this.jeuEnCoursType = "snes";
       this.filtreActuel = "all";
+      this.rechercheTexte = "";
       this.tousLesJeux = [...VAULT_ROMS];
       this.estEnPause = false;
       this.dbName = "HibouRetroVaultDB";
@@ -1699,6 +1700,104 @@
           color: #f3e5ab;
           letter-spacing: 1px;
         }
+        .rv-lib-title-row {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 14px;
+        }
+        .rv-search-wrap {
+          flex: 1;
+          max-width: 380px;
+        }
+        .rv-search-input {
+          width: 100%;
+          background: #09130d;
+          border: 1px solid rgba(212, 175, 55, 0.35);
+          border-radius: 3px;
+          color: #f0f4f1;
+          padding: 8px 14px;
+          font-size: 0.82rem;
+          outline: none;
+          transition: all 0.2s;
+          box-sizing: border-box;
+        }
+        .rv-search-input:focus {
+          border-color: #d4af37;
+          box-shadow: 0 0 12px rgba(212, 175, 55, 0.35);
+          background: #0d1a12;
+        }
+        .rv-hub-standby {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          padding: 36px 20px;
+          background: radial-gradient(circle at center, #102418 0%, #060e09 100%);
+          width: 100%;
+          min-height: 280px;
+          box-sizing: border-box;
+        }
+        .rv-hub-crest {
+          font-size: 3rem;
+          margin-bottom: 10px;
+          filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.6));
+          animation: rvPulse 3.5s ease-in-out infinite;
+        }
+        @keyframes rvPulse {
+          0%, 100% { transform: scale(1); opacity: 0.9; }
+          50% { transform: scale(1.08); opacity: 1; filter: drop-shadow(0 0 24px rgba(212, 175, 55, 0.95)); }
+        }
+        .rv-hub-title {
+          font-family: var(--font-heading, 'Cinzel', serif);
+          font-size: 1.35rem;
+          font-weight: 700;
+          color: #d4af37;
+          letter-spacing: 2px;
+          margin: 0 0 8px 0;
+          text-transform: uppercase;
+        }
+        .rv-hub-desc {
+          font-size: 0.88rem;
+          color: #a8b8ad;
+          max-width: 540px;
+          margin: 0 0 16px 0;
+          line-height: 1.5;
+        }
+        .rv-hub-badges {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 8px;
+          margin-bottom: 20px;
+        }
+        .rv-hub-badge-item {
+          font-size: 0.74rem;
+          font-weight: 600;
+          color: #34d399;
+          background: rgba(16, 185, 129, 0.12);
+          border: 1px solid rgba(16, 185, 129, 0.35);
+          padding: 4px 10px;
+          border-radius: 3px;
+          letter-spacing: 0.5px;
+        }
+        .rv-hub-actions {
+          display: flex;
+          justify-content: center;
+          gap: 10px;
+        }
+        .rv-btn-hub-nav {
+          background: #1e3a2b !important;
+          border-color: #34d399 !important;
+          color: #34d399 !important;
+        }
+        .rv-btn-hub-nav:hover {
+          background: #34d399 !important;
+          color: #060e09 !important;
+        }
         .rv-tabs {
           display: flex;
           flex-wrap: wrap;
@@ -2315,6 +2414,7 @@
                 <!-- Barre d'actions standard (portrait / bureau) -->
                 <div class="rv-toolbar">
                   <div class="rv-tool-group">
+                    <button class="rv-btn rv-btn-hub-nav" id="rv-btn-hub-nav" title="Revenir au choix des consoles et des jeux">📚 Changer de jeu</button>
                     <button class="rv-btn rv-btn-save" id="rv-btn-save">💾 Sauver (F2)</button>
                     <button class="rv-btn rv-btn-load" id="rv-btn-load">📂 Charger (F4)</button>
                     <button class="rv-btn" id="rv-btn-pause">⏸️ Pause</button>
@@ -2392,19 +2492,24 @@
             </div>
           </div>
 
-          <!-- Bibliothèque de jeux -->
-          <div class="rv-library-head">
-            <div class="rv-lib-title">📚 Reliques Conservées</div>
-            <div class="rv-tabs">
-              <button class="rv-tab active" data-filter="all">TOUTES</button>
-              <button class="rv-tab" data-filter="nds">NINTENDO DS</button>
-              <button class="rv-tab" data-filter="ps1">PLAYSTATION 1</button>
-              <button class="rv-tab" data-filter="snes">SUPER NINTENDO</button>
-              <button class="rv-tab" data-filter="megadrive">MEGA DRIVE</button>
-              <button class="rv-tab" data-filter="gba">GBA</button>
-              <button class="rv-tab" data-filter="gb">GAME BOY</button>
-              <button class="rv-tab" data-filter="nes">NES</button>
-              <button class="rv-tab" data-filter="pce">PC ENGINE</button>
+          <!-- Hub & Bibliothèque des Consoles -->
+          <div class="rv-library-head" id="rv-library">
+            <div class="rv-lib-title-row">
+              <div class="rv-lib-title">📚 Sélection des Consoles & Reliques</div>
+              <div class="rv-search-wrap">
+                <input type="text" id="rv-search-input" class="rv-search-input" placeholder="🔍 Rechercher un jeu (Zelda, Mario, Tekken, Dragon Quest, MediEvil...)" autocomplete="off" />
+              </div>
+            </div>
+            <div class="rv-tabs" id="rv-tabs">
+              <button class="rv-tab active" data-filter="all">🔮 TOUTES (23)</button>
+              <button class="rv-tab" data-filter="ps1">⚔️ PLAYSTATION 1 (3)</button>
+              <button class="rv-tab" data-filter="nds">🕹️ NINTENDO DS (6)</button>
+              <button class="rv-tab" data-filter="snes">🍄 SUPER NINTENDO (3)</button>
+              <button class="rv-tab" data-filter="gba">⚡ GBA (1)</button>
+              <button class="rv-tab" data-filter="gb">🟡 GAME BOY / GBC (2)</button>
+              <button class="rv-tab" data-filter="nes">🏰 NES 8-BIT (8)</button>
+              <button class="rv-tab" data-filter="megadrive">🌪️ MEGA DRIVE</button>
+              <button class="rv-tab" data-filter="pce">🚀 PC ENGINE</button>
             </div>
           </div>
           <div class="rv-grid" id="rv-grid"></div>
@@ -2748,6 +2853,30 @@
       document.getElementById("rv-btn-save").addEventListener("click", () => this.sauvegarderPartie());
       document.getElementById("rv-btn-load").addEventListener("click", () => this.chargerPartie());
 
+      // Bouton Revenir au Hub / Changer de jeu
+      const btnHubNav = document.getElementById("rv-btn-hub-nav");
+      if (btnHubNav) {
+        btnHubNav.addEventListener("click", async () => {
+          if (this.partieEnCours && this.jeuEnCoursNom) {
+            try { await this.extraireEtSauvegarderSRAM(this.jeuEnCoursNom, true); } catch (e) {}
+            if (!this.estEnPause) this.togglePause();
+          }
+          const libEl = document.getElementById("rv-library");
+          if (libEl) {
+            libEl.scrollIntoView({ behavior: "smooth" });
+          }
+        });
+      }
+
+      // Recherche dynamique en direct dans le grimoire
+      const searchInput = document.getElementById("rv-search-input");
+      if (searchInput) {
+        searchInput.addEventListener("input", (e) => {
+          this.rechercheTexte = e.target.value;
+          this.rendreGrille();
+        });
+      }
+
       // Bascule Plein Écran unifié (englobe la zone de jeu ET les commandes virtuelles)
       const toggleFullscreen = () => {
         const target = document.getElementById("rv-play-zone") || document.getElementById("rv-game-container") || this.modal;
@@ -3018,14 +3147,35 @@
       if (!grid) return;
       grid.innerHTML = "";
 
-      const liste = this.filtreActuel === "all"
-        ? this.tousLesJeux
-        : this.tousLesJeux.filter((j) => j.console === this.filtreActuel);
+      const query = (this.rechercheTexte || "").toLowerCase().trim();
+
+      const liste = this.tousLesJeux.filter((j) => {
+        const matchesConsole = this.filtreActuel === "all" || j.console === this.filtreActuel;
+        if (!matchesConsole) return false;
+        if (!query) return true;
+        const titre = (j.titre || "").toLowerCase();
+        const nom = (j.nom || "").toLowerCase();
+        const desc = (j.desc || "").toLowerCase();
+        return titre.includes(query) || nom.includes(query) || desc.includes(query);
+      });
+
+      if (liste.length === 0) {
+        grid.innerHTML = `
+          <div class="rv-empty-search" style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: #a8b8ad; font-style: italic;">
+            🦉 Aucune relique trouvée pour "${this.rechercheTexte}". Essayez un autre terme ou changez de console.
+          </div>
+        `;
+        return;
+      }
 
       for (const jeu of liste) {
         const card = document.createElement("div");
         card.className = "rv-card" + (jeu.nom === this.jeuEnCoursNom ? " playing" : "");
-        card.onclick = () => this.lancerPartie(jeu.nom, jeu.blob);
+        card.onclick = () => {
+          this.lancerPartie(jeu.nom, jeu.blob);
+          const playZone = document.getElementById("rv-play-zone");
+          if (playZone) playZone.scrollIntoView({ behavior: "smooth" });
+        };
 
         let saveBadgeHtml = "";
         try {
@@ -3048,7 +3198,7 @@
             <div class="rv-game-desc">${jeu.desc || "Relique prête à être invoquée."}</div>
           </div>
           <div class="rv-card-foot">
-            <span>▶ LANCER</span>
+            <span>▶ ${jeu.nom === this.jeuEnCoursNom ? "EN COURS" : "INVOQUER"}</span>
           </div>
         `;
         grid.appendChild(card);
@@ -3768,6 +3918,37 @@
       }
     }
 
+    // --- Écran d'accueil du Sanctuaire (Hub de sélection des reliques) ---
+    afficherEcranHub() {
+      const container = document.getElementById("rv-game-container");
+      if (!container) return;
+      container.classList.remove("rv-is-nds");
+      container.innerHTML = `
+        <div class="rv-hub-standby" id="rv-hub-standby">
+          <div class="rv-hub-crest">🦉</div>
+          <h3 class="rv-hub-title">Sanctuaire des Reliques Rétro</h3>
+          <p class="rv-hub-desc">Sélectionnez une console ou une relique ci-dessous pour éveiller le moteur d'émulation.</p>
+          <div class="rv-hub-badges">
+            <span class="rv-hub-badge-item">⚔️ 7 Systèmes Rétro</span>
+            <span class="rv-hub-badge-item">💾 Carte Mémoire Active</span>
+            <span class="rv-hub-badge-item">☁️ Cloud VPS Souverain</span>
+            <span class="rv-hub-badge-item">🎮 Manettes PC & Tactile</span>
+          </div>
+          <div class="rv-hub-actions">
+            <button class="rv-btn" id="rv-btn-hub-upload">📁 Insérer une cartouche externe (.nds, .chd, .sfc...)</button>
+          </div>
+        </div>
+      `;
+      const btnUpload = document.getElementById("rv-btn-hub-upload");
+      if (btnUpload) {
+        btnUpload.addEventListener("click", () => {
+          const fileInput = document.getElementById("rv-file-input");
+          if (fileInput) fileInput.click();
+        });
+      }
+      this.setStatus("⚔️ Sanctuaire des Reliques prêt | Choisissez votre console ou votre jeu ci-dessous", "#d4af37");
+    }
+
     // --- Ouverture & Fermeture du Sanctuaire ---
     open(bootFile = null) {
       this.injectDOM();
@@ -3799,8 +3980,10 @@
           blob: bootFile
         });
         this.lancerPartie(bootFile.name, bootFile);
-      } else if (!this.partieEnCours && this.tousLesJeux.length > 0) {
-        this.lancerPartie(this.tousLesJeux[0].nom);
+      } else {
+        if (!this.partieEnCours) {
+          this.afficherEcranHub();
+        }
       }
     }
 
