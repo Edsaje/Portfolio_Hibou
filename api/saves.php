@@ -289,5 +289,162 @@ if ($action === 'delete') {
     exit;
 }
 
+// 6. ROUTE LIBRARY (Catalogue privé des reliques souveraines)
+if ($action === 'library' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Accessible uniquement aux porteurs d'un token HMAC valide (Hibouxe)
+    $catalogFile = $storageDir . '/vault_catalog.json';
+    if (file_exists($catalogFile)) {
+        $roms = json_decode(file_get_contents($catalogFile), true);
+    } else {
+        $roms = [
+            [
+                'nom' => 'Super Mario 64 DS (Europe) (En,Fr,De,Es,It).nds',
+                'titre' => 'Super Mario 64 DS',
+                'console' => 'nds',
+                'desc' => "L'épopée 3D culte de la Nintendo DS avec Mario, Yoshi, Luigi et Wario (contrôles 360° actifs)."
+            ],
+            [
+                'nom' => 'Dragon Quest - The Chapters of the Chosen (E).nds',
+                'titre' => "Dragon Quest IV : L'Épopée des Élus (DS)",
+                'console' => 'nds',
+                'desc' => "Le remake culte sur Nintendo DS en 3D avec les cinq chapitres narratifs des élus (2008)."
+            ],
+            [
+                'nom' => 'Dragon Quest V - The Hand of the Heavenly Bride (EU)(M5).nds',
+                'titre' => 'Dragon Quest V : La Fiancée Céleste (DS)',
+                'console' => 'nds',
+                'desc' => "L'épopée magistrale sur trois générations adaptée en 3D sur Nintendo DS (2009)."
+            ],
+            [
+                'nom' => 'Dragon Quest VI - Realms of Reverie (E).nds',
+                'titre' => 'Dragon Quest VI : Le Royaume des Songes (DS)',
+                'console' => 'nds',
+                'desc' => "L'aventure entre le monde réel et le monde des songes sur Nintendo DS (2011)."
+            ],
+            [
+                'nom' => 'Dragon Quest IX - Sentinels of the Starry Skies (Europe) (En,Fr,De,Es,It).nds',
+                'titre' => 'Dragon Quest IX : Les Sentinelles du Firmament (DS)',
+                'console' => 'nds',
+                'desc' => "L'immense aventure RPG de Level-5 et Square Enix taillée pour la Nintendo DS (2010)."
+            ],
+            [
+                'nom' => 'Tekken 3 (Europe).chd',
+                'titre' => 'Tekken 3',
+                'console' => 'ps1',
+                'desc' => "Le titan absolu du jeu de combat 3D sur PlayStation 1 par Namco (1998)."
+            ],
+            [
+                'nom' => 'MediEvil (France).chd',
+                'titre' => 'MediEvil',
+                'console' => 'ps1',
+                'desc' => "L'épopée gothique et burlesque de Sir Daniel Fortesque à Gallowmere (1998)."
+            ],
+            [
+                'nom' => 'Bomberman (Europe) (En,Fr,De,Es,It).iso',
+                'titre' => 'Bomberman World',
+                'console' => 'ps1',
+                'desc' => "Le classique d'action explosive multijoueur sur PlayStation 1 (1998)."
+            ],
+            [
+                'nom' => 'Super Mario World (Europe) (Rev 1).sfc',
+                'titre' => 'Super Mario World',
+                'console' => 'snes',
+                'desc' => "Le chef-d'œuvre de plateforme de la Super Nintendo (1990)."
+            ],
+            [
+                'nom' => 'CHRONO.SMC',
+                'titre' => 'Chrono Trigger',
+                'console' => 'snes',
+                'desc' => "L'apogée du RPG narratif par la Dream Team de Square (1995)."
+            ],
+            [
+                'nom' => 'Dragon Quest 5 (tr).sfc',
+                'titre' => 'Dragon Quest V : La Fiancée Céleste (SNES)',
+                'console' => 'snes',
+                'desc' => "L'épopée sur trois générations d'Horie, Toriyama et Sugiyama (1992)."
+            ],
+            [
+                'nom' => "Legend of Zelda, The - Link's Awakening DX (France) (Rev 1) (SGB Enhanced) (GB Compatible).gbc",
+                'titre' => "The Legend of Zelda: Link's Awakening DX",
+                'console' => 'gb',
+                'desc' => "L'aventure onirique sur l'île Cocolint (Game Boy Color, 1998)."
+            ],
+            [
+                'nom' => 'Pokemon - Version Jaune - Edition Speciale Pikachu (France) (CGB+SGB Enhanced).gb',
+                'titre' => 'Pokémon Version Jaune : Édition Spéciale Pikachu',
+                'console' => 'gb',
+                'desc' => "L'aventure culte de Kanto avec Pikachu à vos côtés (1998)."
+            ],
+            [
+                'nom' => 'Pokémon Emeraude FULL.gba',
+                'titre' => 'Pokémon Version Émeraude',
+                'console' => 'gba',
+                'desc' => "Le summum de la Game Boy Advance dans la région de Hoenn (2004)."
+            ],
+            [
+                'nom' => 'Super Mario Bros. 3 (USA) (Rev 1).nes',
+                'titre' => 'Super Mario Bros. 3',
+                'console' => 'nes',
+                'desc' => "Le sommet technique et ludique de la NES 8-bit (1988)."
+            ],
+            [
+                'nom' => 'Super Mario Bros. 2 (USA) (Rev 1).nes',
+                'titre' => 'Super Mario Bros. 2',
+                'console' => 'nes',
+                'desc' => "L'aventure onirique de Subcon avec Mario, Luigi, Peach et Toad (1988)."
+            ],
+            [
+                'nom' => 'Dragon Warrior 4 (U).nes',
+                'titre' => 'Dragon Quest IV : Chapters of the Chosen (NES)',
+                'console' => 'nes',
+                'desc' => "L'épopée en cinq chapitres narratifs de Chunsoft et Yuji Horii sur NES (1990)."
+            ],
+            [
+                'nom' => 'Dragon Warrior 3 (U) [T-Port1.1].nes',
+                'titre' => 'Dragon Quest III : Soshite Densetsu e...',
+                'console' => 'nes',
+                'desc' => "Le mythe fondateur du J-RPG sur Famicom / NES (1988)."
+            ],
+            [
+                'nom' => 'Dragon Warrior 2 (U).nes',
+                'titre' => 'Dragon Quest II : Akuryo no Kamigami',
+                'console' => 'nes',
+                'desc' => "La suite légendaire et le périple des trois descendants de Roto (1987)."
+            ],
+            [
+                'nom' => 'dq.nes',
+                'titre' => 'Dragon Quest I (Dragon Warrior)',
+                'console' => 'nes',
+                'desc' => "La légende qui a tout commencé par Yuji Horii (1986)."
+            ],
+            [
+                'nom' => 'Legend of Zelda, The (USA) (Rev 1).nes',
+                'titre' => 'The Legend of Zelda',
+                'console' => 'nes',
+                'desc' => "Le commencement mythique de la quête d'Hyrule par Shigeru Miyamoto (1986)."
+            ],
+            [
+                'nom' => 'Zelda II - The Adventure of Link (USA).nes',
+                'titre' => 'Zelda II : The Adventure of Link',
+                'console' => 'nes',
+                'desc' => "L'aventure action-RPG culte et exigeante en vue de profil (1987)."
+            ],
+            [
+                'nom' => 'console-nds-launcher',
+                'titre' => 'Nintendo DS — Double Écran Tactile',
+                'console' => 'nds',
+                'desc' => "Moteur DeSmuME Desmond WebAssembly avec écran tactile stylet. Glissez ou insérez un fichier .nds."
+            ]
+        ];
+    }
+    echo json_encode([
+        'ok' => true,
+        'user' => $authData['user'] ?? 'Hibouxe',
+        'count' => count($roms),
+        'roms' => $roms
+    ]);
+    exit;
+}
+
 http_response_code(400);
 echo json_encode(['ok' => false, 'error' => 'Action inconnue.']);

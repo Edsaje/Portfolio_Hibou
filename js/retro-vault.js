@@ -11,144 +11,16 @@
 (function () {
   "use strict";
 
-  const VAULT_ROMS = [
-    {
-      nom: "Super Mario 64 DS (Europe) (En,Fr,De,Es,It).nds",
-      titre: "Super Mario 64 DS",
-      console: "nds",
-      desc: "L'épopée 3D culte de la Nintendo DS avec Mario, Yoshi, Luigi et Wario (contrôles 360° actifs)."
-    },
-    {
-      nom: "Dragon Quest - The Chapters of the Chosen (E).nds",
-      titre: "Dragon Quest IV : L'Épopée des Élus (DS)",
-      console: "nds",
-      desc: "Le remake culte sur Nintendo DS en 3D avec les cinq chapitres narratifs des élus (2008)."
-    },
-    {
-      nom: "Dragon Quest V - The Hand of the Heavenly Bride (EU)(M5).nds",
-      titre: "Dragon Quest V : La Fiancée Céleste (DS)",
-      console: "nds",
-      desc: "L'épopée magistrale sur trois générations adaptée en 3D sur Nintendo DS (2009)."
-    },
-    {
-      nom: "Dragon Quest VI - Realms of Reverie (E).nds",
-      titre: "Dragon Quest VI : Le Royaume des Songes (DS)",
-      console: "nds",
-      desc: "L'aventure entre le monde réel et le monde des songes sur Nintendo DS (2011)."
-    },
-    {
-      nom: "Dragon Quest IX - Sentinels of the Starry Skies (Europe) (En,Fr,De,Es,It).nds",
-      titre: "Dragon Quest IX : Les Sentinelles du Firmament (DS)",
-      console: "nds",
-      desc: "L'immense aventure RPG de Level-5 et Square Enix taillée pour la Nintendo DS (2010)."
-    },
-    {
-      nom: "Tekken 3 (Europe).chd",
-      titre: "Tekken 3",
-      console: "ps1",
-      desc: "Le titan absolu du jeu de combat 3D sur PlayStation 1 par Namco (1998)."
-    },
-    {
-      nom: "MediEvil (France).chd",
-      titre: "MediEvil",
-      console: "ps1",
-      desc: "L'épopée gothique et burlesque de Sir Daniel Fortesque à Gallowmere (1998)."
-    },
-    {
-      nom: "Bomberman (Europe) (En,Fr,De,Es,It).iso",
-      titre: "Bomberman World",
-      console: "ps1",
-      desc: "Le classique d'action explosive multijoueur sur PlayStation 1 (1998)."
-    },
-    {
-      nom: "Super Mario World (Europe) (Rev 1).sfc",
-      titre: "Super Mario World",
-      console: "snes",
-      desc: "Le chef-d'œuvre de plateforme de la Super Nintendo (1990)."
-    },
-    {
-      nom: "CHRONO.SMC",
-      titre: "Chrono Trigger",
-      console: "snes",
-      desc: "L'apogée du RPG narratif par la Dream Team de Square (1995)."
-    },
-    {
-      nom: "Dragon Quest 5 (tr).sfc",
-      titre: "Dragon Quest V : La Fiancée Céleste (SNES)",
-      console: "snes",
-      desc: "L'épopée sur trois générations d'Horie, Toriyama et Sugiyama (1992)."
-    },
-    {
-      nom: "Legend of Zelda, The - Link's Awakening DX (France) (Rev 1) (SGB Enhanced) (GB Compatible).gbc",
-      titre: "The Legend of Zelda: Link's Awakening DX",
-      console: "gb",
-      desc: "L'aventure onirique sur l'île Cocolint (Game Boy Color, 1998)."
-    },
-    {
-      nom: "Pokemon - Version Jaune - Edition Speciale Pikachu (France) (CGB+SGB Enhanced).gb",
-      titre: "Pokémon Version Jaune : Édition Spéciale Pikachu",
-      console: "gb",
-      desc: "L'aventure culte de Kanto avec Pikachu à vos côtés (1998)."
-    },
-    {
-      nom: "Pokémon Emeraude FULL.gba",
-      titre: "Pokémon Version Émeraude",
-      console: "gba",
-      desc: "Le summum de la Game Boy Advance dans la région de Hoenn (2004)."
-    },
-    {
-      nom: "Super Mario Bros. 3 (USA) (Rev 1).nes",
-      titre: "Super Mario Bros. 3",
-      console: "nes",
-      desc: "Le sommet technique et ludique de la NES 8-bit (1988)."
-    },
-    {
-      nom: "Super Mario Bros. 2 (USA) (Rev 1).nes",
-      titre: "Super Mario Bros. 2",
-      console: "nes",
-      desc: "L'aventure onirique de Subcon avec Mario, Luigi, Peach et Toad (1988)."
-    },
-    {
-      nom: "Dragon Warrior 4 (U).nes",
-      titre: "Dragon Quest IV : Chapters of the Chosen (NES)",
-      console: "nes",
-      desc: "L'épopée en cinq chapitres narratifs de Chunsoft et Yuji Horii sur NES (1990)."
-    },
-    {
-      nom: "Dragon Warrior 3 (U) [T-Port1.1].nes",
-      titre: "Dragon Quest III : Soshite Densetsu e...",
-      console: "nes",
-      desc: "Le mythe fondateur du J-RPG sur Famicom / NES (1988)."
-    },
-    {
-      nom: "Dragon Warrior 2 (U).nes",
-      titre: "Dragon Quest II : Akuryo no Kamigami",
-      console: "nes",
-      desc: "La suite légendaire et le périple des trois descendants de Roto (1987)."
-    },
-    {
-      nom: "dq.nes",
-      titre: "Dragon Quest I (Dragon Warrior)",
-      console: "nes",
-      desc: "La légende qui a tout commencé par Yuji Horii (1986)."
-    },
-    {
-      nom: "Legend of Zelda, The (USA) (Rev 1).nes",
-      titre: "The Legend of Zelda",
-      console: "nes",
-      desc: "Le commencement mythique de la quête d'Hyrule par Shigeru Miyamoto (1986)."
-    },
-    {
-      nom: "Zelda II - The Adventure of Link (USA).nes",
-      titre: "Zelda II : The Adventure of Link",
-      console: "nes",
-      desc: "L'aventure action-RPG culte et exigeante en vue de profil (1987)."
-    },
+  // --- Reliques Publiques (Mode Invité / Sandbox Légal) ---
+  // Aucune ROM propriétaire sous copyright n'est exposée publiquement aux visiteurs ou robots.
+  // Les reliques personnelles sont hébergées dans le coffre VPS privé de l'Archiviste et
+  // ne sont débloquées que sur son compte vérifié.
+  const PUBLIC_ROMS = [
     {
       nom: "console-nds-launcher",
-      titre: "Nintendo DS — Double Écran Tactile",
+      titre: "Nintendo DS — Double Écran Tactile (Système Nu)",
       console: "nds",
-      desc: "Moteur DeSmuME Desmond WebAssembly avec écran tactile stylet. Glissez ou insérez un fichier .nds."
+      desc: "Environnement d'exécution DeSmuME Desmond WebAssembly avec stylet. Glissez ou insérez un fichier .nds personnel."
     }
   ];
 
@@ -166,14 +38,14 @@
 
   class RetroVault {
     constructor() {
-      this.version = "9.0-vps-cloud-saves";
+      this.version = "9.1-private-cloud-vault";
       this.modal = null;
       this.partieEnCours = null;
       this.jeuEnCoursNom = "";
       this.jeuEnCoursType = "snes";
       this.filtreActuel = "all";
       this.rechercheTexte = "";
-      this.tousLesJeux = [...VAULT_ROMS];
+      this.tousLesJeux = [...PUBLIC_ROMS];
       this.estEnPause = false;
       this.dbName = "HibouRetroVaultDB";
       this.storeName = "saves";
@@ -289,6 +161,68 @@
 
     getCloudToken() {
       return localStorage.getItem("rv_vps_token") || localStorage.getItem("rv_cloud_token") || "";
+    }
+
+    // --- Chargement dynamique selon le compte (Invité vs Archiviste) ---
+    async chargerBibliotheque() {
+      if (this.isCloudConnected()) {
+        const token = this.getCloudToken();
+        try {
+          const res = await fetch(`api/saves.php?action=library&token=${encodeURIComponent(token)}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.ok && Array.isArray(data.roms)) {
+              this.tousLesJeux = [...data.roms];
+              try { localStorage.setItem("rv_cached_library", JSON.stringify(data.roms)); } catch (e) {}
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn("[RetroVault] Erreur chargement bibliothèque privée:", e);
+        }
+
+        // Repli cache local si déjà connecté précédemment
+        const cached = localStorage.getItem("rv_cached_library");
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              this.tousLesJeux = parsed;
+              return;
+            }
+          } catch(e) {}
+        }
+      }
+
+      // Mode Invité / Non authentifié : uniquement les systèmes libres
+      this.tousLesJeux = [...PUBLIC_ROMS];
+    }
+
+    // --- Synchronisation visuelle de l'état du Compte (Boutons & Badges) ---
+    mettreAJourInterfaceCompte() {
+      const isConnected = this.isCloudConnected();
+      const user = localStorage.getItem("rv_vps_user") || "Hibouxe";
+
+      const btnAccount = document.getElementById("rv-btn-account");
+      if (btnAccount) {
+        if (isConnected) {
+          btnAccount.innerHTML = `🟢 Mon Compte (${user})`;
+          btnAccount.title = `Compte Archiviste connecté (${user}) — Cliquez pour gérer les sauvegardes ou vous déconnecter`;
+          btnAccount.classList.add("rv-btn-account-active");
+        } else {
+          btnAccount.innerHTML = `🔐 Mon Compte`;
+          btnAccount.title = `Connexion Archiviste — Déverrouiller le coffre-fort privé de reliques`;
+          btnAccount.classList.remove("rv-btn-account-active");
+        }
+      }
+
+      const landAccount = document.getElementById("rv-land-btn-account");
+      if (landAccount) {
+        landAccount.textContent = isConnected ? "🟢" : "🔐";
+        landAccount.title = isConnected ? `Compte ${user} connecté` : "Connexion Archiviste";
+      }
     }
 
     async saveStateDB(key, blob, customDate = null, skipCloudUpload = false, customTimestamp = null) {
@@ -525,6 +459,14 @@
       localStorage.setItem("rv_vps_user", data.user || "Hibouxe");
       localStorage.removeItem("rv_cloud_token");
       localStorage.removeItem("rv_cloud_gist_id");
+
+      // Déverrouiller immédiatement les reliques privées du compte
+      await this.chargerBibliotheque();
+      this.mettreAJourInterfaceCompte();
+      this.rendreGrille();
+      if (!this.partieEnCours) {
+        this.afficherEcranHub();
+      }
 
       // Synchronisation immédiate des sauvegardes
       await this.syncVPSCloud({ silent: false });
@@ -775,12 +717,22 @@
       localStorage.removeItem("rv_vps_token");
       localStorage.removeItem("rv_vps_user");
       localStorage.removeItem("rv_vps_last_sync");
+      localStorage.removeItem("rv_cached_library");
       localStorage.removeItem("rv_cloud_token");
       localStorage.removeItem("rv_cloud_gist_id");
       localStorage.removeItem("rv_cloud_user");
+
+      // Revenir en Mode Invité public (bac à sable)
+      this.tousLesJeux = [...PUBLIC_ROMS];
+      this.mettreAJourInterfaceCompte();
+      this.rendreGrille();
+      if (!this.partieEnCours) {
+        this.afficherEcranHub();
+      }
+
       const status = document.getElementById("rv-status");
       if (status) {
-        status.textContent = "🔌 Synchronisation Cloud déconnectée sur ce périphérique.";
+        status.textContent = "🔌 Sceau d'Archiviste rompu. Mode Invité actif.";
         status.style.color = "#a8b8ad";
       }
     }
@@ -1798,6 +1750,36 @@
           background: #34d399 !important;
           color: #060e09 !important;
         }
+        .rv-btn-account {
+          background: #14281c !important;
+          border-color: #d4af37 !important;
+          color: #d4af37 !important;
+          font-weight: 600 !important;
+        }
+        .rv-btn-account:hover {
+          background: #d4af37 !important;
+          color: #060e09 !important;
+        }
+        .rv-btn-account-active {
+          background: #0d281a !important;
+          border-color: #34d399 !important;
+          color: #34d399 !important;
+        }
+        .rv-btn-account-active:hover {
+          background: #34d399 !important;
+          color: #060e09 !important;
+        }
+        .rv-btn-gold {
+          background: linear-gradient(135deg, #d4af37 0%, #b8972f 100%) !important;
+          color: #050a07 !important;
+          font-weight: 700 !important;
+          border: none !important;
+          box-shadow: 0 4px 14px rgba(212, 175, 55, 0.35) !important;
+        }
+        .rv-btn-gold:hover {
+          transform: translateY(-1px) !important;
+          box-shadow: 0 6px 18px rgba(212, 175, 55, 0.5) !important;
+        }
         .rv-tabs {
           display: flex;
           flex-wrap: wrap;
@@ -2398,6 +2380,7 @@
                   <button class="rv-land-btn" id="rv-land-btn-load" title="Charger l'état">📂</button>
                   <button class="rv-land-btn" id="rv-land-btn-pause" title="Pause / Reprendre">⏸️</button>
                   <button class="rv-land-btn" id="rv-land-btn-mute" title="Couper ou rétablir le son">🔊</button>
+                  <button class="rv-land-btn" id="rv-land-btn-account" title="Compte Archiviste / Cloud VPS">🔐</button>
                   <button class="rv-land-btn" id="rv-land-btn-fs" title="Plein Écran unifié">⛶</button>
                   <button class="rv-land-btn rv-land-btn-close" id="rv-land-btn-close" title="Fermer le sanctuaire">✕</button>
                 </div>
@@ -2414,6 +2397,7 @@
                 <!-- Barre d'actions standard (portrait / bureau) -->
                 <div class="rv-toolbar">
                   <div class="rv-tool-group">
+                    <button class="rv-btn rv-btn-account" id="rv-btn-account" title="Compte Archiviste / Cloud VPS">🔐 Mon Compte</button>
                     <button class="rv-btn rv-btn-hub-nav" id="rv-btn-hub-nav" title="Revenir au choix des consoles et des jeux">📚 Changer de jeu</button>
                     <button class="rv-btn rv-btn-save" id="rv-btn-save">💾 Sauver (F2)</button>
                     <button class="rv-btn rv-btn-load" id="rv-btn-load">📂 Charger (F4)</button>
@@ -2501,13 +2485,13 @@
               </div>
             </div>
             <div class="rv-tabs" id="rv-tabs">
-              <button class="rv-tab active" data-filter="all">🔮 TOUTES (23)</button>
-              <button class="rv-tab" data-filter="ps1">⚔️ PLAYSTATION 1 (3)</button>
-              <button class="rv-tab" data-filter="nds">🕹️ NINTENDO DS (6)</button>
-              <button class="rv-tab" data-filter="snes">🍄 SUPER NINTENDO (3)</button>
-              <button class="rv-tab" data-filter="gba">⚡ GBA (1)</button>
-              <button class="rv-tab" data-filter="gb">🟡 GAME BOY / GBC (2)</button>
-              <button class="rv-tab" data-filter="nes">🏰 NES 8-BIT (8)</button>
+              <button class="rv-tab active" data-filter="all">🔮 TOUTES</button>
+              <button class="rv-tab" data-filter="ps1">⚔️ PLAYSTATION 1</button>
+              <button class="rv-tab" data-filter="nds">🕹️ NINTENDO DS</button>
+              <button class="rv-tab" data-filter="snes">🍄 SUPER NINTENDO</button>
+              <button class="rv-tab" data-filter="gba">⚡ GBA</button>
+              <button class="rv-tab" data-filter="gb">🟡 GAME BOY / GBC</button>
+              <button class="rv-tab" data-filter="nes">🏰 NES 8-BIT</button>
               <button class="rv-tab" data-filter="megadrive">🌪️ MEGA DRIVE</button>
               <button class="rv-tab" data-filter="pce">🚀 PC ENGINE</button>
             </div>
@@ -2519,6 +2503,7 @@
       this.modal = modal;
       this.bindModalEvents();
       this.bindVirtualGamepad();
+      this.mettreAJourInterfaceCompte();
     }
 
     bindVirtualGamepad() {
@@ -2853,6 +2838,16 @@
       document.getElementById("rv-btn-save").addEventListener("click", () => this.sauvegarderPartie());
       document.getElementById("rv-btn-load").addEventListener("click", () => this.chargerPartie());
 
+      // Bouton Mon Compte (Archiviste / VPS)
+      const btnAccount = document.getElementById("rv-btn-account");
+      if (btnAccount) {
+        btnAccount.addEventListener("click", () => this.openCloudArchivistModal());
+      }
+      const landAccount = document.getElementById("rv-land-btn-account");
+      if (landAccount) {
+        landAccount.addEventListener("click", () => this.openCloudArchivistModal());
+      }
+
       // Bouton Revenir au Hub / Changer de jeu
       const btnHubNav = document.getElementById("rv-btn-hub-nav");
       if (btnHubNav) {
@@ -3147,6 +3142,28 @@
       if (!grid) return;
       grid.innerHTML = "";
 
+      // Mise à jour dynamique des compteurs dans les onglets de consoles
+      const counts = { all: this.tousLesJeux.length, ps1: 0, nds: 0, snes: 0, gba: 0, gb: 0, nes: 0, megadrive: 0, pce: 0 };
+      for (const j of this.tousLesJeux) {
+        if (counts[j.console] !== undefined) counts[j.console]++;
+      }
+      const updateTab = (filter, label) => {
+        const tab = document.querySelector(`.rv-tab[data-filter="${filter}"]`);
+        if (tab) {
+          const c = counts[filter] || 0;
+          tab.textContent = c > 0 ? `${label} (${c})` : label;
+        }
+      };
+      updateTab("all", "🔮 TOUTES");
+      updateTab("ps1", "⚔️ PLAYSTATION 1");
+      updateTab("nds", "🕹️ NINTENDO DS");
+      updateTab("snes", "🍄 SUPER NINTENDO");
+      updateTab("gba", "⚡ GBA");
+      updateTab("gb", "🟡 GAME BOY / GBC");
+      updateTab("nes", "🏰 NES 8-BIT");
+      updateTab("megadrive", "🌪️ MEGA DRIVE");
+      updateTab("pce", "🚀 PC ENGINE");
+
       const query = (this.rechercheTexte || "").toLowerCase().trim();
 
       const liste = this.tousLesJeux.filter((j) => {
@@ -3165,43 +3182,65 @@
             🦉 Aucune relique trouvée pour "${this.rechercheTexte}". Essayez un autre terme ou changez de console.
           </div>
         `;
-        return;
+      } else {
+        for (const jeu of liste) {
+          const card = document.createElement("div");
+          card.className = "rv-card" + (jeu.nom === this.jeuEnCoursNom ? " playing" : "");
+          card.onclick = () => {
+            this.lancerPartie(jeu.nom, jeu.blob);
+            const playZone = document.getElementById("rv-play-zone");
+            if (playZone) playZone.scrollIntoView({ behavior: "smooth" });
+          };
+
+          let saveBadgeHtml = "";
+          try {
+            const save = await this.loadStateDB(jeu.nom);
+            if (save && (save.sram || save.state)) {
+              const badgeLabel = save.sram ? "💾 Carte Mémoire" : "💾 Sauvegarde";
+              saveBadgeHtml = `<span class="rv-save-badge">${badgeLabel}</span>`;
+            }
+          } catch (e) {}
+
+          const conf = CONSOLES_CONF[jeu.console] || CONSOLES_CONF.nes;
+
+          card.innerHTML = `
+            <div>
+              <div class="rv-card-head">
+                <span class="rv-tag ${conf.tag}">${conf.label}</span>
+                ${saveBadgeHtml}
+              </div>
+              <div class="rv-game-title">${jeu.titre || jeu.nom}</div>
+              <div class="rv-game-desc">${jeu.desc || "Relique prête à être invoquée."}</div>
+            </div>
+            <div class="rv-card-foot">
+              <span>▶ ${jeu.nom === this.jeuEnCoursNom ? "EN COURS" : "INVOQUER"}</span>
+            </div>
+          `;
+          grid.appendChild(card);
+        }
       }
 
-      for (const jeu of liste) {
-        const card = document.createElement("div");
-        card.className = "rv-card" + (jeu.nom === this.jeuEnCoursNom ? " playing" : "");
-        card.onclick = () => {
-          this.lancerPartie(jeu.nom, jeu.blob);
-          const playZone = document.getElementById("rv-play-zone");
-          if (playZone) playZone.scrollIntoView({ behavior: "smooth" });
-        };
-
-        let saveBadgeHtml = "";
-        try {
-          const save = await this.loadStateDB(jeu.nom);
-          if (save && (save.sram || save.state)) {
-            const badgeLabel = save.sram ? "💾 Carte Mémoire" : "💾 Sauvegarde";
-            saveBadgeHtml = `<span class="rv-save-badge">${badgeLabel}</span>`;
-          }
-        } catch (e) {}
-
-        const conf = CONSOLES_CONF[jeu.console] || CONSOLES_CONF.nes;
-
-        card.innerHTML = `
+      // En Mode Invité (déconnecté), afficher la carte de déverrouillage du coffre privé
+      if (!this.isCloudConnected()) {
+        const unlockCard = document.createElement("div");
+        unlockCard.className = "rv-card rv-unlock-card";
+        unlockCard.style.cssText = "border: 1px dashed rgba(212, 175, 55, 0.45); background: radial-gradient(circle at center, #102418 0%, #060e09 100%); cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;";
+        unlockCard.innerHTML = `
           <div>
             <div class="rv-card-head">
-              <span class="rv-tag ${conf.tag}">${conf.label}</span>
-              ${saveBadgeHtml}
+              <span class="rv-tag" style="background: rgba(212, 175, 55, 0.15); color: #d4af37; border: 1px solid rgba(212, 175, 55, 0.4);">COFFRE PRIVÉ</span>
             </div>
-            <div class="rv-game-title">${jeu.titre || jeu.nom}</div>
-            <div class="rv-game-desc">${jeu.desc || "Relique prête à être invoquée."}</div>
+            <div class="rv-game-title" style="color: #d4af37; font-size: 1.05rem; margin: 8px 0 6px;">🔐 Coffre-fort de l'Archiviste</div>
+            <div class="rv-game-desc" style="color: #a8b8ad; font-size: 0.8rem; line-height: 1.45;">
+              Vous êtes Quentin ? Connectez-vous à votre compte pour révéler vos reliques personnelles (Mario, Zelda, Pokemon, Dragon Quest...) et synchroniser vos sauvegardes VPS.
+            </div>
           </div>
-          <div class="rv-card-foot">
-            <span>▶ ${jeu.nom === this.jeuEnCoursNom ? "EN COURS" : "INVOQUER"}</span>
+          <div class="rv-card-foot" style="margin-top: 14px;">
+            <span style="color: #d4af37; font-weight: 700;">▶ DÉVERROUILLER MON COMPTE</span>
           </div>
         `;
-        grid.appendChild(card);
+        unlockCard.onclick = () => this.openCloudArchivistModal();
+        grid.appendChild(unlockCard);
       }
     }
 
@@ -3923,22 +3962,60 @@
       const container = document.getElementById("rv-game-container");
       if (!container) return;
       container.classList.remove("rv-is-nds");
-      container.innerHTML = `
-        <div class="rv-hub-standby" id="rv-hub-standby">
-          <div class="rv-hub-crest">🦉</div>
-          <h3 class="rv-hub-title">Sanctuaire des Reliques Rétro</h3>
-          <p class="rv-hub-desc">Sélectionnez une console ou une relique ci-dessous pour éveiller le moteur d'émulation.</p>
-          <div class="rv-hub-badges">
-            <span class="rv-hub-badge-item">⚔️ 7 Systèmes Rétro</span>
-            <span class="rv-hub-badge-item">💾 Carte Mémoire Active</span>
-            <span class="rv-hub-badge-item">☁️ Cloud VPS Souverain</span>
-            <span class="rv-hub-badge-item">🎮 Manettes PC & Tactile</span>
+
+      const isConnected = this.isCloudConnected();
+      const user = localStorage.getItem("rv_vps_user") || "Hibouxe";
+      const totalRoms = this.tousLesJeux.length;
+
+      if (isConnected) {
+        container.innerHTML = `
+          <div class="rv-hub-standby" id="rv-hub-standby">
+            <div class="rv-hub-crest">🦉</div>
+            <h3 class="rv-hub-title">Sanctuaire des Reliques Privées</h3>
+            <p class="rv-hub-desc">Bienvenue <strong>${user}</strong>. Votre coffre souverain contient <strong>${totalRoms} reliques</strong> synchronisées avec votre VPS.</p>
+            <div class="rv-hub-badges">
+              <span class="rv-hub-badge-item">👑 Compte ${user} Vérifié</span>
+              <span class="rv-hub-badge-item">⚔️ 7 Systèmes Rétro</span>
+              <span class="rv-hub-badge-item">💾 Carte Mémoire Active</span>
+              <span class="rv-hub-badge-item">☁️ Cloud VPS Souverain</span>
+              <span class="rv-hub-badge-item">🎮 Manettes PC & Tactile</span>
+            </div>
+            <div class="rv-hub-actions">
+              <button class="rv-btn rv-btn-gold" id="rv-btn-hub-cloud">⚙️ Coffre & Sauvegardes Cloud</button>
+              <button class="rv-btn" id="rv-btn-hub-upload">📁 Insérer une cartouche externe (.nds, .chd, .sfc...)</button>
+            </div>
           </div>
-          <div class="rv-hub-actions">
-            <button class="rv-btn" id="rv-btn-hub-upload">📁 Insérer une cartouche externe (.nds, .chd, .sfc...)</button>
+        `;
+        const btnCloud = document.getElementById("rv-btn-hub-cloud");
+        if (btnCloud) {
+          btnCloud.addEventListener("click", () => this.openCloudArchivistModal());
+        }
+        this.setStatus(`👑 Sanctuaire Privé déverrouillé (${user}) | ${totalRoms} reliques prêtes`, "#34d399");
+      } else {
+        container.innerHTML = `
+          <div class="rv-hub-standby" id="rv-hub-standby">
+            <div class="rv-hub-crest">🦉</div>
+            <h3 class="rv-hub-title">Sanctuaire Rétro — Mode Invité</h3>
+            <p class="rv-hub-desc">Console virtuelle & bac à sable local. Aucune relique privée n'est accessible aux visiteurs non autorisés.</p>
+            <div class="rv-hub-badges">
+              <span class="rv-hub-badge-item">🛡️ Mode Invité (Sandbox Local)</span>
+              <span class="rv-hub-badge-item">🎮 7 Moteurs WASM Prêts</span>
+              <span class="rv-hub-badge-item">💾 Sauvegardes Locales</span>
+              <span class="rv-hub-badge-item">⌨️ Clavier & Manettes</span>
+            </div>
+            <div class="rv-hub-actions">
+              <button class="rv-btn rv-btn-gold" id="rv-btn-hub-login">🔐 Déverrouiller Mon Compte Archiviste</button>
+              <button class="rv-btn" id="rv-btn-hub-upload">📁 Charger ma ROM (.nds, .sfc, .gba, .chd...)</button>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+        const btnLogin = document.getElementById("rv-btn-hub-login");
+        if (btnLogin) {
+          btnLogin.addEventListener("click", () => this.openCloudArchivistModal());
+        }
+        this.setStatus("🛡️ Mode Invité Actif | Glissez votre fichier ROM ou connectez-vous", "#d4af37");
+      }
+
       const btnUpload = document.getElementById("rv-btn-hub-upload");
       if (btnUpload) {
         btnUpload.addEventListener("click", () => {
@@ -3946,11 +4023,10 @@
           if (fileInput) fileInput.click();
         });
       }
-      this.setStatus("⚔️ Sanctuaire des Reliques prêt | Choisissez votre console ou votre jeu ci-dessous", "#d4af37");
     }
 
     // --- Ouverture & Fermeture du Sanctuaire ---
-    open(bootFile = null) {
+    async open(bootFile = null) {
       this.injectDOM();
       this.modal.classList.add("active");
       document.body.style.overflow = "hidden";
@@ -3960,6 +4036,10 @@
 
       this.appliquerVolume(this.volumeActuel, false);
       this.demarrerGamepadLoop();
+
+      // Charger la bibliothèque dynamique selon le compte actif (Invité vs Archiviste)
+      await this.chargerBibliotheque();
+      this.mettreAJourInterfaceCompte();
       this.rendreGrille();
 
       if (this.partieEnCours && !this.estEnPause) {
