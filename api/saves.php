@@ -111,7 +111,11 @@ if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Toutes les autres routes requièrent le jeton
-$authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+$authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+if (empty($authHeader) && function_exists('apache_request_headers')) {
+    $reqHeaders = apache_request_headers();
+    $authHeader = $reqHeaders['Authorization'] ?? $reqHeaders['authorization'] ?? '';
+}
 $token = '';
 if (preg_match('/Bearer\s+(\S+)/i', $authHeader, $matches)) {
     $token = $matches[1];

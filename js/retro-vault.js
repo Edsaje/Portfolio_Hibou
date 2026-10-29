@@ -422,7 +422,7 @@
 
       try {
         // 1. Récupérer l'inventaire des sauvegardes distantes sur le VPS
-        const listRes = await fetch("api/saves.php?action=list", {
+        const listRes = await fetch(`api/saves.php?action=list&token=${encodeURIComponent(token)}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -449,7 +449,7 @@
 
           if (!lSave || rTime > lTime) {
             try {
-              const loadRes = await fetch(`api/saves.php?action=load&game=${encodeURIComponent(key)}`, {
+              const loadRes = await fetch(`api/saves.php?action=load&game=${encodeURIComponent(key)}&token=${encodeURIComponent(token)}`, {
                 headers: { Authorization: `Bearer ${token}` }
               });
               if (loadRes.ok) {
@@ -523,7 +523,7 @@
         }
 
         const cType = this.identifierConsole(nomFichier);
-        const res = await fetch("api/saves.php?action=save", {
+        const res = await fetch(`api/saves.php?action=save&token=${encodeURIComponent(token)}`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -558,7 +558,7 @@
       const token = this.getCloudToken();
       if (!token) return;
       try {
-        const listRes = await fetch("api/saves.php?action=list", {
+        const listRes = await fetch(`api/saves.php?action=list&token=${encodeURIComponent(token)}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!listRes.ok) return;
@@ -571,7 +571,7 @@
         const lTime = (lSave && lSave.timestamp) || 0;
 
         if (!lSave || rTime > lTime) {
-          const loadRes = await fetch(`api/saves.php?action=load&game=${encodeURIComponent(nomFichier)}`, {
+          const loadRes = await fetch(`api/saves.php?action=load&game=${encodeURIComponent(nomFichier)}&token=${encodeURIComponent(token)}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (loadRes.ok) {
@@ -841,7 +841,7 @@
       if (isConnected) {
         const token = this.getCloudToken();
         const listContainer = document.getElementById("rv-cloud-saves-list");
-        fetch("api/saves.php?action=list", { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`api/saves.php?action=list&token=${encodeURIComponent(token)}`, { headers: { Authorization: `Bearer ${token}` } })
           .then((r) => r.json())
           .then((data) => {
             if (!listContainer) return;
