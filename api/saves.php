@@ -310,10 +310,22 @@ if ($action === 'delete') {
 // 6. ROUTE LIBRARY (Catalogue privé des reliques souveraines)
 if ($action === 'library' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     // Accessible uniquement aux porteurs d'un token HMAC valide (Hibouxe)
-    $catalogFile = $storageDir . '/vault_catalog.json';
-    if (file_exists($catalogFile)) {
-        $roms = json_decode(file_get_contents($catalogFile), true);
-    } else {
+    $candidateFiles = [
+        '/var/www/storage/vault_catalog.json',
+        $storageDir . '/vault_catalog.json',
+        '/var/www/storage/saves/vault_catalog.json'
+    ];
+    $roms = null;
+    foreach ($candidateFiles as $cFile) {
+        if (file_exists($cFile)) {
+            $data = @json_decode(@file_get_contents($cFile), true);
+            if (is_array($data) && !empty($data)) {
+                $roms = $data;
+                break;
+            }
+        }
+    }
+    if ($roms === null) {
         $roms = [
             [
                 'nom' => 'Super Mario 64 DS (Europe) (En,Fr,De,Es,It).nds',
