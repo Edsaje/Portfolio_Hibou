@@ -15,8 +15,8 @@ for file in $DATA_FILES; do
         cp "/var/www/html/api/$file" "$STORAGE_DIR/$file"
     fi
 
-    # Création du fichier vide s'il n'existe nulle part
-    if [ ! -f "$STORAGE_DIR/$file" ]; then
+    # Création du fichier vide s'il n'existe nulle part (sauf .admin_pass pour permettre la configuration initiale)
+    if [ ! -f "$STORAGE_DIR/$file" ] && [ "$file" != ".admin_pass" ]; then
         touch "$STORAGE_DIR/$file"
     fi
 

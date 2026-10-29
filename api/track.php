@@ -182,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || isset($_POST['admin_login']) || isse
     }
 
     // A. PREMIER DÉMARRAGE : Aucun mot de passe défini -> Écran de configuration
-    if (!file_exists($adminPassFile)) {
+    if (!file_exists($adminPassFile) || @filesize($adminPassFile) === 0) {
         $setupError = false;
         if (isset($_POST['admin_setup'])) {
             $p1 = trim($_POST['new_password'] ?? '');

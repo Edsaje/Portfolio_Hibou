@@ -11,8 +11,8 @@ Options -Indexes
   RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 </IfModule>
 
-# Bloquer l'accès direct aux fichiers sensibles, fichiers cachés et sauvegardes
-<FilesMatch "(^\..*|\.json|\.secret|\.admin_pass|\.log|\.env|\.bak|\.tmp.*|\.swp|\.swo|~$|\.php\.bak)$">
+# Bloquer l'accès direct aux fichiers sensibles, fichiers cachés, scripts et configurations d'infrastructure
+<FilesMatch "(^\..*|\.json|\.secret|\.admin_pass|\.log|\.env|\.bak|\.tmp.*|\.swp|\.swo|~$|\.php\.bak|\.yml|\.yaml|\.sh|Dockerfile|Makefile|\.md)$">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>

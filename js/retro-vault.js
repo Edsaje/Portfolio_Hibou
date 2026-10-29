@@ -3246,15 +3246,18 @@
 
     // --- Téléchargement résilient de ROM (Local ou CDN VPS distant) avec jauge de progression ---
     async fetchRomBlob(nomFichier, onProgress) {
+      const token = this.getCloudToken();
+      const tokenParam = token ? `?token=${encodeURIComponent(token)}` : "";
       const urls = [
-        "assets/vault/" + encodeURI(nomFichier),
-        "https://quentinbeaud.com/assets/vault/" + encodeURI(nomFichier),
-        "https://roms.quentinbeaud.com/vault/" + encodeURI(nomFichier)
+        `assets/vault/${encodeURI(nomFichier)}${tokenParam}`,
+        `https://quentinbeaud.com/assets/vault/${encodeURI(nomFichier)}${tokenParam}`,
+        `https://roms.quentinbeaud.com/vault/${encodeURI(nomFichier)}`
       ];
+      const headers = token ? { "Authorization": `Bearer ${token}` } : {};
 
       for (const url of urls) {
         try {
-          const res = await fetch(url);
+          const res = await fetch(url, { headers });
           if (!res.ok) continue;
 
           const total = parseInt(res.headers.get("content-length") || "0", 10);

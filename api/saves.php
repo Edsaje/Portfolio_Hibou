@@ -121,12 +121,30 @@ if (preg_match('/Bearer\s+(\S+)/i', $authHeader, $matches)) {
     $token = $matches[1];
 } elseif (!empty($_GET['token'])) {
     $token = $_GET['token'];
+} elseif (!empty($_SERVER['HTTP_X_ORIGINAL_URI'])) {
+    $parts = parse_url($_SERVER['HTTP_X_ORIGINAL_URI']);
+    if (!empty($parts['query'])) {
+        parse_str($parts['query'], $queryVars);
+        if (!empty($queryVars['token'])) $token = $queryVars['token'];
+    }
+} elseif (!empty($_SERVER['HTTP_X_FORWARDED_URI'])) {
+    $parts = parse_url($_SERVER['HTTP_X_FORWARDED_URI']);
+    if (!empty($parts['query'])) {
+        parse_str($parts['query'], $queryVars);
+        if (!empty($queryVars['token'])) $token = $queryVars['token'];
+    }
 }
 
 $authData = verifyAuthToken($token, $serverSecret);
 if (!$authData) {
     http_response_code(401);
     echo json_encode(['ok' => false, 'error' => 'Session expirée ou non autorisée.']);
+    exit;
+}
+
+if ($action === 'auth_check') {
+    http_response_code(200);
+    echo json_encode(['ok' => true, 'user' => $authData['user'] ?? 'Hibouxe']);
     exit;
 }
 
