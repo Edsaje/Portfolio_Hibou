@@ -29,7 +29,7 @@
 
   class RetroVault {
     constructor() {
-      this.version = "10.0-stealth-sovereign";
+      this.version = "10.1-ghost-vault";
       this.modal = null;
       this.partieEnCours = null;
       this.jeuEnCoursNom = "";
@@ -216,17 +216,22 @@
           btnAccount.innerHTML = `🟢 Mon Compte (${user})`;
           btnAccount.title = `Compte connecté (${user}) — Gérer les sauvegardes ou se déconnecter`;
           btnAccount.classList.add("rv-btn-account-active");
+          btnAccount.style.display = "inline-flex";
         } else {
-          btnAccount.innerHTML = `🔐 Connexion`;
-          btnAccount.title = `Connexion au compte`;
+          btnAccount.style.display = "none";
           btnAccount.classList.remove("rv-btn-account-active");
         }
       }
 
       const landAccount = document.getElementById("rv-land-btn-account");
       if (landAccount) {
-        landAccount.textContent = isConnected ? "🟢" : "🔐";
-        landAccount.title = isConnected ? `Compte ${user} connecté` : "Connexion";
+        if (isConnected) {
+          landAccount.textContent = "🟢";
+          landAccount.title = `Compte ${user} connecté`;
+          landAccount.style.display = "inline-flex";
+        } else {
+          landAccount.style.display = "none";
+        }
       }
 
       // Masquer / Afficher le bouton "Changer de jeu" selon la connexion
@@ -2400,7 +2405,7 @@
                   <button class="rv-land-btn" id="rv-land-btn-load" title="Charger l'état">📂</button>
                   <button class="rv-land-btn" id="rv-land-btn-pause" title="Pause / Reprendre">⏸️</button>
                   <button class="rv-land-btn" id="rv-land-btn-mute" title="Couper ou rétablir le son">🔊</button>
-                  <button class="rv-land-btn" id="rv-land-btn-account" title="Connexion">🔐</button>
+                  <button class="rv-land-btn" id="rv-land-btn-account" style="display: none;" title="Mon Compte">🟢</button>
                   <button class="rv-land-btn" id="rv-land-btn-fs" title="Plein Écran unifié">⛶</button>
                   <button class="rv-land-btn rv-land-btn-close" id="rv-land-btn-close" title="Fermer le sanctuaire">✕</button>
                 </div>
@@ -2417,7 +2422,7 @@
                 <!-- Barre d'actions standard (portrait / bureau) -->
                 <div class="rv-toolbar">
                   <div class="rv-tool-group">
-                    <button class="rv-btn rv-btn-account" id="rv-btn-account" title="Connexion">🔐 Connexion</button>
+                    <button class="rv-btn rv-btn-account" id="rv-btn-account" style="display: none;" title="Mon Compte">🟢 Mon Compte</button>
                     <button class="rv-btn rv-btn-hub-nav" id="rv-btn-hub-nav" style="display: none;" title="Revenir au choix des jeux">📚 Changer de jeu</button>
                     <button class="rv-btn rv-btn-save" id="rv-btn-save">💾 Sauver (F2)</button>
                     <button class="rv-btn rv-btn-load" id="rv-btn-load">📂 Charger (F4)</button>
@@ -3343,8 +3348,7 @@
 
         if (!romBlob && !isLauncher) {
           if (!this.isCloudConnected()) {
-            this.openCloudArchivistModal();
-            throw new Error("Veuillez vous connecter pour invoquer cette relique.");
+            throw new Error("Relique inaccessible en mode invité.");
           }
 
           status.textContent = `⏳ Récupération de la relique : "${nomFichier}"...`;
@@ -4037,14 +4041,9 @@
             <p class="rv-hub-desc">Glissez-déposez un fichier de jeu ou insérez votre cartouche pour lancer l'émulation.</p>
             <div class="rv-hub-actions">
               <button class="rv-btn rv-btn-gold" id="rv-btn-hub-upload">📁 Insérer une ROM (.nds, .sfc, .gba, .chd...)</button>
-              <button class="rv-btn" id="rv-btn-hub-login">🔐 Connexion</button>
             </div>
           </div>
         `;
-        const btnLogin = document.getElementById("rv-btn-hub-login");
-        if (btnLogin) {
-          btnLogin.addEventListener("click", () => this.openCloudArchivistModal());
-        }
         this.setStatus("🎮 Prêt | Glissez un fichier ROM ou insérez une cartouche", "#d4af37");
       }
 
