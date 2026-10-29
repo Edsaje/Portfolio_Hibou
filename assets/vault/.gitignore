@@ -1,0 +1,4 @@
+# Les ROMs sont hébergées directement sur le VPS et servies via Caddy CDN
+*
+!.gitignore
+!.htaccess

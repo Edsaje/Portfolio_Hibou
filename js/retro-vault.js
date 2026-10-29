@@ -19,6 +19,48 @@
       desc: "L'épopée 3D culte de la Nintendo DS avec Mario, Yoshi, Luigi et Wario (contrôles 360° actifs)."
     },
     {
+      nom: "Dragon Quest - The Chapters of the Chosen (E).nds",
+      titre: "Dragon Quest IV : L'Épopée des Élus (DS)",
+      console: "nds",
+      desc: "Le remake culte sur Nintendo DS en 3D avec les cinq chapitres narratifs des élus (2008)."
+    },
+    {
+      nom: "Dragon Quest V - The Hand of the Heavenly Bride (EU)(M5).nds",
+      titre: "Dragon Quest V : La Fiancée Céleste (DS)",
+      console: "nds",
+      desc: "L'épopée magistrale sur trois générations adaptée en 3D sur Nintendo DS (2009)."
+    },
+    {
+      nom: "Dragon Quest VI - Realms of Reverie (E).nds",
+      titre: "Dragon Quest VI : Le Royaume des Songes (DS)",
+      console: "nds",
+      desc: "L'aventure entre le monde réel et le monde des songes sur Nintendo DS (2011)."
+    },
+    {
+      nom: "Dragon Quest IX - Sentinels of the Starry Skies (Europe) (En,Fr,De,Es,It).nds",
+      titre: "Dragon Quest IX : Les Sentinelles du Firmament (DS)",
+      console: "nds",
+      desc: "L'immense aventure RPG de Level-5 et Square Enix taillée pour la Nintendo DS (2010)."
+    },
+    {
+      nom: "Tekken 3 (Europe).chd",
+      titre: "Tekken 3",
+      console: "ps1",
+      desc: "Le titan absolu du jeu de combat 3D sur PlayStation 1 par Namco (1998)."
+    },
+    {
+      nom: "MediEvil (France).chd",
+      titre: "MediEvil",
+      console: "ps1",
+      desc: "L'épopée gothique et burlesque de Sir Daniel Fortesque à Gallowmere (1998)."
+    },
+    {
+      nom: "Bomberman (Europe) (En,Fr,De,Es,It).iso",
+      titre: "Bomberman World",
+      console: "ps1",
+      desc: "Le classique d'action explosive multijoueur sur PlayStation 1 (1998)."
+    },
+    {
       nom: "Super Mario World (Europe) (Rev 1).sfc",
       titre: "Super Mario World",
       console: "snes",
@@ -32,9 +74,9 @@
     },
     {
       nom: "Dragon Quest 5 (tr).sfc",
-      titre: "Dragon Quest V : La Fiancée Céleste",
+      titre: "Dragon Quest V : La Fiancée Céleste (SNES)",
       console: "snes",
-      desc: "L'épopée sur trois générations d'Horie, Toriyama et Sugiyama."
+      desc: "L'épopée sur trois générations d'Horie, Toriyama et Sugiyama (1992)."
     },
     {
       nom: "Legend of Zelda, The - Link's Awakening DX (France) (Rev 1) (SGB Enhanced) (GB Compatible).gbc",
@@ -68,7 +110,7 @@
     },
     {
       nom: "Dragon Warrior 4 (U).nes",
-      titre: "Dragon Quest IV : Chapters of the Chosen",
+      titre: "Dragon Quest IV : Chapters of the Chosen (NES)",
       console: "nes",
       desc: "L'épopée en cinq chapitres narratifs de Chunsoft et Yuji Horii sur NES (1990)."
     },
@@ -124,7 +166,7 @@
 
   class RetroVault {
     constructor() {
-      this.version = "8.8-ds-landscape-screens-fix";
+      this.version = "8.9-vps-vault-cdn";
       this.modal = null;
       this.partieEnCours = null;
       this.jeuEnCoursNom = "";
@@ -2759,6 +2801,49 @@
       }
     }
 
+    // --- Téléchargement résilient de ROM (Local ou CDN VPS distant) avec jauge de progression ---
+    async fetchRomBlob(nomFichier, onProgress) {
+      const urls = [
+        "assets/vault/" + encodeURI(nomFichier),
+        "https://quentinbeaud.com/assets/vault/" + encodeURI(nomFichier),
+        "https://roms.quentinbeaud.com/vault/" + encodeURI(nomFichier)
+      ];
+
+      for (const url of urls) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+
+          const total = parseInt(res.headers.get("content-length") || "0", 10);
+          if (!total || !res.body) {
+            return await res.blob();
+          }
+
+          const reader = res.body.getReader();
+          const chunks = [];
+          let received = 0;
+          let lastTick = 0;
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            received += value.length;
+            const now = Date.now();
+            if (onProgress && now - lastTick > 120) {
+              lastTick = now;
+              onProgress(received, total);
+            }
+          }
+          if (onProgress) onProgress(received, total);
+          return new Blob(chunks);
+        } catch (err) {
+          // Si cette URL échoue (ex: CORS ou offline), essayer la suivante
+        }
+      }
+      throw new Error(`Fichier ROM "${nomFichier}" introuvable dans le Sanctuaire.`);
+    }
+
     // --- Lancement de l'émulateur ---
     async lancerPartie(nomFichier, customBlob = null) {
       if (typeof Nostalgist === "undefined") {
@@ -2780,28 +2865,32 @@
           this.partieEnCours = null;
         }
 
+        const isLauncher = nomFichier.includes("console-nds-launcher");
+        let romBlob = customBlob;
+
+        if (!romBlob && !isLauncher) {
+          status.textContent = `⏳ Récupération de la relique : "${nomFichier}"...`;
+          status.style.color = "#d4af37";
+
+          romBlob = await this.fetchRomBlob(nomFichier, (received, total) => {
+            const pct = Math.round((received / total) * 100);
+            const mbRec = (received / 1048576).toFixed(1);
+            const mbTot = (total / 1048576).toFixed(1);
+            status.textContent = `⏳ Téléchargement de la relique : ${pct}% (${mbRec} / ${mbTot} Mo)...`;
+          });
+        }
+
         const container = document.getElementById("rv-game-container");
 
         if (cType === "nds") {
           container.classList.add("rv-is-nds");
-          const isLauncher = nomFichier.includes("console-nds-launcher");
-
-          let romBlob = customBlob;
-          if (!romBlob && !isLauncher) {
-            try {
-              const res = await fetch("assets/vault/" + encodeURI(nomFichier));
-              if (res.ok) romBlob = await res.blob();
-            } catch (e) {
-              console.warn("Could not fetch ROM from vault:", e);
-            }
-          }
 
           container.innerHTML = `
             <div class="rv-nds-wrapper">
               <div class="rv-nds-ext-btn-wrap" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
-                <a href="emulators/ds/index.html?v=8.8" target="_blank" class="rv-btn rv-nds-ext-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
+                <a href="emulators/ds/index.html?v=8.9" target="_blank" class="rv-btn rv-nds-ext-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
               </div>
-              <iframe id="rv-nds-frame" class="rv-embedded-frame" src="emulators/ds/index.html?v=8.8&embedded=1" allow="autoplay; fullscreen; gamepad"></iframe>
+              <iframe id="rv-nds-frame" class="rv-embedded-frame" src="emulators/ds/index.html?v=8.9&embedded=1" allow="autoplay; fullscreen; gamepad"></iframe>
             </div>
           `;
 
@@ -2857,13 +2946,6 @@
           <div class="rv-crt-overlay" id="rv-crt"></div>
           <canvas id="rv-canvas"></canvas>
         `;
-
-        let romBlob = customBlob;
-        if (!romBlob) {
-          const res = await fetch("assets/vault/" + encodeURI(nomFichier));
-          if (!res.ok) throw new Error("Fichier ROM introuvable dans le sanctuaire.");
-          romBlob = await res.blob();
-        }
 
         this.jeuEnCoursNom = nomFichier;
 
