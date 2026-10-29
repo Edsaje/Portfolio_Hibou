@@ -403,7 +403,7 @@
     </div>
   </div>
 
-  <script src="desmond.min.js?v=8.5"></script>
+  <script src="desmond.min.js?v=8.6"></script>
   <script>
     (function() {
       // Détection automatique du mode imbriqué (dans RetroVault)
@@ -1008,6 +1008,10 @@
 
         if (e.data.type === "LOAD_ROM" && e.data.blob) {
           loadRomBlob(e.data.blob, e.data.name);
+        } else if (e.data.type === "SET_SPEED") {
+          const spd = parseFloat(e.data.speed) || 1;
+          window.dsSpeedMultiplier = spd;
+          setStatus("⚡ Vitesse DS : " + spd + "x", "#34d399");
         } else if (e.data.type === "SET_VOLUME") {
           const vol = parseFloat(e.data.volume);
           if (!isNaN(vol)) {

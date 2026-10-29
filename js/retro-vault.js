@@ -27,9 +27,62 @@
     arcade: { label: "Arcade", core: "fbneo", tag: "tag-arcade", hasExtra: true }
   };
 
+  // Base de sortilèges préconfigurés (Cheats par relique)
+  const PREDEFINED_CHEATS = {
+    "Pokémon Emeraude": [
+      { code: "02025840 00010001", description: "Master Ball infinies (PC slot 1)", enabled: false },
+      { code: "02025840 00440001", description: "Super Bonbons infinis (PC slot 1)", enabled: false },
+      { code: "02024F4C 000F423F", description: "Argent Maximum 999 999 ₽", enabled: false },
+      { code: "02037006 0000", description: "Repousse infinie (Zéro combat sauvage)", enabled: false }
+    ],
+    "Spider-Man - Mysterio": [
+      { code: "03001858:64", description: "Santé Infinie (100 HP)", enabled: false },
+      { code: "0300185A:64", description: "Fluide de Toile Infini", enabled: false },
+      { code: "03001856:09", description: "Vies Infinies (9 Vies)", enabled: false }
+    ],
+    "Super Mario World": [
+      { code: "7E0DBE63", description: "Vies Infinies (99 Vies)", enabled: false },
+      { code: "7E149010", description: "Invincibilité continue", enabled: false },
+      { code: "7E001902", description: "Mario Capé permanent", enabled: false }
+    ],
+    "CHRONO": [
+      { code: "7E2C537F", description: "Argent Max (Partie 1)", enabled: false },
+      { code: "7E2C5496", description: "Argent Max (Partie 2)", enabled: false },
+      { code: "7E5E6E03", description: "HP Infinis Crono en Combat", enabled: false }
+    ],
+    "Pokemon - Version Jaune": [
+      { code: "019946D3", description: "Argent Maximum (Partie 1)", enabled: false },
+      { code: "019947D3", description: "Argent Maximum (Partie 2)", enabled: false },
+      { code: "01011ED3", description: "Master Ball x99 slot 1 sac", enabled: false },
+      { code: "01033CD1", description: "Pas de combats sauvages", enabled: false }
+    ],
+    "Link's Awakening DX": [
+      { code: "010CD4DB", description: "Santé Infinie (14 Cœurs)", enabled: false },
+      { code: "01035DDB", description: "Rubis Maximum (999)", enabled: false }
+    ],
+    "Super Mario Bros. 3": [
+      { code: "SLXPLOVS", description: "Vies Infinies", enabled: false },
+      { code: "PEUZSIAA", description: "Toujours Mario Tanuki", enabled: false }
+    ],
+    "Super Mario Bros. 2": [
+      { code: "SLXULLVS", description: "Vies Infinies", enabled: false }
+    ],
+    "Legend of Zelda": [
+      { code: "SZVZZZVG", description: "Vies Infinies", enabled: false },
+      { code: "066D:FF", description: "Rubis Maximum (255)", enabled: false }
+    ],
+    "Tekken 3": [
+      { code: "800A9E70 FFFF", description: "Débloquer tous les combattants", enabled: false },
+      { code: "800AAB0E 0082", description: "Santé Joueur 1 Infinie", enabled: false }
+    ],
+    "MediEvil": [
+      { code: "800D16B4 012C", description: "Santé Infinie Sir Dan", enabled: false }
+    ]
+  };
+
   class RetroVault {
     constructor() {
-      this.version = "10.1-ghost-vault";
+      this.version = "10.2-options-perf";
       this.modal = null;
       this.partieEnCours = null;
       this.jeuEnCoursNom = "";
@@ -38,6 +91,12 @@
       this.rechercheTexte = "";
       this.tousLesJeux = [];
       this.estEnPause = false;
+      this.vitesseActuelle = 1.0;
+      this.isFastForward = false;
+      this.afficherPerfFps = localStorage.getItem("rv_show_fps") === "true";
+      this.autoFullscreenPaysage = localStorage.getItem("rv_auto_landscape_fs") !== "false";
+      this.fpsAnimId = null;
+      this.cheatsLocaux = JSON.parse(localStorage.getItem("rv_custom_cheats") || "{}");
       this.dbName = "HibouRetroVaultDB";
       this.storeName = "saves";
       this.db = null;
@@ -1096,6 +1155,427 @@
             this.openCloudArchivistModal();
           }
         };
+      }
+    }
+
+    // --- GESTION DES OPTIONS DU SANCTUAIRE (Vitesse, Cheats, FPS, Plein Écran) ---
+    openOptionsModal() {
+      let modal = document.getElementById("rv-options-modal");
+      if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "rv-options-modal";
+        document.body.appendChild(modal);
+      }
+
+      const nomJeu = this.jeuEnCoursNom || "";
+      const cType = nomJeu ? this.identifierConsole(nomJeu) : "";
+      const cheats = nomJeu ? this.obtenirCheatsPourJeu(nomJeu) : [];
+      const speeds = [0.5, 1.0, 1.5, 2.0, 4.0];
+
+      modal.innerHTML = `
+        <div class="rv-opt-backdrop" id="rv-opt-backdrop"></div>
+        <div class="rv-opt-dialog">
+          <div class="rv-opt-header">
+            <div class="rv-opt-title-wrap">
+              <span class="rv-opt-sigil">⚙️</span>
+              <div>
+                <h3 class="rv-opt-title">Grimoire des Options</h3>
+                <div style="font-size: 0.78rem; color: #a8b8ad;">Configuration d'émulation & Sortilèges</div>
+              </div>
+            </div>
+            <button class="rv-opt-close" id="rv-opt-close-btn" title="Fermer les options">✕</button>
+          </div>
+
+          <!-- Section 1 : Vitesse de Jeu -->
+          <div class="rv-opt-section">
+            <div class="rv-opt-section-title">⚡ Vitesse d'Émulation</div>
+            <div class="rv-opt-speed-grid">
+              ${speeds.map(s => `
+                <button class="rv-opt-speed-btn ${this.vitesseActuelle === s ? 'active' : ''}" data-speed="${s}">
+                  ${s === 0.5 ? '0.5x' : s === 1.0 ? '1.0x Normal' : s === 2.0 ? '2.0x Turbo' : `${s}x`}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Section 2 : Performance & Fluidité (FPS) -->
+          <div class="rv-opt-section">
+            <div class="rv-opt-section-title">📊 Performance & Affichage</div>
+            <label class="rv-opt-check-row">
+              <input type="checkbox" id="rv-opt-check-fps" ${this.afficherPerfFps ? 'checked' : ''}>
+              <span class="rv-opt-check-label">
+                Afficher le compteur FPS & temps de trame (HUD en direct)
+                <span class="rv-opt-check-sub">Incrustation discrète : vert si 60 FPS stable, ambre si saccades.</span>
+              </span>
+            </label>
+          </div>
+
+          <!-- Section 3 : Mobile & Immersion -->
+          <div class="rv-opt-section">
+            <div class="rv-opt-section-title">📱 Immersion Mobile (Mode Paysage)</div>
+            <label class="rv-opt-check-row">
+              <input type="checkbox" id="rv-opt-check-auto-landscape" ${this.autoFullscreenPaysage ? 'checked' : ''}>
+              <span class="rv-opt-check-label">
+                Plein écran automatique dès rotation en mode paysage
+                <span class="rv-opt-check-sub">Adapte instantanément les boutons latéraux et l'écran à l'horizontale.</span>
+              </span>
+            </label>
+          </div>
+
+          <!-- Section 4 : Codes de Triche / Sortilèges -->
+          <div class="rv-opt-section">
+            <div class="rv-opt-section-title">🔮 Sortilèges & Codes de Triche (Cheats)</div>
+            ${!nomJeu ? `
+              <div style="font-size: 0.8rem; color: #a8b8ad; font-style: italic; text-align: center; padding: 12px 0;">
+                🦉 Lancez une relique dans le sanctuaire pour afficher ou configurer ses sortilèges.
+              </div>
+            ` : cType === 'nds' ? `
+              <div style="font-size: 0.8rem; color: #d4af37; padding: 6px 0; line-height: 1.4;">
+                🎮 <strong>${nomJeu}</strong> (Nintendo DS DeSmuME)
+                <div style="color: #a8b8ad; font-size: 0.74rem; margin-top: 4px;">
+                  La vitesse de jeu (0.5x à 4x) et le compteur de FPS sont actifs pour cette console.
+                </div>
+              </div>
+            ` : `
+              <div style="margin-bottom: 8px; font-size: 0.78rem; color: #d4af37; font-weight: 600;">
+                Relique active : <span style="color: #34d399;">${nomJeu}</span>
+              </div>
+              <div id="rv-opt-cheats-list" style="max-height: 180px; overflow-y: auto;">
+                ${cheats.length === 0 ? `
+                  <div style="font-size: 0.78rem; color: #a8b8ad; font-style: italic; padding: 6px 0;">
+                    Aucun sortilège pour l'instant. Ajoutez-en un ci-dessous !
+                  </div>
+                ` : cheats.map((c, idx) => `
+                  <div class="rv-opt-cheat-item">
+                    <input type="checkbox" class="rv-opt-cheat-check" data-idx="${idx}" ${c.enabled ? 'checked' : ''}>
+                    <div class="rv-opt-cheat-info">
+                      <div class="rv-opt-cheat-name">${c.description || c.desc || 'Sortilège'}</div>
+                      <div class="rv-opt-cheat-code">${c.code}</div>
+                    </div>
+                    ${c.isCustom ? `<button class="rv-opt-cheat-del" data-idx="${idx}" title="Supprimer ce sortilège">🗑️</button>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+
+              <!-- Formulaire d'ajout de cheat code -->
+              <div class="rv-opt-add-box">
+                <div style="font-size: 0.76rem; color: #d4af37; font-weight: 600;">➕ Invoquer un nouveau sortilège personnalisé :</div>
+                <input type="text" id="rv-opt-new-cheat-desc" placeholder="Nom (ex: Vies Infinies, Argent Max...)" class="rv-opt-input">
+                <input type="text" id="rv-opt-new-cheat-code" placeholder="Code (ex: 02025840 00010001 ou SLXPLOVS)" class="rv-opt-input" style="font-family: monospace;">
+                <button class="rv-btn rv-btn-gold" id="rv-opt-btn-add-cheat" style="font-size: 0.78rem; padding: 6px 12px; margin-top: 4px;">✨ Activer le Sortilège</button>
+              </div>
+              <div id="rv-opt-cheat-feedback" style="font-size: 0.76rem; margin-top: 6px; min-height: 16px;"></div>
+            `}
+          </div>
+        </div>
+      `;
+
+      const close = () => {
+        if (modal) modal.remove();
+      };
+      document.getElementById("rv-opt-close-btn")?.addEventListener("click", close);
+      document.getElementById("rv-opt-backdrop")?.addEventListener("click", close);
+
+      // Gestion des vitesses
+      modal.querySelectorAll(".rv-opt-speed-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const spd = parseFloat(e.currentTarget.getAttribute("data-speed"));
+          this.changerVitesse(spd);
+          modal.querySelectorAll(".rv-opt-speed-btn").forEach(b => b.classList.remove("active"));
+          e.currentTarget.classList.add("active");
+        });
+      });
+
+      // Gestion de la case à cocher FPS
+      const chkFps = document.getElementById("rv-opt-check-fps");
+      if (chkFps) {
+        chkFps.addEventListener("change", (e) => {
+          this.togglePerfFps(e.target.checked);
+        });
+      }
+
+      // Gestion de la case à cocher Paysage Auto
+      const chkLandscape = document.getElementById("rv-opt-check-auto-landscape");
+      if (chkLandscape) {
+        chkLandscape.addEventListener("change", (e) => {
+          this.autoFullscreenPaysage = e.target.checked;
+          try {
+            localStorage.setItem("rv_auto_landscape_fs", this.autoFullscreenPaysage ? "true" : "false");
+          } catch (err) {}
+        });
+      }
+
+      // Gestion des checkboxes cheats
+      modal.querySelectorAll(".rv-opt-cheat-check").forEach(chk => {
+        chk.addEventListener("change", (e) => {
+          const idx = parseInt(e.target.getAttribute("data-idx"), 10);
+          this.toggleCheat(nomJeu, idx, e.target.checked);
+          const fb = document.getElementById("rv-opt-cheat-feedback");
+          if (fb) {
+            fb.textContent = e.target.checked ? "✨ Sortilège activé dans le jeu !" : "⚪ Sortilège désactivé.";
+            fb.style.color = e.target.checked ? "#34d399" : "#a8b8ad";
+          }
+        });
+      });
+
+      // Gestion de suppression de cheat custom
+      modal.querySelectorAll(".rv-opt-cheat-del").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const idx = parseInt(e.currentTarget.getAttribute("data-idx"), 10);
+          this.supprimerCheatCustom(nomJeu, idx);
+          this.openOptionsModal();
+        });
+      });
+
+      // Ajout d'un nouveau cheat
+      const btnAddCheat = document.getElementById("rv-opt-btn-add-cheat");
+      if (btnAddCheat) {
+        btnAddCheat.addEventListener("click", () => {
+          const descInput = document.getElementById("rv-opt-new-cheat-desc");
+          const codeInput = document.getElementById("rv-opt-new-cheat-code");
+          const desc = (descInput?.value || "").trim();
+          const code = (codeInput?.value || "").trim();
+          const fb = document.getElementById("rv-opt-cheat-feedback");
+
+          if (!code) {
+            if (fb) {
+              fb.textContent = "❌ Veuillez saisir au moins un code de triche.";
+              fb.style.color = "#ef4444";
+            }
+            return;
+          }
+
+          this.ajouterCheatCustom(nomJeu, desc || "Sortilège Personnalisé", code);
+          this.openOptionsModal();
+        });
+      }
+    }
+
+    closeOptionsModal() {
+      const modal = document.getElementById("rv-options-modal");
+      if (modal) modal.remove();
+    }
+
+    changerVitesse(nouvelleVitesse) {
+      const spd = parseFloat(nouvelleVitesse) || 1.0;
+      this.vitesseActuelle = spd;
+
+      const speedBtn = document.getElementById("rv-btn-speed");
+      if (speedBtn) {
+        speedBtn.textContent = `⚡ ${spd}x`;
+        speedBtn.title = `Vitesse actuelle : ${spd}x (Cliquez pour accélérer)`;
+        if (spd > 1) speedBtn.classList.add("rv-btn-active-speed");
+        else speedBtn.classList.remove("rv-btn-active-speed");
+      }
+      const landSpeedBtn = document.getElementById("rv-land-btn-speed");
+      if (landSpeedBtn) {
+        landSpeedBtn.textContent = `⚡ ${spd}x`;
+        if (spd > 1) landSpeedBtn.classList.add("rv-btn-active-speed");
+        else landSpeedBtn.classList.remove("rv-btn-active-speed");
+      }
+
+      if (this.jeuEnCoursType === "nds") {
+        const frame = document.getElementById("rv-nds-frame");
+        if (frame && frame.contentWindow) {
+          try {
+            frame.contentWindow.postMessage({
+              type: "SET_SPEED",
+              speed: spd
+            }, "*");
+          } catch (e) {}
+        }
+        return;
+      }
+
+      if (this.partieEnCours && typeof this.partieEnCours.sendCommand === "function") {
+        try {
+          if (spd > 1 && !this.isFastForward) {
+            this.partieEnCours.sendCommand("FAST_FORWARD");
+            this.isFastForward = true;
+          } else if (spd <= 1 && this.isFastForward) {
+            this.partieEnCours.sendCommand("FAST_FORWARD");
+            this.isFastForward = false;
+          }
+        } catch (e) {}
+      }
+    }
+
+    toggleVitesseRapide() {
+      const vitesses = [1.0, 1.5, 2.0, 4.0];
+      const idx = vitesses.indexOf(this.vitesseActuelle);
+      const nextIdx = (idx + 1) % vitesses.length;
+      this.changerVitesse(vitesses[nextIdx]);
+    }
+
+    togglePerfFps(forceState = null) {
+      this.afficherPerfFps = forceState !== null ? !!forceState : !this.afficherPerfFps;
+      try {
+        localStorage.setItem("rv_show_fps", this.afficherPerfFps ? "true" : "false");
+      } catch (e) {}
+
+      const btn = document.getElementById("rv-btn-fps");
+      if (btn) {
+        btn.textContent = `📊 FPS : ${this.afficherPerfFps ? "ON" : "OFF"}`;
+        if (this.afficherPerfFps) btn.classList.add("rv-btn-active-fps");
+        else btn.classList.remove("rv-btn-active-fps");
+      }
+      const landFpsBtn = document.getElementById("rv-land-btn-fps");
+      if (landFpsBtn) {
+        if (this.afficherPerfFps) landFpsBtn.classList.add("rv-btn-active-fps");
+        else landFpsBtn.classList.remove("rv-btn-active-fps");
+      }
+
+      if (this.afficherPerfFps) {
+        this.demarrerMesurePerf();
+      } else {
+        this.arreterMesurePerf();
+      }
+    }
+
+    demarrerMesurePerf() {
+      this.arreterMesurePerf();
+      if (!this.afficherPerfFps) return;
+      const hud = document.getElementById("rv-perf-hud");
+      if (!hud) return;
+      hud.classList.add("active");
+
+      let lastTime = performance.now();
+      let frames = 0;
+      const dotEl = document.getElementById("rv-perf-dot");
+      const textEl = document.getElementById("rv-perf-text");
+
+      const loop = () => {
+        frames++;
+        const now = performance.now();
+        const elapsed = now - lastTime;
+        if (elapsed >= 500) {
+          const fps = Math.round((frames * 1000) / elapsed);
+          const ms = (1000 / Math.max(1, fps)).toFixed(1);
+          if (textEl) textEl.textContent = `${fps} FPS | ${ms} ms`;
+          if (dotEl) {
+            if (fps >= 52) {
+              dotEl.textContent = "🟢";
+              hud.style.color = "#34d399";
+              hud.style.borderColor = "rgba(52, 211, 153, 0.4)";
+            } else if (fps >= 30) {
+              dotEl.textContent = "🟡";
+              hud.style.color = "#fbbf24";
+              hud.style.borderColor = "rgba(251, 191, 36, 0.4)";
+            } else {
+              dotEl.textContent = "🔴";
+              hud.style.color = "#f87171";
+              hud.style.borderColor = "rgba(248, 113, 113, 0.4)";
+            }
+          }
+          frames = 0;
+          lastTime = now;
+        }
+        this.fpsAnimId = requestAnimationFrame(loop);
+      };
+      this.fpsAnimId = requestAnimationFrame(loop);
+    }
+
+    arreterMesurePerf() {
+      if (this.fpsAnimId) {
+        cancelAnimationFrame(this.fpsAnimId);
+        this.fpsAnimId = null;
+      }
+      const hud = document.getElementById("rv-perf-hud");
+      if (hud) hud.classList.remove("active");
+    }
+
+    obtenirCheatsPourJeu(nomFichier) {
+      if (!nomFichier) return [];
+      const nomLower = nomFichier.toLowerCase();
+      let predefined = [];
+      for (const [key, list] of Object.entries(PREDEFINED_CHEATS)) {
+        if (nomLower.includes(key.toLowerCase()) || key.toLowerCase().includes(nomLower)) {
+          predefined = list.map(c => ({ ...c, isCustom: false }));
+          break;
+        }
+      }
+
+      const custom = (this.cheatsLocaux && this.cheatsLocaux[nomFichier]) || [];
+      const customList = custom.map(c => ({ ...c, isCustom: true }));
+      const activeState = JSON.parse(localStorage.getItem(`rv_cheat_state_${nomFichier}`) || "{}");
+
+      const all = [...predefined, ...customList];
+      return all.map(c => ({
+        ...c,
+        enabled: activeState[c.code] !== undefined ? !!activeState[c.code] : (c.enabled || false)
+      }));
+    }
+
+    obtenirCheatsActifsPourJeu(nomFichier) {
+      const cheats = this.obtenirCheatsPourJeu(nomFichier);
+      return cheats.filter(c => c.enabled);
+    }
+
+    toggleCheat(nomFichier, cheatIndex, isEnabled) {
+      const cheats = this.obtenirCheatsPourJeu(nomFichier);
+      if (!cheats[cheatIndex]) return;
+
+      const targetCheat = cheats[cheatIndex];
+      targetCheat.enabled = !!isEnabled;
+
+      const activeState = JSON.parse(localStorage.getItem(`rv_cheat_state_${nomFichier}`) || "{}");
+      activeState[targetCheat.code] = !!isEnabled;
+      try {
+        localStorage.setItem(`rv_cheat_state_${nomFichier}`, JSON.stringify(activeState));
+      } catch (e) {}
+
+      this.appliquerCheatsJeu(nomFichier);
+    }
+
+    ajouterCheatCustom(nomFichier, description, code) {
+      if (!this.cheatsLocaux) this.cheatsLocaux = {};
+      if (!this.cheatsLocaux[nomFichier]) this.cheatsLocaux[nomFichier] = [];
+
+      this.cheatsLocaux[nomFichier].push({
+        description,
+        code,
+        enabled: true
+      });
+
+      try {
+        localStorage.setItem("rv_custom_cheats", JSON.stringify(this.cheatsLocaux));
+        const activeState = JSON.parse(localStorage.getItem(`rv_cheat_state_${nomFichier}`) || "{}");
+        activeState[code] = true;
+        localStorage.setItem(`rv_cheat_state_${nomFichier}`, JSON.stringify(activeState));
+      } catch (e) {}
+
+      this.appliquerCheatsJeu(nomFichier);
+    }
+
+    supprimerCheatCustom(nomFichier, cheatIndex) {
+      const allCheats = this.obtenirCheatsPourJeu(nomFichier);
+      const target = allCheats[cheatIndex];
+      if (!target || !target.isCustom) return;
+
+      if (this.cheatsLocaux && this.cheatsLocaux[nomFichier]) {
+        this.cheatsLocaux[nomFichier] = this.cheatsLocaux[nomFichier].filter(c => c.code !== target.code);
+        try {
+          localStorage.setItem("rv_custom_cheats", JSON.stringify(this.cheatsLocaux));
+        } catch (e) {}
+      }
+
+      this.appliquerCheatsJeu(nomFichier);
+    }
+
+    appliquerCheatsJeu(nomFichier) {
+      if (!this.partieEnCours) return;
+      const activeCheats = this.obtenirCheatsActifsPourJeu(nomFichier);
+
+      if (typeof this.partieEnCours.setCheats === "function") {
+        try {
+          this.partieEnCours.setCheats(activeCheats.map(c => ({
+            code: c.code,
+            description: c.description || c.desc || "",
+            enabled: true
+          })));
+        } catch (e) {
+          console.warn("[RetroVault] Erreur setCheats:", e);
+        }
       }
     }
 
@@ -2349,6 +2829,358 @@
           width: auto !important;
           height: 100% !important;
         }
+
+        /* ========================================================
+           HUD PERFORMANCE & FPS (INCRUSTATION DIRECTE ÉCRAN)
+           ======================================================== */
+        .rv-perf-hud {
+          position: absolute;
+          top: 8px;
+          left: 8px;
+          z-index: 80;
+          display: none;
+          align-items: center;
+          gap: 6px;
+          background: rgba(5, 10, 7, 0.88);
+          border: 1px solid rgba(52, 211, 153, 0.45);
+          border-radius: 4px;
+          padding: 3px 8px;
+          font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+          font-size: 0.72rem;
+          font-weight: 700;
+          color: #34d399;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.85);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          pointer-events: none;
+          user-select: none;
+          transition: border-color 0.2s ease, color 0.2s ease;
+        }
+        .rv-perf-hud.active {
+          display: inline-flex !important;
+        }
+        .rv-btn-active-fps {
+          border-color: rgba(52, 211, 153, 0.75) !important;
+          color: #34d399 !important;
+          box-shadow: 0 0 10px rgba(52, 211, 153, 0.3) !important;
+        }
+        .rv-btn-active-speed {
+          border-color: rgba(212, 175, 55, 0.85) !important;
+          color: #fde047 !important;
+          box-shadow: 0 0 12px rgba(212, 175, 55, 0.4) !important;
+        }
+
+        /* ========================================================
+           MODAL OPTIONS DU SANCTUAIRE (VITESSE, CHEATS, FPS...)
+           ======================================================== */
+        #rv-options-modal {
+          position: fixed;
+          top: 0; left: 0; width: 100vw; height: 100vh;
+          z-index: 10000005;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 14px;
+          box-sizing: border-box;
+          font-family: var(--font-body, 'Outfit', sans-serif);
+        }
+        .rv-opt-backdrop {
+          position: absolute;
+          top: 0; left: 0; width: 100%; height: 100%;
+          background: rgba(3, 8, 5, 0.88);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+        }
+        .rv-opt-dialog {
+          position: relative;
+          background: #09130d;
+          border: 1px solid rgba(212, 175, 55, 0.45);
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 40px rgba(212, 175, 55, 0.15);
+          border-radius: 6px;
+          width: 100%;
+          max-width: 580px;
+          max-height: 90vh;
+          overflow-y: auto;
+          padding: 20px 22px;
+          color: #f0f4f1;
+          box-sizing: border-box;
+          animation: rvCloudPop 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .rv-opt-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+          padding-bottom: 12px;
+          margin-bottom: 14px;
+        }
+        .rv-opt-title-wrap {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .rv-opt-sigil {
+          font-size: 1.6rem;
+          filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.6));
+        }
+        .rv-opt-title {
+          font-family: var(--font-heading, 'Cinzel', serif);
+          font-size: 1.15rem;
+          font-weight: 700;
+          color: #d4af37;
+          margin: 0;
+          letter-spacing: 0.5px;
+        }
+        .rv-opt-close {
+          background: none;
+          border: 1px solid rgba(212, 175, 55, 0.3);
+          color: #d4af37;
+          font-size: 0.95rem;
+          width: 32px;
+          height: 32px;
+          border-radius: 4px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        }
+        .rv-opt-close:hover {
+          background: rgba(239, 68, 68, 0.2);
+          border-color: #ef4444;
+          color: #ef4444;
+        }
+        .rv-opt-section {
+          background: #050a07;
+          border: 1px solid rgba(212, 175, 55, 0.2);
+          border-radius: 6px;
+          padding: 12px 14px;
+          margin-bottom: 14px;
+        }
+        .rv-opt-section-title {
+          font-family: var(--font-heading, 'Cinzel', serif);
+          font-size: 0.88rem;
+          font-weight: 700;
+          color: #d4af37;
+          margin-bottom: 8px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .rv-opt-speed-grid {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          gap: 6px;
+        }
+        .rv-opt-speed-btn {
+          background: #0d2218;
+          border: 1px solid rgba(212, 175, 55, 0.3);
+          color: #c4d4c8;
+          padding: 8px 4px;
+          border-radius: 4px;
+          font-size: 0.78rem;
+          cursor: pointer;
+          text-align: center;
+          transition: all 0.15s ease;
+        }
+        .rv-opt-speed-btn:hover {
+          border-color: #d4af37;
+          color: #fff;
+        }
+        .rv-opt-speed-btn.active {
+          background: linear-gradient(180deg, #193826 0%, #0d2218 100%);
+          border-color: #34d399;
+          color: #34d399;
+          font-weight: 700;
+          box-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
+        }
+        .rv-opt-check-row {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 6px 0;
+          cursor: pointer;
+          user-select: none;
+        }
+        .rv-opt-check-row input[type="checkbox"] {
+          width: 17px;
+          height: 17px;
+          margin-top: 2px;
+          accent-color: #34d399;
+          cursor: pointer;
+        }
+        .rv-opt-check-label {
+          font-size: 0.82rem;
+          color: #e2ece5;
+          line-height: 1.35;
+        }
+        .rv-opt-check-sub {
+          font-size: 0.72rem;
+          color: #88998e;
+          display: block;
+          margin-top: 2px;
+        }
+        .rv-opt-cheat-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          background: #0d2218;
+          border: 1px solid rgba(212, 175, 55, 0.2);
+          border-radius: 4px;
+          padding: 7px 10px;
+          margin-bottom: 6px;
+        }
+        .rv-opt-cheat-info {
+          flex: 1 1 auto;
+          min-width: 0;
+        }
+        .rv-opt-cheat-name {
+          font-size: 0.82rem;
+          font-weight: 600;
+          color: #f0f4f1;
+        }
+        .rv-opt-cheat-code {
+          font-family: monospace;
+          font-size: 0.72rem;
+          color: #d4af37;
+        }
+        .rv-opt-cheat-del {
+          background: none;
+          border: none;
+          color: #f87171;
+          cursor: pointer;
+          font-size: 0.9rem;
+          padding: 2px 6px;
+        }
+        .rv-opt-cheat-del:hover {
+          filter: brightness(1.3);
+        }
+        .rv-opt-add-box {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-top: 10px;
+          padding-top: 10px;
+          border-top: 1px dashed rgba(212, 175, 55, 0.2);
+        }
+        .rv-opt-input {
+          background: #020503;
+          border: 1px solid rgba(212, 175, 55, 0.3);
+          border-radius: 4px;
+          color: #f0f4f1;
+          font-size: 0.8rem;
+          padding: 6px 10px;
+          outline: none;
+          box-sizing: border-box;
+          width: 100%;
+        }
+        .rv-opt-input:focus {
+          border-color: #34d399;
+          box-shadow: 0 0 6px rgba(52, 211, 153, 0.3);
+        }
+
+        /* ========================================================
+           IMMERSION MOBILE PAYSAGE (PLEIN ÉCRAN AUTOMATIQUE)
+           ======================================================== */
+        #retro-vault-modal.rv-mobile-landscape-fullscreen {
+          padding: 0 !important;
+          margin: 0 !important;
+          overflow: hidden !important;
+          background: #000 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          height: 100dvh !important;
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          z-index: 2147483647 !important;
+        }
+        #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-container {
+          max-width: none !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          height: 100dvh !important;
+          border: none !important;
+          border-radius: 0 !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          display: flex !important;
+          flex-direction: column !important;
+        }
+        #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-header,
+        #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-toolbar,
+        #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-status,
+        #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-controls-guide,
+        #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-catalog-section,
+        #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-save-indicator,
+        #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-cloud-status-banner,
+        #retro-vault-modal.rv-mobile-landscape-fullscreen #rv-library {
+          display: none !important;
+        }
+        #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-landscape-bar {
+          display: flex !important;
+          height: 32px !important;
+          padding: 2px 10px !important;
+        }
+        #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-play-zone {
+          flex: 1 1 auto !important;
+          width: 100vw !important;
+          height: calc(100vh - 32px) !important;
+          height: calc(100dvh - 32px) !important;
+          max-width: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          display: flex !important;
+          flex-direction: row !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+        }
+        #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-wing {
+          display: flex !important;
+          height: 100% !important;
+          z-index: 20 !important;
+        }
+        #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-center-stage {
+          flex: 1 1 auto !important;
+          height: 100% !important;
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+        #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-screen-wrapper {
+          width: 100% !important;
+          height: 100% !important;
+          max-width: none !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+        #retro-vault-modal.rv-mobile-landscape-fullscreen #rv-game-container {
+          width: 100% !important;
+          height: 100% !important;
+          max-width: none !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+        #retro-vault-modal.rv-mobile-landscape-fullscreen #rv-canvas {
+          max-height: calc(100vh - 32px) !important;
+          max-height: calc(100dvh - 32px) !important;
+          max-width: calc(100vw - 230px) !important;
+          object-fit: contain !important;
+        }
+        #retro-vault-modal.rv-mobile-landscape-fullscreen.force-hidden-wings #rv-canvas {
+          max-width: 100vw !important;
+        }
+        #retro-vault-modal.rv-mobile-landscape-fullscreen #rv-game-container.rv-is-nds .rv-nds-wrapper,
+        #retro-vault-modal.rv-mobile-landscape-fullscreen #rv-game-container.rv-is-nds .rv-embedded-frame {
+          width: 100% !important;
+          height: 100% !important;
+          max-height: calc(100vh - 32px) !important;
+          max-height: calc(100dvh - 32px) !important;
+        }
       `;
       document.head.appendChild(styles);
 
@@ -2403,6 +3235,9 @@
                 <div class="rv-land-tools">
                   <button class="rv-land-btn" id="rv-land-btn-save" title="Sauvegarder l'état">💾</button>
                   <button class="rv-land-btn" id="rv-land-btn-load" title="Charger l'état">📂</button>
+                  <button class="rv-land-btn" id="rv-land-btn-speed" title="Changer la vitesse (Actuelle: 1x)">⚡ 1x</button>
+                  <button class="rv-land-btn" id="rv-land-btn-options" title="Options d'émulation & Sortilèges">⚙️</button>
+                  <button class="rv-land-btn" id="rv-land-btn-fps" title="Afficher ou masquer les FPS">📊</button>
                   <button class="rv-land-btn" id="rv-land-btn-pause" title="Pause / Reprendre">⏸️</button>
                   <button class="rv-land-btn" id="rv-land-btn-mute" title="Couper ou rétablir le son">🔊</button>
                   <button class="rv-land-btn" id="rv-land-btn-account" style="display: none;" title="Mon Compte">🟢</button>
@@ -2414,6 +3249,10 @@
               <!-- Écran de jeu -->
               <div class="rv-screen-wrapper">
                 <div id="rv-game-container">
+                  <div class="rv-perf-hud" id="rv-perf-hud">
+                    <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
+                    <span class="rv-perf-text" id="rv-perf-text">60 FPS | 16.6 ms</span>
+                  </div>
                   <div class="rv-crt-overlay" id="rv-crt"></div>
                   <canvas id="rv-canvas"></canvas>
                 </div>
@@ -2424,6 +3263,9 @@
                   <div class="rv-tool-group">
                     <button class="rv-btn rv-btn-account" id="rv-btn-account" style="display: none;" title="Mon Compte">🟢 Mon Compte</button>
                     <button class="rv-btn rv-btn-hub-nav" id="rv-btn-hub-nav" style="display: none;" title="Revenir au choix des jeux">📚 Changer de jeu</button>
+                    <button class="rv-btn" id="rv-btn-options" title="Options d'émulation (Vitesse, Cheat codes, FPS...)">⚙️ Options</button>
+                    <button class="rv-btn" id="rv-btn-speed" title="Changer la vitesse de jeu (1x, 1.5x, 2x, 4x)">⚡ 1x</button>
+                    <button class="rv-btn" id="rv-btn-fps" title="Afficher ou masquer les FPS et la performance">📊 FPS : OFF</button>
                     <button class="rv-btn rv-btn-save" id="rv-btn-save">💾 Sauver (F2)</button>
                     <button class="rv-btn rv-btn-load" id="rv-btn-load">📂 Charger (F4)</button>
                     <button class="rv-btn" id="rv-btn-pause">⏸️ Pause</button>
@@ -2957,6 +3799,61 @@
         });
       }
 
+      // Bouton Options & Sortilèges
+      const btnOptions = document.getElementById("rv-btn-options");
+      if (btnOptions) btnOptions.addEventListener("click", () => this.openOptionsModal());
+      const landBtnOptions = document.getElementById("rv-land-btn-options");
+      if (landBtnOptions) landBtnOptions.addEventListener("click", () => this.openOptionsModal());
+
+      // Bouton Vitesse d'Émulation
+      const btnSpeed = document.getElementById("rv-btn-speed");
+      if (btnSpeed) btnSpeed.addEventListener("click", () => this.toggleVitesseRapide());
+      const landBtnSpeed = document.getElementById("rv-land-btn-speed");
+      if (landBtnSpeed) landBtnSpeed.addEventListener("click", () => this.toggleVitesseRapide());
+
+      // Bouton FPS & Performance
+      const btnFps = document.getElementById("rv-btn-fps");
+      if (btnFps) {
+        btnFps.textContent = `📊 FPS : ${this.afficherPerfFps ? "ON" : "OFF"}`;
+        btnFps.addEventListener("click", () => this.togglePerfFps());
+      }
+      const landBtnFps = document.getElementById("rv-land-btn-fps");
+      if (landBtnFps) landBtnFps.addEventListener("click", () => this.togglePerfFps());
+
+      // Bascule automatique plein écran en mode paysage sur mobile / tactile
+      const handleMobileOrientation = () => {
+        if (!this.autoFullscreenPaysage) return;
+        const isMobile = window.matchMedia("(pointer: coarse)").matches || window.innerWidth <= 900 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (!isMobile) return;
+
+        const isLandscape = (window.innerWidth > window.innerHeight) || (screen.orientation && screen.orientation.type && screen.orientation.type.includes("landscape"));
+        const isModalOpen = this.modal && (this.modal.classList.contains("active") || this.modal.style.display === "block");
+
+        if (isLandscape && isModalOpen) {
+          this.modal.classList.add("rv-mobile-landscape-fullscreen");
+          const target = document.getElementById("rv-play-zone") || this.modal;
+          if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            if (target.requestFullscreen) target.requestFullscreen().catch(() => {});
+            else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen().catch(() => {});
+          }
+        } else if (this.modal) {
+          this.modal.classList.remove("rv-mobile-landscape-fullscreen");
+          if (document.fullscreenElement || document.webkitFullscreenElement) {
+            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen().catch(() => {});
+          }
+        }
+      };
+
+      if (screen.orientation) {
+        screen.orientation.addEventListener("change", handleMobileOrientation);
+      }
+      window.addEventListener("orientationchange", handleMobileOrientation);
+      window.addEventListener("resize", () => {
+        clearTimeout(this._orientationResizeTimer);
+        this._orientationResizeTimer = setTimeout(handleMobileOrientation, 150);
+      });
+
       // Écoute des messages venant de l'iframe DS
       window.addEventListener("message", (e) => {
         if (e.data && e.data.type === "NDS_READY") {
@@ -3339,6 +4236,7 @@
             try { await this.extraireEtSauvegarderSRAM(this.jeuEnCoursNom, true); } catch (e) {}
           }
           this.arreterSramLoop();
+          this.arreterMesurePerf();
           await this.partieEnCours.exit();
           this.partieEnCours = null;
         }
@@ -3368,6 +4266,10 @@
           container.classList.add("rv-is-nds");
 
           container.innerHTML = `
+            <div class="rv-perf-hud" id="rv-perf-hud">
+              <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
+              <span class="rv-perf-text" id="rv-perf-text">60 FPS | 16.6 ms</span>
+            </div>
             <div class="rv-nds-wrapper">
               <div class="rv-nds-ext-btn-wrap" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
                 <a href="emulators/ds/index.html?v=8.9" target="_blank" class="rv-btn rv-nds-ext-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
@@ -3424,12 +4326,22 @@
             : `🎮 Relique DS : "${nomFichier}". Émulateur Desmond actif (Stylet sur écran bas).`;
           status.style.color = "#d4af37";
           this.jeuEnCoursNom = nomFichier;
+          if (this.vitesseActuelle !== 1.0) {
+            this.changerVitesse(this.vitesseActuelle);
+          }
+          if (this.afficherPerfFps) {
+            this.demarrerMesurePerf();
+          }
           this.rendreGrille();
           return;
         }
 
         container.classList.remove("rv-is-nds");
         container.innerHTML = `
+          <div class="rv-perf-hud" id="rv-perf-hud">
+            <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
+            <span class="rv-perf-text" id="rv-perf-text">60 FPS | 16.6 ms</span>
+          </div>
           <div class="rv-crt-overlay" id="rv-crt"></div>
           <canvas id="rv-canvas"></canvas>
         `;
@@ -3467,17 +4379,26 @@
           savestate_auto_save: false,
           savestate_auto_load: false,
           autosave_interval: 5,
+          fast_forward_ratio: 2.0,
           audio_volume: String(this.volumeActuel === 0 ? -80 : Math.max(-80, Math.min(12, Math.round(20 * Math.log10(this.volumeActuel)))))
         };
 
         const canvasEl = document.getElementById("rv-canvas");
         const romFile = romBlob instanceof File ? romBlob : new File([romBlob], nomFichier);
 
+        const activeCheats = this.obtenirCheatsActifsPourJeu(nomFichier);
         const nostalgistOptions = {
           element: canvasEl,
           rom: romFile,
           retroarchConfig: retroConfig
         };
+        if (activeCheats.length > 0) {
+          nostalgistOptions.cheats = activeCheats.map(c => ({
+            code: c.code,
+            description: c.description || c.desc || "",
+            enabled: true
+          }));
+        }
         if (sramToInject) {
           nostalgistOptions.sram = sramToInject;
         }
@@ -3501,6 +4422,12 @@
         }
 
         this.demarrerSramLoop();
+        if (this.vitesseActuelle !== 1.0) {
+          this.changerVitesse(this.vitesseActuelle);
+        }
+        if (this.afficherPerfFps) {
+          this.demarrerMesurePerf();
+        }
 
         const hasSram = !!(existingSave && existingSave.sram);
         const hasState = !!(existingSave && existingSave.state);
@@ -4077,6 +5004,10 @@
         try { this.partieEnCours.resume(); } catch (e) {}
       }
 
+      if (this.afficherPerfFps) {
+        this.demarrerMesurePerf();
+      }
+
       // Synchronisation furtive automatique en arrière-plan si le Cloud est configuré
       if (this.isCloudConnected()) {
         this.syncVPSCloud({ silent: true }).catch(() => {});
@@ -4117,6 +5048,11 @@
       }
 
       this.arreterGamepadLoop();
+      this.arreterMesurePerf();
+      this.closeOptionsModal();
+      if (this.modal) {
+        this.modal.classList.remove("rv-mobile-landscape-fullscreen");
+      }
       this.pendingNdsRom = null;
 
       if (this.jeuEnCoursType === "nds") {
