@@ -678,7 +678,7 @@
                 <label style="display: block; font-size: 0.78rem; color: #d4af37; margin-bottom: 5px;">
                   🔑 Mot de passe du Sanctuaire :
                 </label>
-                <input type="password" id="rv-cloud-pass-input" placeholder="Mot de passe Caddy / VPN..." class="rv-cloud-input" autocomplete="current-password">
+                <input type="password" id="rv-cloud-pass-input" placeholder="••••••••••••" class="rv-cloud-input" autocomplete="current-password">
               </div>
 
               <div class="rv-cloud-actions">
