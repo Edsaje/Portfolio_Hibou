@@ -6,9 +6,6 @@ live_report.json
 script.py
 GEMINI.md
 README.md
-docker-compose.yml
-Dockerfile
-docker-entrypoint.sh
 api/test.php
 .secret
 .admin_pass

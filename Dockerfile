@@ -35,6 +35,9 @@ COPY . /var/www/html/
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
+# Nettoyage des fichiers d'orchestration hors du webroot public
+RUN rm -f /var/www/html/docker* /var/www/html/Dockerfile
+
 # Droits initiaux
 RUN chown -R www-data:www-data /var/www/html
 
