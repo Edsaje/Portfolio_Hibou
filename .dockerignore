@@ -1,0 +1,8 @@
+.git
+.github
+*.log
+local_report*.json
+live_report.json
+script.py
+GEMINI.md
+README.md

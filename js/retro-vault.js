@@ -166,7 +166,7 @@
 
   class RetroVault {
     constructor() {
-      this.version = "8.9-vps-vault-cdn";
+      this.version = "9.0-vps-cloud-saves";
       this.modal = null;
       this.partieEnCours = null;
       this.jeuEnCoursNom = "";
@@ -266,19 +266,28 @@
       });
     }
 
-    async saveStateDB(key, blob, customDate = null, skipCloudUpload = false) {
+    isCloudConnected() {
+      return !!(localStorage.getItem("rv_vps_token") || localStorage.getItem("rv_cloud_token"));
+    }
+
+    getCloudToken() {
+      return localStorage.getItem("rv_vps_token") || localStorage.getItem("rv_cloud_token") || "";
+    }
+
+    async saveStateDB(key, blob, customDate = null, skipCloudUpload = false, customTimestamp = null) {
       const db = await this.getDB();
       const dateStr = customDate || new Date().toLocaleString();
+      const ts = customTimestamp || Date.now();
       await new Promise((resolve, reject) => {
         const tx = db.transaction(this.storeName, "readwrite");
-        tx.objectStore(this.storeName).put({ state: blob, date: dateStr, timestamp: Date.now() }, key);
+        tx.objectStore(this.storeName).put({ state: blob, date: dateStr, timestamp: ts }, key);
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
       });
 
-      // Synchronisation furtive vers GitHub Gist si le Cloud personnel est connecté
-      if (!skipCloudUpload && localStorage.getItem("rv_cloud_token")) {
-        this.uploadSaveToCloud(key, blob, dateStr).catch(() => {});
+      // Synchronisation furtive vers le Cloud VPS Souverain si connecté
+      if (!skipCloudUpload && this.isCloudConnected()) {
+        this.uploadSaveToVPS(key, blob, dateStr, ts).catch(() => {});
       }
     }
 
@@ -359,7 +368,7 @@
     }
 
     // =========================================================================
-    // SCEAU D'ARCHIVISTE — SYNCHRONISATION CLOUD PRIVÉE (GITHUB GIST)
+    // SCEAU D'ARCHIVISTE — SYNCHRONISATION CLOUD SOUVERAINE (VPS PRIVÉ)
     // =========================================================================
     async verifyCloudHash(str) {
       try {
@@ -374,172 +383,122 @@
       } catch (e) {}
     }
 
-    async connectGitHubGist(token) {
-      const cleanToken = token.trim();
-      if (!cleanToken) throw new Error("Veuillez renseigner un token GitHub valide.");
+    async connectVPSCloud(username, password) {
+      const cleanUser = (username || "").trim();
+      if (!cleanUser) throw new Error("Veuillez renseigner un identifiant d'Archiviste.");
+      if (!password) throw new Error("Veuillez renseigner le mot de passe du Sanctuaire.");
 
-      // 1. Valider l'identité GitHub
-      const userRes = await fetch("https://api.github.com/user", {
-        headers: {
-          Authorization: `Bearer ${cleanToken}`,
-          Accept: "application/vnd.github+json"
-        }
+      const res = await fetch("api/saves.php?action=login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: cleanUser, password })
       });
-      if (!userRes.ok) throw new Error("Token GitHub invalide ou expiré (Code HTTP " + userRes.status + ")");
-      const userData = await userRes.json();
 
-      // 2. Chercher un Gist existant pour les sauvegardes
-      let gistId = null;
-      const listRes = await fetch("https://api.github.com/gists?per_page=100", {
-        headers: {
-          Authorization: `Bearer ${cleanToken}`,
-          Accept: "application/vnd.github+json"
-        }
-      });
-      if (listRes.ok) {
-        const gists = await listRes.json();
-        const found = gists.find(g => 
-          (g.description && g.description.includes("[Hibou RetroVault]")) ||
-          (g.files && g.files["hibou_vault_saves.json"])
-        );
-        if (found) gistId = found.id;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || ("Échec de connexion (Code HTTP " + res.status + ")"));
       }
 
-      // 3. Créer le Gist s'il n'existe pas encore
-      if (!gistId) {
-        const createRes = await fetch("https://api.github.com/gists", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${cleanToken}`,
-            Accept: "application/vnd.github+json"
-          },
-          body: JSON.stringify({
-            description: "[Hibou RetroVault] Archives secrètes des sauvegardes",
-            public: false,
-            files: {
-              "hibou_vault_saves.json": {
-                content: JSON.stringify({
-                  owner: userData.login,
-                  created_at: new Date().toISOString(),
-                  saves: {}
-                })
-              }
-            }
-          })
-        });
-        if (!createRes.ok) throw new Error("Impossible de créer le Gist privé (vérifiez la permission 'gist' de votre token).");
-        const newGist = await createRes.json();
-        gistId = newGist.id;
-      }
+      localStorage.setItem("rv_vps_token", data.token);
+      localStorage.setItem("rv_vps_user", data.user || "Hibouxe");
+      localStorage.removeItem("rv_cloud_token");
+      localStorage.removeItem("rv_cloud_gist_id");
 
-      localStorage.setItem("rv_cloud_token", cleanToken);
-      localStorage.setItem("rv_cloud_gist_id", gistId);
-      localStorage.setItem("rv_cloud_user", userData.login || "Archiviste");
-
-      // Synchroniser immédiatement toutes les sauvegardes existantes
-      await this.syncCloudSaves({ silent: false });
-      return { user: userData.login, gistId };
+      // Synchronisation immédiate des sauvegardes
+      await this.syncVPSCloud({ silent: false });
+      return data;
     }
 
-    async syncCloudSaves({ silent = false } = {}) {
-      const token = localStorage.getItem("rv_cloud_token");
-      const gistId = localStorage.getItem("rv_cloud_gist_id");
-      if (!token || !gistId || this.cloudSyncing) return;
+    async syncVPSCloud({ silent = false } = {}) {
+      const token = this.getCloudToken();
+      if (!token || this.cloudSyncing) return;
 
       this.cloudSyncing = true;
       const status = document.getElementById("rv-status");
       if (!silent && status) {
-        status.textContent = "⏳ Synchronisation céleste avec GitHub Gist...";
+        status.textContent = "⏳ Synchronisation céleste avec le VPS Souverain...";
         status.style.color = "#d4af37";
       }
 
       try {
-        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/vnd.github+json"
-          }
+        // 1. Récupérer l'inventaire des sauvegardes distantes sur le VPS
+        const listRes = await fetch("api/saves.php?action=list", {
+          headers: { Authorization: `Bearer ${token}` }
         });
-        if (!res.ok) throw new Error("Échec de récupération du Gist Cloud.");
-        const gist = await res.json();
-        const file = gist.files && gist.files["hibou_vault_saves.json"];
-        let cloudData = { saves: {} };
-        if (file && file.content) {
-          try { cloudData = JSON.parse(file.content); } catch (e) {}
-        }
-        cloudData.saves = cloudData.saves || {};
 
+        if (!listRes.ok) {
+          if (listRes.status === 401) {
+            this.disconnectVPSCloud();
+            throw new Error("Session expirée. Veuillez vous reconnecter.");
+          }
+          throw new Error("Impossible de joindre le stockage VPS (Code " + listRes.status + ")");
+        }
+
+        const listData = await listRes.json();
+        const remoteSaves = (listData && listData.saves) || {};
         const localSaves = await this.getAllStatesDB();
+
         let importedCount = 0;
         let exportedCount = 0;
 
-        // 1. Cloud -> Local (importer les sauvegardes distantes si plus récentes ou absentes)
-        for (const [key, cSave] of Object.entries(cloudData.saves)) {
+        // 2. VPS -> Local : importer les sauvegardes distantes si absentes ou plus récentes
+        for (const [key, rMeta] of Object.entries(remoteSaves)) {
           const lSave = localSaves[key];
-          const cTime = cSave.timestamp || 0;
+          const rTime = rMeta.timestamp || 0;
           const lTime = (lSave && lSave.timestamp) || 0;
 
-          if (!lSave || cTime > lTime) {
-            const cType = this.identifierConsole(key);
-            const stateObj = this.base64ToState(cSave.data, cType);
-            if (stateObj) {
-              await this.saveStateDB(key, stateObj, cSave.date, true);
-              importedCount++;
+          if (!lSave || rTime > lTime) {
+            try {
+              const loadRes = await fetch(`api/saves.php?action=load&game=${encodeURIComponent(key)}`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              if (loadRes.ok) {
+                const buf = await loadRes.arrayBuffer();
+                const cType = this.identifierConsole(key);
+                let stateObj;
+                if (cType === "nds") {
+                  stateObj = new Uint8Array(buf);
+                } else {
+                  stateObj = new Blob([buf], { type: "application/octet-stream" });
+                }
+                await this.saveStateDB(key, stateObj, rMeta.date, true, rTime);
+                importedCount++;
+              }
+            } catch (dlErr) {
+              console.warn("[RetroVault Cloud] Erreur rapatriement " + key, dlErr);
             }
           }
         }
 
-        // 2. Local -> Cloud (exporter les sauvegardes locales si absentes du cloud ou plus récentes)
-        let hasExportChanges = false;
+        // 3. Local -> VPS : téléverser les sauvegardes locales si absentes du VPS ou plus récentes
         for (const [key, lSave] of Object.entries(localSaves)) {
-          const cSave = cloudData.saves[key];
-          const cTime = (cSave && cSave.timestamp) || 0;
+          const rMeta = remoteSaves[key];
+          const rTime = (rMeta && rMeta.timestamp) || 0;
           const lTime = lSave.timestamp || 0;
 
-          if (!cSave || lTime > cTime) {
-            const b64 = await this.stateToBase64(lSave.state);
-            if (b64) {
-              cloudData.saves[key] = {
-                date: lSave.date || new Date().toLocaleString(),
-                timestamp: lTime || Date.now(),
-                data: b64
-              };
-              hasExportChanges = true;
+          if (!rMeta || lTime > rTime) {
+            try {
+              await this.uploadSaveToVPS(key, lSave.state, lSave.date, lTime, true);
               exportedCount++;
+            } catch (upErr) {
+              console.warn("[RetroVault Cloud] Erreur envoi " + key, upErr);
             }
           }
         }
 
-        if (hasExportChanges) {
-          cloudData.updated_at = new Date().toISOString();
-          await fetch(`https://api.github.com/gists/${gistId}`, {
-            method: "PATCH",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: "application/vnd.github+json"
-            },
-            body: JSON.stringify({
-              files: {
-                "hibou_vault_saves.json": {
-                  content: JSON.stringify(cloudData)
-                }
-              }
-            })
-          });
-        }
-
-        localStorage.setItem("rv_cloud_last_sync", new Date().toLocaleString());
+        const nowStr = new Date().toLocaleString();
+        localStorage.setItem("rv_vps_last_sync", nowStr);
         this.rendreGrille();
 
         if (status) {
-          const totalGames = Object.keys(cloudData.saves).length;
-          status.textContent = `☁️ Sanctuaire Cloud synchronisé (${totalGames} jeux archivés) !`;
+          const totalReliques = Object.keys(remoteSaves).length + exportedCount;
+          status.textContent = `☁️ Sanctuaire synchronisé (${totalReliques} reliques souveraines) !`;
           status.style.color = "#34d399";
         }
       } catch (err) {
-        console.warn("Cloud sync error:", err);
+        console.warn("[RetroVault Cloud] Erreur synchronisation VPS:", err);
         if (!silent && status) {
-          status.textContent = `⚠️ Erreur Cloud : ${err.message}`;
+          status.textContent = `⚠️ Erreur Cloud VPS : ${err.message}`;
           status.style.color = "#fbbf24";
         }
       } finally {
@@ -547,73 +506,103 @@
       }
     }
 
-    async uploadSaveToCloud(nomFichier, stateObj, dateStr) {
-      const token = localStorage.getItem("rv_cloud_token");
-      const gistId = localStorage.getItem("rv_cloud_gist_id");
-      if (!token || !gistId) return;
+    async uploadSaveToVPS(nomFichier, stateObj, dateStr, timestamp = Date.now(), silent = false) {
+      const token = this.getCloudToken();
+      if (!token) return;
 
       try {
-        const b64 = await this.stateToBase64(stateObj);
-        if (!b64) return;
-
-        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/vnd.github+json"
-          }
-        });
-        if (!res.ok) return;
-        const gist = await res.json();
-        const file = gist.files && gist.files["hibou_vault_saves.json"];
-        let cloudData = { saves: {} };
-        if (file && file.content) {
-          try { cloudData = JSON.parse(file.content); } catch (e) {}
+        let bodyData = null;
+        if (stateObj instanceof Blob) {
+          bodyData = stateObj;
+        } else if (stateObj instanceof Uint8Array || stateObj instanceof ArrayBuffer) {
+          bodyData = stateObj;
+        } else if (Array.isArray(stateObj)) {
+          bodyData = new Uint8Array(stateObj);
+        } else {
+          return;
         }
-        cloudData.saves = cloudData.saves || {};
-        cloudData.saves[nomFichier] = {
-          date: dateStr || new Date().toLocaleString(),
-          timestamp: Date.now(),
-          data: b64
-        };
-        cloudData.updated_at = new Date().toISOString();
 
-        await fetch(`https://api.github.com/gists/${gistId}`, {
-          method: "PATCH",
+        const cType = this.identifierConsole(nomFichier);
+        const res = await fetch("api/saves.php?action=save", {
+          method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
-            Accept: "application/vnd.github+json"
+            "X-Game-Name": encodeURIComponent(nomFichier),
+            "X-Save-Type": cType,
+            "X-Save-Timestamp": String(timestamp),
+            "Content-Type": "application/octet-stream"
           },
-          body: JSON.stringify({
-            files: {
-              "hibou_vault_saves.json": {
-                content: JSON.stringify(cloudData)
-              }
-            }
-          })
+          body: bodyData
         });
 
-        localStorage.setItem("rv_cloud_last_sync", new Date().toLocaleString());
-        const status = document.getElementById("rv-status");
-        if (status) {
-          status.textContent = `☁️ Sauvegarde synchronisée sur GitHub Gist (${new Date().toLocaleTimeString()})`;
-          status.style.color = "#34d399";
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || ("Code " + res.status));
+        }
+
+        const nowStr = new Date().toLocaleString();
+        localStorage.setItem("rv_vps_last_sync", nowStr);
+        if (!silent) {
+          const status = document.getElementById("rv-status");
+          if (status) {
+            status.textContent = `☁️ Sauvegarde synchronisée sur le VPS (${new Date().toLocaleTimeString()})`;
+            status.style.color = "#34d399";
+          }
         }
       } catch (err) {
-        console.warn("Erreur envoi Cloud background:", err);
+        console.warn("[RetroVault Cloud] Erreur téléversement:", err);
       }
     }
 
-    disconnectCloud() {
+    async verifierSauvegardeDistante(nomFichier) {
+      const token = this.getCloudToken();
+      if (!token) return;
+      try {
+        const listRes = await fetch("api/saves.php?action=list", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!listRes.ok) return;
+        const listData = await listRes.json();
+        const rMeta = listData?.saves?.[nomFichier];
+        if (!rMeta) return;
+
+        const lSave = await this.loadStateDB(nomFichier);
+        const rTime = rMeta.timestamp || 0;
+        const lTime = (lSave && lSave.timestamp) || 0;
+
+        if (!lSave || rTime > lTime) {
+          const loadRes = await fetch(`api/saves.php?action=load&game=${encodeURIComponent(nomFichier)}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (loadRes.ok) {
+            const buf = await loadRes.arrayBuffer();
+            const cType = this.identifierConsole(nomFichier);
+            const stateObj = cType === "nds" ? new Uint8Array(buf) : new Blob([buf], { type: "application/octet-stream" });
+            await this.saveStateDB(nomFichier, stateObj, rMeta.date, true, rTime);
+            this.setStatus(`☁️ Sauvegarde VPS restaurée (${rMeta.date}) !`, "#34d399");
+            this.rendreGrille();
+          }
+        }
+      } catch (e) {}
+    }
+
+    disconnectVPSCloud() {
+      localStorage.removeItem("rv_vps_token");
+      localStorage.removeItem("rv_vps_user");
+      localStorage.removeItem("rv_vps_last_sync");
       localStorage.removeItem("rv_cloud_token");
       localStorage.removeItem("rv_cloud_gist_id");
       localStorage.removeItem("rv_cloud_user");
-      localStorage.removeItem("rv_cloud_last_sync");
       const status = document.getElementById("rv-status");
       if (status) {
         status.textContent = "🔌 Synchronisation Cloud déconnectée sur ce périphérique.";
         status.style.color = "#a8b8ad";
       }
     }
+
+    // Compatibilité rétroactive
+    syncCloudSaves(opts) { return this.syncVPSCloud(opts); }
+    disconnectCloud() { return this.disconnectVPSCloud(); }
 
     openCloudArchivistModal() {
       let modal = document.getElementById("rv-cloud-modal");
@@ -623,11 +612,9 @@
         document.body.appendChild(modal);
       }
 
-      const token = localStorage.getItem("rv_cloud_token");
-      const gistId = localStorage.getItem("rv_cloud_gist_id") || "";
-      const user = localStorage.getItem("rv_cloud_user") || "Archiviste";
-      const lastSync = localStorage.getItem("rv_cloud_last_sync") || "Jamais";
-      const isConnected = !!token && !!gistId;
+      const isConnected = this.isCloudConnected();
+      const user = localStorage.getItem("rv_vps_user") || "Hibouxe";
+      const lastSync = localStorage.getItem("rv_vps_last_sync") || "Jamais";
 
       modal.innerHTML = `
         <div class="rv-cloud-backdrop" id="rv-cloud-backdrop"></div>
@@ -637,7 +624,7 @@
               <span class="rv-cloud-sigil">🦉</span>
               <div>
                 <h3 class="rv-cloud-title">Sceau d'Archiviste</h3>
-                <div class="rv-cloud-subtitle">Liaison Céleste Privée (GitHub Gist)</div>
+                <div class="rv-cloud-subtitle">Cloud VPS Souverain (Cross-Save PC ⇄ Mobile)</div>
               </div>
             </div>
             <button class="rv-cloud-close" id="rv-cloud-close-btn" title="Fermer">✖</button>
@@ -648,38 +635,54 @@
               <div class="rv-cloud-status-box active">
                 <div class="rv-cloud-status-icon">🟢</div>
                 <div>
-                  <div style="font-weight: 600; color: #34d399;">Sanctuaire Connecté à GitHub Gist</div>
+                  <div style="font-weight: 600; color: #34d399;">Sanctuaire Relié au VPS Souverain</div>
                   <div style="font-size: 0.8rem; color: #a8b8ad; margin-top: 2px;">
-                    Archiviste : <strong style="color: #d4af37;">${user}</strong> | Gist : <code>${gistId.substring(0, 10)}...</code>
+                    Archiviste : <strong style="color: #d4af37;">${user}</strong> | Serveur : <code>quentinbeaud.com</code>
                   </div>
                   <div style="font-size: 0.76rem; color: #778; margin-top: 2px;">
-                    Dernière synchronisation : ${lastSync}
+                    Dernière synchronisation céleste : ${lastSync}
                   </div>
                 </div>
               </div>
 
-              <p style="font-size: 0.85rem; color: #c4d4c8; line-height: 1.5; margin: 16px 0 20px;">
-                Toutes vos sauvegardes de jeux (DS, SNES, GBA, etc.) sont synchronisées en continu et de manière totalement invisible avec votre Gist privé. Les visiteurs réguliers ne voient rien et restent en local.
+              <div style="margin-top: 14px;">
+                <div style="font-size: 0.78rem; color: #d4af37; margin-bottom: 6px; font-weight: 600;">
+                  📦 Reliques archivées sur le VPS :
+                </div>
+                <div id="rv-cloud-saves-list" style="max-height: 160px; overflow-y: auto; background: #050a07; border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 4px; padding: 8px 12px; font-size: 0.78rem; color: #c4d4c8;">
+                  <div style="color: #a8b8ad; text-align: center; padding: 6px;">⏳ Consultation du coffre fort...</div>
+                </div>
+              </div>
+
+              <p style="font-size: 0.82rem; color: #a8b8ad; line-height: 1.4; margin: 12px 0 16px;">
+                Vos sauvegardes (NDS, PS1, GBA...) sont transférées directement sur votre volume Docker sécurisé. Aucune limite de taille de Gist, latence ultra-faible.
               </p>
 
               <div class="rv-cloud-actions">
-                <button class="rv-btn rv-btn-gold" id="rv-cloud-btn-sync">🔄 Synchroniser Maintenant</button>
-                <button class="rv-btn" id="rv-cloud-btn-disconnect" style="color: #f87171; border-color: rgba(248, 113, 113, 0.4);">🔌 Déconnecter</button>
+                <button class="rv-btn rv-btn-gold" id="rv-cloud-btn-sync">🔄 Synchroniser Tout</button>
+                <button class="rv-btn" id="rv-cloud-btn-disconnect" style="color: #f87171; border-color: rgba(248, 113, 113, 0.4);">🔌 Rompre le Sceau</button>
               </div>
             ` : `
               <p style="font-size: 0.86rem; color: #c4d4c8; line-height: 1.5; margin-bottom: 16px;">
-                Bienvenue Quentin. Pour synchroniser vos sauvegardes entre votre PC, Mac et mobile sans serveur ni visibilité pour les visiteurs, entrez votre <strong>GitHub Personal Access Token (PAT)</strong> avec le droit <code>gist</code> uniquement.
+                Bienvenue Quentin. Authentifiez-vous pour lier ce navigateur à votre serveur VPS souverain et retrouver instantanément vos parties commencées sur PC, Mac ou mobile.
               </p>
 
-              <div style="margin-bottom: 14px;">
-                <label style="display: block; font-size: 0.78rem; color: #d4af37; margin-bottom: 6px; letter-spacing: 0.5px;">
-                  🔑 Token Personnel GitHub (droit 'gist') :
+              <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 0.78rem; color: #d4af37; margin-bottom: 5px;">
+                  🦉 Identifiant d'Archiviste :
                 </label>
-                <input type="password" id="rv-cloud-token-input" placeholder="ghp_... ou github_pat_..." class="rv-cloud-input" autocomplete="off">
+                <input type="text" id="rv-cloud-user-input" value="Hibouxe" class="rv-cloud-input" autocomplete="username">
+              </div>
+
+              <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 0.78rem; color: #d4af37; margin-bottom: 5px;">
+                  🔑 Mot de passe du Sanctuaire :
+                </label>
+                <input type="password" id="rv-cloud-pass-input" placeholder="Mot de passe Caddy / VPN..." class="rv-cloud-input" autocomplete="current-password">
               </div>
 
               <div class="rv-cloud-actions">
-                <button class="rv-btn rv-btn-gold" id="rv-cloud-btn-connect">🔮 Lier le Sanctuaire au Cloud</button>
+                <button class="rv-btn rv-btn-gold" id="rv-cloud-btn-connect">🔮 Desceller les Archives (Liaison VPS)</button>
               </div>
             `}
 
@@ -794,7 +797,6 @@
             box-sizing: border-box;
             outline: none;
             transition: border-color 0.2s;
-            font-family: monospace;
           }
           .rv-cloud-input:focus {
             border-color: #d4af37;
@@ -817,6 +819,14 @@
             transform: translateY(-1px) !important;
             box-shadow: 0 6px 18px rgba(212, 175, 55, 0.5) !important;
           }
+          .rv-cloud-save-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+          }
+          .rv-cloud-save-item:last-child { border-bottom: none; }
         `;
         document.head.appendChild(s);
       }
@@ -827,32 +837,71 @@
 
       const feedback = document.getElementById("rv-cloud-feedback");
 
+      // Charger l'inventaire des sauvegardes si connecté
+      if (isConnected) {
+        const token = this.getCloudToken();
+        const listContainer = document.getElementById("rv-cloud-saves-list");
+        fetch("api/saves.php?action=list", { headers: { Authorization: `Bearer ${token}` } })
+          .then((r) => r.json())
+          .then((data) => {
+            if (!listContainer) return;
+            const saves = data?.saves || {};
+            const keys = Object.keys(saves);
+            if (keys.length === 0) {
+              listContainer.innerHTML = '<div style="color: #a8b8ad; text-align: center; padding: 6px;">Aucune sauvegarde sur le VPS. Lancez une partie pour inaugurer le Cloud !</div>';
+            } else {
+              listContainer.innerHTML = keys.map((k) => {
+                const s = saves[k];
+                const sizeKb = s.size ? (s.size > 1048576 ? (s.size / 1048576).toFixed(1) + ' Mo' : Math.round(s.size / 1024) + ' Ko') : '';
+                return `
+                  <div class="rv-cloud-save-item">
+                    <span style="font-weight: 500; color: #f0f4f1;">🎮 ${s.game || k}</span>
+                    <span style="color: #a8b8ad; font-size: 0.74rem;">${sizeKb} • ${s.date || ''}</span>
+                  </div>
+                `;
+              }).join('');
+            }
+          })
+          .catch(() => {
+            if (listContainer) listContainer.innerHTML = '<div style="color: #f87171; text-align: center;">Erreur lecture inventaire.</div>';
+          });
+      }
+
       const btnConnect = document.getElementById("rv-cloud-btn-connect");
       if (btnConnect) {
-        btnConnect.onclick = async () => {
-          const inp = document.getElementById("rv-cloud-token-input");
-          const val = (inp ? inp.value : "").trim();
-          if (!val) {
-            feedback.textContent = "⚠️ Veuillez coller votre token GitHub.";
+        const passInp = document.getElementById("rv-cloud-pass-input");
+        const doConnect = async () => {
+          const userInp = document.getElementById("rv-cloud-user-input");
+          const uVal = (userInp ? userInp.value : "").trim();
+          const pVal = passInp ? passInp.value : "";
+          if (!pVal) {
+            feedback.textContent = "⚠️ Veuillez renseigner le mot de passe.";
             feedback.style.color = "#fbbf24";
             return;
           }
           btnConnect.disabled = true;
-          btnConnect.textContent = "⏳ Vérification du Gist...";
-          feedback.textContent = "Connexion à GitHub en cours...";
+          btnConnect.textContent = "⏳ Déverrouillage...";
+          feedback.textContent = "Vérification des sceaux sur le VPS...";
           feedback.style.color = "#d4af37";
           try {
-            const res = await this.connectGitHubGist(val);
-            feedback.textContent = `✅ Sanctuaire lié à GitHub Gist (${res.user}) ! Synchronisation active.`;
+            const res = await this.connectVPSCloud(uVal, pVal);
+            feedback.textContent = `✅ Sceau brisé avec succès ! Liaison Céleste établie avec ${res.user}.`;
             feedback.style.color = "#34d399";
-            setTimeout(() => this.openCloudArchivistModal(), 1500);
+            setTimeout(() => this.openCloudArchivistModal(), 1200);
           } catch (err) {
-            feedback.textContent = `❌ Erreur : ${err.message}`;
+            feedback.textContent = `❌ ${err.message}`;
             feedback.style.color = "#ef4444";
             btnConnect.disabled = false;
-            btnConnect.textContent = "🔮 Lier le Sanctuaire au Cloud";
+            btnConnect.textContent = "🔮 Desceller les Archives (Liaison VPS)";
           }
         };
+
+        btnConnect.onclick = doConnect;
+        if (passInp) {
+          passInp.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") doConnect();
+          });
+        }
       }
 
       const btnSync = document.getElementById("rv-cloud-btn-sync");
@@ -863,16 +912,16 @@
           feedback.textContent = "Synchronisation bidirectionnelle en cours...";
           feedback.style.color = "#d4af37";
           try {
-            await this.syncCloudSaves({ silent: false });
-            feedback.textContent = "✅ Synchronisation réussie avec GitHub Gist !";
+            await this.syncVPSCloud({ silent: false });
+            feedback.textContent = "✅ Synchronisation réussie avec le VPS Souverain !";
             feedback.style.color = "#34d399";
-            setTimeout(() => this.openCloudArchivistModal(), 1200);
-          } catch(err) {
+            setTimeout(() => this.openCloudArchivistModal(), 1000);
+          } catch (err) {
             feedback.textContent = `❌ Erreur : ${err.message}`;
             feedback.style.color = "#ef4444";
           } finally {
             btnSync.disabled = false;
-            btnSync.textContent = "🔄 Synchroniser Maintenant";
+            btnSync.textContent = "🔄 Synchroniser Tout";
           }
         };
       }
@@ -880,8 +929,8 @@
       const btnDisconnect = document.getElementById("rv-cloud-btn-disconnect");
       if (btnDisconnect) {
         btnDisconnect.onclick = () => {
-          if (confirm("Déconnecter la synchronisation Cloud de cet appareil ? Vos sauvegardes locales seront conservées.")) {
-            this.disconnectCloud();
+          if (confirm("Rompre le Sceau d'Archiviste sur cet appareil ? Vos sauvegardes locales resteront intactes.")) {
+            this.disconnectVPSCloud();
             this.openCloudArchivistModal();
           }
         };
@@ -2483,6 +2532,24 @@
     bindModalEvents() {
       // Fermeture
       document.getElementById("rv-close-btn").addEventListener("click", () => this.close());
+
+      // Sceau d'Archiviste (accessible sur Mobile & Desktop via le Hibou)
+      const handleSigilClick = () => {
+        this.sigilClickCount = (this.sigilClickCount || 0) + 1;
+        clearTimeout(this.sigilClickTimer);
+        this.sigilClickTimer = setTimeout(() => { this.sigilClickCount = 0; }, 1500);
+        if (this.isCloudConnected() || this.sigilClickCount >= 3) {
+          this.sigilClickCount = 0;
+          this.openCloudArchivistModal();
+        }
+      };
+
+      document.querySelectorAll(".rv-sigil, .rv-land-logo").forEach((el) => {
+        el.style.cursor = "pointer";
+        el.setAttribute("title", "Sceau d'Archiviste");
+        el.addEventListener("click", handleSigilClick);
+      });
+
       document.getElementById("rv-btn-pause").addEventListener("click", () => this.togglePause());
       document.getElementById("rv-btn-reset").addEventListener("click", () => {
         if (this.jeuEnCoursType === "nds") {
@@ -2897,6 +2964,11 @@
           const frame = document.getElementById("rv-nds-frame");
           this.pendingNdsRom = romBlob ? { blob: romBlob, name: nomFichier } : null;
 
+          // Si connecté au Cloud VPS, rapatrier la dernière sauvegarde si disponible
+          if (this.isCloudConnected()) {
+            await this.verifierSauvegardeDistante(nomFichier);
+          }
+
           // Charger la sauvegarde locale existante depuis IndexedDB
           try {
             const existingSave = await this.loadStateDB(nomFichier);
@@ -2994,6 +3066,10 @@
           this.partieEnCours = await Nostalgist.launch({ core: "mednafen_pce_fast", element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
         } else {
           this.partieEnCours = await Nostalgist.launch({ core: conf.core, element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
+        }
+
+        if (this.isCloudConnected()) {
+          await this.verifierSauvegardeDistante(this.jeuEnCoursNom);
         }
 
         const saveInfo = await this.loadStateDB(this.jeuEnCoursNom);
@@ -3491,8 +3567,8 @@
       }
 
       // Synchronisation furtive automatique en arrière-plan si le Cloud est configuré
-      if (localStorage.getItem("rv_cloud_token")) {
-        this.syncCloudSaves({ silent: true }).catch(() => {});
+      if (this.isCloudConnected()) {
+        this.syncVPSCloud({ silent: true }).catch(() => {});
       }
 
       if (bootFile) {

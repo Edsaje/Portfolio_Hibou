@@ -1,0 +1,24 @@
+services:
+  quentinbeaud:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app_quentinbeaud
+    restart: unless-stopped
+    volumes:
+      # Persistance des scores, sessions HMAC et statistiques de visite
+      - portfolio_storage:/var/www/storage
+    networks:
+      - web_gateway
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.6'
+
+volumes:
+  portfolio_storage:
+
+networks:
+  web_gateway:
+    external: true
