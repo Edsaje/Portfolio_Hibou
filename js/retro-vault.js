@@ -196,6 +196,21 @@
       this.cloudKeyBuffer = "";
       this.cloudSha256 = "e4d8de0fcd22fe4e48bf23e6e8a1d97db92c980a668abc32d1977466e362339e";
       this.cloudSyncing = false;
+      this.sramLoopId = null;
+      this.isSavingSram = false;
+      this.lastSramHash = {};
+
+      // Sauvegarde réflexe lors de la fermeture ou du rafraîchissement d'onglet
+      window.addEventListener("beforeunload", () => {
+        if (this.partieEnCours && this.jeuEnCoursNom) {
+          this.extraireEtSauvegarderSRAM(this.jeuEnCoursNom, true);
+        }
+      });
+      window.addEventListener("pagehide", () => {
+        if (this.partieEnCours && this.jeuEnCoursNom) {
+          this.extraireEtSauvegarderSRAM(this.jeuEnCoursNom, true);
+        }
+      });
 
       // Écoute des messages DS pour sauvegarde et synchronisation
       window.addEventListener("message", async (e) => {
@@ -206,7 +221,8 @@
           if (saveBytes && gameName) {
             try {
               const uint8 = new Uint8Array(saveBytes);
-              await this.saveStateDB(gameName, uint8);
+              await this.saveSramDB(gameName, uint8);
+              await this.saveStateDB(gameName, uint8, null, true);
               const status = document.getElementById("rv-status");
               if (status && e.data.type === "DS_SAVE_DATA") {
                 status.textContent = `💾 Sauvegarde DS enregistrée dans le Sanctuaire (${new Date().toLocaleTimeString()}) !`;
@@ -278,16 +294,121 @@
       const db = await this.getDB();
       const dateStr = customDate || new Date().toLocaleString();
       const ts = customTimestamp || Date.now();
+      const existing = (await this.loadStateDB(key)) || {};
+      existing.state = blob;
+      existing.stateDate = dateStr;
+      existing.stateTimestamp = ts;
+      if (ts >= (existing.timestamp || 0)) {
+        existing.date = dateStr;
+        existing.timestamp = ts;
+      }
+
       await new Promise((resolve, reject) => {
         const tx = db.transaction(this.storeName, "readwrite");
-        tx.objectStore(this.storeName).put({ state: blob, date: dateStr, timestamp: ts }, key);
+        tx.objectStore(this.storeName).put(existing, key);
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
       });
 
       // Synchronisation furtive vers le Cloud VPS Souverain si connecté
       if (!skipCloudUpload && this.isCloudConnected()) {
-        this.uploadSaveToVPS(key, blob, dateStr, ts).catch(() => {});
+        this.uploadSaveToVPS(key, blob, dateStr, ts, false, "state").catch(() => {});
+      }
+    }
+
+    async saveSramDB(key, blob, customDate = null, skipCloudUpload = false, customTimestamp = null) {
+      const db = await this.getDB();
+      const dateStr = customDate || new Date().toLocaleString();
+      const ts = customTimestamp || Date.now();
+      const existing = (await this.loadStateDB(key)) || {};
+      existing.sram = blob;
+      existing.sramDate = dateStr;
+      existing.sramTimestamp = ts;
+      if (ts >= (existing.timestamp || 0)) {
+        existing.date = dateStr;
+        existing.timestamp = ts;
+      }
+
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(this.storeName, "readwrite");
+        tx.objectStore(this.storeName).put(existing, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+
+      // Synchronisation furtive vers le Cloud VPS Souverain si connecté
+      if (!skipCloudUpload && this.isCloudConnected()) {
+        this.uploadSaveToVPS(key, blob, dateStr, ts, true, "sram").catch(() => {});
+      }
+    }
+
+    demarrerSramLoop() {
+      if (this.sramLoopId) return;
+      this.sramLoopId = setInterval(() => {
+        if (this.partieEnCours && !this.estEnPause && this.jeuEnCoursNom) {
+          this.extraireEtSauvegarderSRAM(this.jeuEnCoursNom, true);
+        }
+      }, 10000);
+    }
+
+    arreterSramLoop() {
+      if (this.sramLoopId) {
+        clearInterval(this.sramLoopId);
+        this.sramLoopId = null;
+      }
+    }
+
+    async extraireEtSauvegarderSRAM(nomJeu, silent = true) {
+      if (!this.partieEnCours || !nomJeu || this.isSavingSram) return;
+      this.isSavingSram = true;
+      try {
+        let sramBlob = null;
+        try {
+          sramBlob = await this.partieEnCours.saveSRAM();
+        } catch (err) {
+          // Secours FS Emscripten si RetroArch a écrit le fichier mais Nostalgist a timeout
+          try {
+            const emulator = this.partieEnCours.getEmulator ? this.partieEnCours.getEmulator() : null;
+            if (emulator && emulator.fs && emulator.sramFilePath) {
+              const stats = emulator.fs.stat(emulator.sramFilePath);
+              if (stats && stats.size > 0) {
+                const buffer = emulator.fs.readFile(emulator.sramFilePath, "binary").buffer;
+                if (buffer && buffer.byteLength > 0) {
+                  sramBlob = new Blob([buffer], { type: "application/octet-stream" });
+                }
+              }
+            }
+          } catch (fsErr) {}
+        }
+
+        if (!sramBlob || sramBlob.size === 0) return;
+
+        let hashHex = "";
+        try {
+          const ab = await sramBlob.arrayBuffer();
+          const hashBuf = await crypto.subtle.digest("SHA-1", ab);
+          hashHex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+        } catch (e) {
+          hashHex = String(sramBlob.size);
+        }
+
+        if (this.lastSramHash[nomJeu] === hashHex) {
+          return;
+        }
+
+        this.lastSramHash[nomJeu] = hashHex;
+        const dateStr = new Date().toLocaleString();
+        const ts = Date.now();
+
+        await this.saveSramDB(nomJeu, sramBlob, dateStr, false, ts);
+
+        if (!silent) {
+          this.setStatus(`💾 Carte mémoire sauvegardée (${new Date().toLocaleTimeString()}) !`, "#34d399");
+        }
+      } catch (err) {
+        console.debug("[RetroVault] SRAM flush info:", err);
+      } finally {
+        this.isSavingSram = false;
       }
     }
 
@@ -443,29 +564,48 @@
 
         // 2. VPS -> Local : importer les sauvegardes distantes si absentes ou plus récentes
         for (const [key, rMeta] of Object.entries(remoteSaves)) {
-          const lSave = localSaves[key];
-          const rTime = rMeta.timestamp || 0;
-          const lTime = (lSave && lSave.timestamp) || 0;
+          const lSave = localSaves[key] || {};
+          const cType = this.identifierConsole(key);
 
-          if (!lSave || rTime > lTime) {
+          // Rapatriement SRAM
+          const remoteHasSram = !!rMeta.has_sram || (!rMeta.has_state && !!rMeta.timestamp);
+          const rSramTime = rMeta.sram_timestamp || (!rMeta.has_state ? rMeta.timestamp : 0);
+          const lSramTime = lSave.sramTimestamp || (lSave.sram ? (lSave.timestamp || 0) : 0);
+
+          if (remoteHasSram && (!lSave.sram || rSramTime > lSramTime)) {
             try {
-              const loadRes = await fetch(`api/saves.php?action=load&game=${encodeURIComponent(key)}&token=${encodeURIComponent(token)}`, {
+              const loadRes = await fetch(`api/saves.php?action=load&game=${encodeURIComponent(key)}&type=sram&token=${encodeURIComponent(token)}`, {
                 headers: { Authorization: `Bearer ${token}` }
               });
               if (loadRes.ok) {
                 const buf = await loadRes.arrayBuffer();
-                const cType = this.identifierConsole(key);
-                let stateObj;
-                if (cType === "nds") {
-                  stateObj = new Uint8Array(buf);
-                } else {
-                  stateObj = new Blob([buf], { type: "application/octet-stream" });
-                }
-                await this.saveStateDB(key, stateObj, rMeta.date, true, rTime);
+                const sramObj = (cType === "nds") ? new Uint8Array(buf) : new Blob([buf], { type: "application/octet-stream" });
+                await this.saveSramDB(key, sramObj, rMeta.sram_date || rMeta.date, true, rSramTime);
                 importedCount++;
               }
             } catch (dlErr) {
-              console.warn("[RetroVault Cloud] Erreur rapatriement " + key, dlErr);
+              console.warn("[RetroVault Cloud] Erreur rapatriement SRAM " + key, dlErr);
+            }
+          }
+
+          // Rapatriement State instantané
+          const remoteHasState = !!rMeta.has_state;
+          const rStateTime = rMeta.state_timestamp || 0;
+          const lStateTime = lSave.stateTimestamp || 0;
+
+          if (remoteHasState && (!lSave.state || rStateTime > lStateTime)) {
+            try {
+              const loadRes = await fetch(`api/saves.php?action=load&game=${encodeURIComponent(key)}&type=state&token=${encodeURIComponent(token)}`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              if (loadRes.ok) {
+                const buf = await loadRes.arrayBuffer();
+                const stateObj = (cType === "nds") ? new Uint8Array(buf) : new Blob([buf], { type: "application/octet-stream" });
+                await this.saveStateDB(key, stateObj, rMeta.state_date || rMeta.date, true, rStateTime);
+                importedCount++;
+              }
+            } catch (dlErr) {
+              console.warn("[RetroVault Cloud] Erreur rapatriement State " + key, dlErr);
             }
           }
         }
@@ -473,15 +613,32 @@
         // 3. Local -> VPS : téléverser les sauvegardes locales si absentes du VPS ou plus récentes
         for (const [key, lSave] of Object.entries(localSaves)) {
           const rMeta = remoteSaves[key];
-          const rTime = (rMeta && rMeta.timestamp) || 0;
-          const lTime = lSave.timestamp || 0;
 
-          if (!rMeta || lTime > rTime) {
-            try {
-              await this.uploadSaveToVPS(key, lSave.state, lSave.date, lTime, true);
-              exportedCount++;
-            } catch (upErr) {
-              console.warn("[RetroVault Cloud] Erreur envoi " + key, upErr);
+          // Upload SRAM local si plus récent
+          if (lSave.sram) {
+            const lSramTime = lSave.sramTimestamp || (lSave.timestamp || 0);
+            const rSramTime = (rMeta && (rMeta.sram_timestamp || (!rMeta.has_state ? rMeta.timestamp : 0))) || 0;
+            if (!rMeta || !rMeta.has_sram || lSramTime > rSramTime) {
+              try {
+                await this.uploadSaveToVPS(key, lSave.sram, lSave.sramDate || lSave.date, lSramTime, true, "sram");
+                exportedCount++;
+              } catch (upErr) {
+                console.warn("[RetroVault Cloud] Erreur envoi SRAM " + key, upErr);
+              }
+            }
+          }
+
+          // Upload State local si plus récent
+          if (lSave.state) {
+            const lStateTime = lSave.stateTimestamp || 0;
+            const rStateTime = (rMeta && rMeta.state_timestamp) || 0;
+            if (lStateTime > 0 && (!rMeta || !rMeta.has_state || lStateTime > rStateTime)) {
+              try {
+                await this.uploadSaveToVPS(key, lSave.state, lSave.stateDate || lSave.date, lStateTime, true, "state");
+                exportedCount++;
+              } catch (upErr) {
+                console.warn("[RetroVault Cloud] Erreur envoi State " + key, upErr);
+              }
             }
           }
         }
@@ -506,29 +663,28 @@
       }
     }
 
-    async uploadSaveToVPS(nomFichier, stateObj, dateStr, timestamp = Date.now(), silent = false) {
+    async uploadSaveToVPS(nomFichier, saveObj, dateStr, timestamp = Date.now(), silent = false, saveType = "state") {
       const token = this.getCloudToken();
       if (!token) return;
 
       try {
         let bodyData = null;
-        if (stateObj instanceof Blob) {
-          bodyData = stateObj;
-        } else if (stateObj instanceof Uint8Array || stateObj instanceof ArrayBuffer) {
-          bodyData = stateObj;
-        } else if (Array.isArray(stateObj)) {
-          bodyData = new Uint8Array(stateObj);
+        if (saveObj instanceof Blob) {
+          bodyData = saveObj;
+        } else if (saveObj instanceof Uint8Array || saveObj instanceof ArrayBuffer) {
+          bodyData = saveObj;
+        } else if (Array.isArray(saveObj)) {
+          bodyData = new Uint8Array(saveObj);
         } else {
           return;
         }
 
-        const cType = this.identifierConsole(nomFichier);
         const res = await fetch(`api/saves.php?action=save&token=${encodeURIComponent(token)}`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
             "X-Game-Name": encodeURIComponent(nomFichier),
-            "X-Save-Type": cType,
+            "X-Save-Type": saveType,
             "X-Save-Timestamp": String(timestamp),
             "Content-Type": "application/octet-stream"
           },
@@ -545,7 +701,8 @@
         if (!silent) {
           const status = document.getElementById("rv-status");
           if (status) {
-            status.textContent = `☁️ Sauvegarde synchronisée sur le VPS (${new Date().toLocaleTimeString()})`;
+            const typeLabel = saveType === "sram" ? "Carte mémoire" : "Sauvegarde rapide";
+            status.textContent = `☁️ ${typeLabel} synchronisée sur le VPS (${new Date().toLocaleTimeString()})`;
             status.style.color = "#34d399";
           }
         }
@@ -566,24 +723,51 @@
         const rMeta = listData?.saves?.[nomFichier];
         if (!rMeta) return;
 
-        const lSave = await this.loadStateDB(nomFichier);
-        const rTime = rMeta.timestamp || 0;
-        const lTime = (lSave && lSave.timestamp) || 0;
+        const lSave = (await this.loadStateDB(nomFichier)) || {};
+        const cType = this.identifierConsole(nomFichier);
+        let updated = false;
 
-        if (!lSave || rTime > lTime) {
-          const loadRes = await fetch(`api/saves.php?action=load&game=${encodeURIComponent(nomFichier)}&token=${encodeURIComponent(token)}`, {
+        // 1. Rapatrier SRAM distante si plus récente
+        const remoteHasSram = !!rMeta.has_sram || (!rMeta.has_state && !!rMeta.timestamp);
+        const rSramTime = rMeta.sram_timestamp || (!rMeta.has_state ? rMeta.timestamp : 0);
+        const lSramTime = lSave.sramTimestamp || (lSave.sram ? (lSave.timestamp || 0) : 0);
+
+        if (remoteHasSram && (!lSave.sram || rSramTime > lSramTime)) {
+          const loadRes = await fetch(`api/saves.php?action=load&game=${encodeURIComponent(nomFichier)}&type=sram&token=${encodeURIComponent(token)}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (loadRes.ok) {
             const buf = await loadRes.arrayBuffer();
-            const cType = this.identifierConsole(nomFichier);
-            const stateObj = cType === "nds" ? new Uint8Array(buf) : new Blob([buf], { type: "application/octet-stream" });
-            await this.saveStateDB(nomFichier, stateObj, rMeta.date, true, rTime);
-            this.setStatus(`☁️ Sauvegarde VPS restaurée (${rMeta.date}) !`, "#34d399");
-            this.rendreGrille();
+            const sramObj = (cType === "nds") ? new Uint8Array(buf) : new Blob([buf], { type: "application/octet-stream" });
+            await this.saveSramDB(nomFichier, sramObj, rMeta.sram_date || rMeta.date, true, rSramTime);
+            updated = true;
           }
         }
-      } catch (e) {}
+
+        // 2. Rapatrier State distante si plus récente
+        const remoteHasState = !!rMeta.has_state;
+        const rStateTime = rMeta.state_timestamp || 0;
+        const lStateTime = lSave.stateTimestamp || 0;
+
+        if (remoteHasState && (!lSave.state || rStateTime > lStateTime)) {
+          const loadRes = await fetch(`api/saves.php?action=load&game=${encodeURIComponent(nomFichier)}&type=state&token=${encodeURIComponent(token)}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (loadRes.ok) {
+            const buf = await loadRes.arrayBuffer();
+            const stateObj = (cType === "nds") ? new Uint8Array(buf) : new Blob([buf], { type: "application/octet-stream" });
+            await this.saveStateDB(nomFichier, stateObj, rMeta.state_date || rMeta.date, true, rStateTime);
+            updated = true;
+          }
+        }
+
+        if (updated) {
+          this.setStatus(`☁️ Sauvegarde VPS restaurée (${rMeta.date}) !`, "#34d399");
+          this.rendreGrille();
+        }
+      } catch (e) {
+        console.warn("[RetroVault Cloud] Erreur vérification distante:", e);
+      }
     }
 
     disconnectVPSCloud() {
@@ -2846,7 +3030,10 @@
         let saveBadgeHtml = "";
         try {
           const save = await this.loadStateDB(jeu.nom);
-          if (save) saveBadgeHtml = `<span class="rv-save-badge">💾 Sauvegarde</span>`;
+          if (save && (save.sram || save.state)) {
+            const badgeLabel = save.sram ? "💾 Carte Mémoire" : "💾 Sauvegarde";
+            saveBadgeHtml = `<span class="rv-save-badge">${badgeLabel}</span>`;
+          }
         } catch (e) {}
 
         const conf = CONSOLES_CONF[jeu.console] || CONSOLES_CONF.nes;
@@ -2928,6 +3115,10 @@
 
       try {
         if (this.partieEnCours) {
+          if (this.jeuEnCoursNom) {
+            try { await this.extraireEtSauvegarderSRAM(this.jeuEnCoursNom, true); } catch (e) {}
+          }
+          this.arreterSramLoop();
           await this.partieEnCours.exit();
           this.partieEnCours = null;
         }
@@ -2972,7 +3163,7 @@
           // Charger la sauvegarde locale existante depuis IndexedDB
           try {
             const existingSave = await this.loadStateDB(nomFichier);
-            this.pendingNdsSave = (existingSave && existingSave.state) ? existingSave.state : null;
+            this.pendingNdsSave = (existingSave && (existingSave.sram || existingSave.state)) ? (existingSave.sram || existingSave.state) : null;
           } catch(e) {
             this.pendingNdsSave = null;
           }
@@ -3021,6 +3212,14 @@
 
         this.jeuEnCoursNom = nomFichier;
 
+        // Si connecté au Cloud VPS, rapatrier la dernière sauvegarde (SRAM & State) AVANT le lancement
+        if (this.isCloudConnected()) {
+          await this.verifierSauvegardeDistante(nomFichier);
+        }
+
+        const existingSave = await this.loadStateDB(nomFichier);
+        const sramToInject = existingSave?.sram || (existingSave?.state && cType === "nds" ? existingSave.state : null);
+
         // Configuration RetroArch ergonomique (ZSQD + Pavé Numérique 8546 + Start B / Select V)
         const retroConfig = {
           input_player1_up: "w",
@@ -3043,41 +3242,55 @@
           savestate_thumbnail_enable: false,
           savestate_auto_save: false,
           savestate_auto_load: false,
+          autosave_interval: 5,
           audio_volume: String(this.volumeActuel === 0 ? -80 : Math.max(-80, Math.min(12, Math.round(20 * Math.log10(this.volumeActuel)))))
         };
 
         const canvasEl = document.getElementById("rv-canvas");
-
         const romFile = romBlob instanceof File ? romBlob : new File([romBlob], nomFichier);
 
+        const nostalgistOptions = {
+          element: canvasEl,
+          rom: romFile,
+          retroarchConfig: retroConfig
+        };
+        if (sramToInject) {
+          nostalgistOptions.sram = sramToInject;
+        }
+
         if (cType === "snes") {
-          this.partieEnCours = await Nostalgist.snes({ element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
+          this.partieEnCours = await Nostalgist.snes(nostalgistOptions);
         } else if (cType === "gba") {
-          this.partieEnCours = await Nostalgist.gba({ element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
+          this.partieEnCours = await Nostalgist.gba(nostalgistOptions);
         } else if (cType === "gb") {
-          this.partieEnCours = await Nostalgist.gbc({ element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
+          this.partieEnCours = await Nostalgist.gbc(nostalgistOptions);
         } else if (cType === "megadrive") {
-          this.partieEnCours = await Nostalgist.megadrive({ element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
+          this.partieEnCours = await Nostalgist.megadrive(nostalgistOptions);
         } else if (cType === "nes") {
-          this.partieEnCours = await Nostalgist.nes({ element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
+          this.partieEnCours = await Nostalgist.nes(nostalgistOptions);
         } else if (cType === "ps1") {
-          this.partieEnCours = await Nostalgist.launch({ core: "pcsx_rearmed", element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
+          this.partieEnCours = await Nostalgist.launch({ core: "pcsx_rearmed", ...nostalgistOptions });
         } else if (cType === "pce") {
-          this.partieEnCours = await Nostalgist.launch({ core: "mednafen_pce_fast", element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
+          this.partieEnCours = await Nostalgist.launch({ core: "mednafen_pce_fast", ...nostalgistOptions });
         } else {
-          this.partieEnCours = await Nostalgist.launch({ core: conf.core, element: canvasEl, rom: romFile, retroarchConfig: retroConfig });
+          this.partieEnCours = await Nostalgist.launch({ core: conf.core, ...nostalgistOptions });
         }
 
-        if (this.isCloudConnected()) {
-          await this.verifierSauvegardeDistante(this.jeuEnCoursNom);
-        }
+        this.demarrerSramLoop();
 
-        const saveInfo = await this.loadStateDB(this.jeuEnCoursNom);
-        if (saveInfo) {
-          status.textContent = `🎮 En cours : ${nomFichier} | 💾 Sauvegarde disponible (F4 pour charger)`;
+        const hasSram = !!(existingSave && existingSave.sram);
+        const hasState = !!(existingSave && existingSave.state);
+        if (hasSram && hasState) {
+          status.textContent = `🎮 En cours : ${nomFichier} | 💾 Carte Mémoire chargée & État rapide prêt (F4)`;
+          status.style.color = "#34d399";
+        } else if (hasSram) {
+          status.textContent = `🎮 En cours : ${nomFichier} | 💾 Carte Mémoire chargée (sauvegarde en jeu active)`;
+          status.style.color = "#34d399";
+        } else if (hasState) {
+          status.textContent = `🎮 En cours : ${nomFichier} | 💾 Sauvegarde rapide disponible (F4 pour charger)`;
           status.style.color = "#34d399";
         } else {
-          status.textContent = `🎮 En cours : ${nomFichier} (${conf.label}) | Bon jeu !`;
+          status.textContent = `🎮 En cours : ${nomFichier} (${conf.label}) | Sauvegarde automatique en jeu active !`;
           status.style.color = "#d4af37";
         }
 
@@ -3319,8 +3532,9 @@
 
         if (stateObj) {
           await this.saveStateDB(this.jeuEnCoursNom, stateObj);
+          await this.extraireEtSauvegarderSRAM(this.jeuEnCoursNom, true);
           const timeStr = new Date().toLocaleTimeString();
-          this.setStatutMessage(`✅ Sauvegarde réussie (${timeStr}) !`, "#34d399", true);
+          this.setStatutMessage(`✅ Sauvegarde d'état & Carte mémoire réussies (${timeStr}) !`, "#34d399", true);
           this.rendreGrille();
         } else {
           throw lastError || new Error("Délai de sauvegarde dépassé");
@@ -3373,8 +3587,13 @@
         }
 
         const data = await this.loadStateDB(this.jeuEnCoursNom);
-        if (!data || !data.state) {
+        if (!data || (!data.state && !data.sram)) {
           this.setStatutMessage("⚠️ Aucune sauvegarde trouvée pour ce jeu.", "#fbbf24", true);
+          return;
+        }
+
+        if (!data.state && data.sram) {
+          this.setStatutMessage("💡 Carte mémoire en jeu active ! Chargez votre partie directement depuis le menu du jeu.", "#34d399", true);
           return;
         }
 
@@ -3593,6 +3812,11 @@
         this.modal.classList.remove("active");
       }
       document.body.style.overflow = "";
+
+      if (this.partieEnCours && this.jeuEnCoursNom) {
+        this.extraireEtSauvegarderSRAM(this.jeuEnCoursNom, true).catch(() => {});
+      }
+      this.arreterSramLoop();
 
       if (this.partieEnCours) {
         try { this.partieEnCours.pause(); } catch (e) {}

@@ -168,24 +168,42 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $savePath = $storageDir . '/' . $key . '.bin';
+    $isSram = ($saveType === 'sram');
+    $subExt = $isSram ? '.sram.bin' : '.state.bin';
+    $savePath = $storageDir . '/' . $key . $subExt;
     $metaPath = $storageDir . '/' . $key . '.meta.json';
 
     file_put_contents($savePath, $data, LOCK_EX);
 
-    $meta = [
+    $meta = file_exists($metaPath) ? json_decode(file_get_contents($metaPath), true) : [
         'game' => $gameName,
-        'type' => $saveType,
-        'timestamp' => $timestamp,
         'date' => date('d/m/Y H:i:s'),
-        'size' => strlen($data),
-        'hash' => sha1($data)
+        'timestamp' => $timestamp
     ];
+
+    if ($isSram) {
+        $meta['has_sram'] = true;
+        $meta['sram_size'] = strlen($data);
+        $meta['sram_date'] = date('d/m/Y H:i:s');
+        $meta['sram_timestamp'] = $timestamp;
+        $meta['sram_hash'] = sha1($data);
+    } else {
+        $meta['has_state'] = true;
+        $meta['state_size'] = strlen($data);
+        $meta['state_date'] = date('d/m/Y H:i:s');
+        $meta['state_timestamp'] = $timestamp;
+        $meta['state_hash'] = sha1($data);
+    }
+    if ($timestamp >= ($meta['timestamp'] ?? 0)) {
+        $meta['date'] = date('d/m/Y H:i:s');
+        $meta['timestamp'] = $timestamp;
+    }
     file_put_contents($metaPath, json_encode($meta, JSON_PRETTY_PRINT), LOCK_EX);
 
     echo json_encode([
         'ok' => true,
         'game' => $gameName,
+        'type' => $saveType,
         'size' => strlen($data),
         'date' => $meta['date'],
         'timestamp' => $timestamp
@@ -203,21 +221,33 @@ if ($action === 'load' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     $key = getGameKey($gameName);
-    $savePath = $storageDir . '/' . $key . '.bin';
-    $metaPath = $storageDir . '/' . $key . '.meta.json';
+    $reqType = $_GET['type'] ?? 'sram';
+    $sramPath = $storageDir . '/' . $key . '.sram.bin';
+    $statePath = $storageDir . '/' . $key . '.state.bin';
+    $legacyPath = $storageDir . '/' . $key . '.bin';
 
-    if (!file_exists($savePath)) {
+    $savePath = '';
+    if ($reqType === 'sram') {
+        if (file_exists($sramPath)) $savePath = $sramPath;
+        elseif (file_exists($legacyPath)) $savePath = $legacyPath;
+    } else {
+        if (file_exists($statePath)) $savePath = $statePath;
+        elseif (file_exists($legacyPath)) $savePath = $legacyPath;
+    }
+
+    if (empty($savePath) || !file_exists($savePath)) {
         http_response_code(404);
         echo json_encode(['ok' => false, 'error' => 'Aucune sauvegarde trouvée sur le VPS.']);
         exit;
     }
 
-    $meta = file_exists($metaPath) ? json_decode(file_get_contents($metaPath), true) : [];
+    $meta = file_exists($metaPath = $storageDir . '/' . $key . '.meta.json') ? json_decode(file_get_contents($metaPath), true) : [];
     $data = file_get_contents($savePath);
 
     header('Content-Type: application/octet-stream');
     header('Content-Length: ' . strlen($data));
     header('X-Save-Game: ' . rawurlencode($meta['game'] ?? $gameName));
+    header('X-Save-Type: ' . $reqType);
     header('X-Save-Date: ' . ($meta['date'] ?? date('d/m/Y H:i:s')));
     header('X-Save-Timestamp: ' . ($meta['timestamp'] ?? (filemtime($savePath) * 1000)));
     header('X-Save-Size: ' . strlen($data));
@@ -251,6 +281,8 @@ if ($action === 'delete') {
         exit;
     }
     $key = getGameKey($gameName);
+    @unlink($storageDir . '/' . $key . '.sram.bin');
+    @unlink($storageDir . '/' . $key . '.state.bin');
     @unlink($storageDir . '/' . $key . '.bin');
     @unlink($storageDir . '/' . $key . '.meta.json');
     echo json_encode(['ok' => true]);
