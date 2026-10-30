@@ -6,7 +6,7 @@
   <title>Sanctuaire PlayStation Portable — Quentin Beaud</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="dark.css">
   <script src="coi-serviceworker.js"></script>
   <style>
@@ -26,6 +26,7 @@
       justify-content: flex-start;
       -webkit-user-select: none;
       user-select: none;
+      touch-action: none;
     }
 
     /* Mode Imbriqué (dans l'iframe du Sanctuaire RetroVault) */
@@ -47,19 +48,19 @@
       background: #000 !important;
     }
 
-    /* En-tête Dark Fantasy (Mode Standalone / Dédié) */
+    /* En-tête Dark Fantasy */
     .psp-header {
       width: 100%;
-      background: linear-gradient(180deg, rgba(9, 19, 13, 0.95) 0%, rgba(5, 10, 7, 0.9) 100%);
+      background: linear-gradient(180deg, rgba(9, 19, 13, 0.96) 0%, rgba(5, 10, 7, 0.92) 100%);
       border-bottom: 1px solid rgba(212, 175, 55, 0.35);
-      padding: 8px 14px;
+      padding: 7px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
-      z-index: 10;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+      z-index: 20;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
     }
 
     .psp-brand {
@@ -71,7 +72,7 @@
 
     .psp-title {
       font-family: 'Cinzel', serif;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       font-weight: 700;
       color: #d4af37;
       letter-spacing: 0.5px;
@@ -80,31 +81,31 @@
     }
 
     .psp-status-bar {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: #a8b8ad;
-      max-width: 380px;
+      max-width: 340px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    /* Badges */
     .psp-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       background: #0e1d14;
       border: 1px solid rgba(212, 175, 55, 0.35);
       border-radius: 4px;
       padding: 3px 8px;
-      font-size: 0.76rem;
+      font-size: 0.74rem;
       color: #d4af37;
     }
 
     .psp-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
     .psp-btn-icon {
@@ -113,17 +114,27 @@
       color: #f0f4f1;
       padding: 5px 10px;
       border-radius: 4px;
-      font-size: 0.76rem;
+      font-size: 0.74rem;
+      font-family: inherit;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      transition: all 0.2s ease;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
     }
     .psp-btn-icon:hover {
       background: #14281c;
       border-color: #d4af37;
       color: #d4af37;
+      box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    }
+    .psp-btn-icon.active {
+      background: linear-gradient(135deg, #d4af37 0%, #a6831d 100%);
+      color: #050a07;
+      border-color: #f5d77f;
+      font-weight: 700;
     }
 
     /* Scène Principale */
@@ -150,7 +161,31 @@
       display: block;
     }
 
-    /* Reliquaire / Dropzone si aucun jeu chargé */
+    /* HUD FPS Flottant */
+    .psp-floating-hud {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(5, 10, 7, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.74rem;
+      color: #34d399;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 15;
+      pointer-events: none;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+      transition: opacity 0.2s ease;
+    }
+    .psp-floating-hud.hidden {
+      display: none !important;
+    }
+
+    /* Dropzone si aucun jeu chargé */
     .psp-dropzone {
       position: absolute;
       inset: 20px;
@@ -166,17 +201,10 @@
       z-index: 5;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
       cursor: pointer;
-      transition: border-color 0.2s ease, transform 0.2s ease;
     }
     .psp-dropzone:hover {
       border-color: #d4af37;
-      transform: scale(1.005);
     }
-    .psp-dropzone.dragover {
-      border-color: #34d399;
-      background: radial-gradient(circle at center, rgba(16, 40, 26, 0.98) 0%, rgba(5, 10, 7, 1) 100%);
-    }
-
     .psp-dropzone-icon {
       font-size: 3.5rem;
       color: #d4af37;
@@ -201,18 +229,18 @@
     .psp-loader-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(5, 10, 7, 0.94);
+      background: rgba(5, 10, 7, 0.95);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 16px;
-      z-index: 20;
+      z-index: 25;
       transition: opacity 0.3s ease;
     }
     .psp-spinner {
-      width: 48px;
-      height: 48px;
+      width: 50px;
+      height: 50px;
       border: 3px solid rgba(212, 175, 55, 0.2);
       border-top-color: #d4af37;
       border-radius: 50%;
@@ -226,29 +254,11 @@
       font-size: 1rem;
       color: #d4af37;
       letter-spacing: 0.5px;
+      text-align: center;
+      padding: 0 20px;
     }
 
-    /* HUD FPS Flottant */
-    .psp-floating-hud {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(5, 10, 7, 0.85);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-size: 0.75rem;
-      color: #34d399;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      z-index: 15;
-      pointer-events: none;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-    }
-
-    /* Bouton Dédié Plein Écran (dans mode imbriqué) */
+    /* Bouton plein écran externe si iframe */
     .psp-ext-button {
       position: absolute;
       top: 10px;
@@ -266,12 +276,353 @@
       align-items: center;
       gap: 4px;
       z-index: 15;
-      transition: all 0.2s ease;
     }
-    .psp-ext-button:hover {
+
+    /* ========================================================
+       MANETTE VIRTUELLE TACTILE SONY PSP (DARK FANTASY)
+       ======================================================== */
+    .psp-vpad {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 12;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 14px 18px;
+      box-sizing: border-box;
+      transition: opacity 0.2s ease;
+    }
+    .psp-vpad.hidden {
+      display: none !important;
+    }
+
+    .psp-vpad-wing {
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      width: clamp(140px, 18vw, 170px);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Gâchettes L et R */
+    .psp-shoulder-btn {
       background: #14281c;
-      border-color: #d4af37;
-      transform: translateY(-1px);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: #d4af37;
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 0.88rem;
+      padding: 8px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      touch-action: none;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      transition: all 0.08s ease;
+    }
+    .psp-shoulder-btn:active, .psp-shoulder-btn.pressed {
+      background: #d4af37 !important;
+      color: #050a07 !important;
+      transform: translateY(1px);
+      box-shadow: 0 0 16px rgba(212, 175, 55, 0.8);
+    }
+
+    /* Sélecteur Mode Gauche (Croix / Joystick) */
+    .psp-mode-tabs {
+      display: flex;
+      gap: 4px;
+      background: #060e08;
+      padding: 2px;
+      border-radius: 12px;
+      border: 1px solid rgba(212, 175, 55, 0.25);
+    }
+    .psp-mode-tab {
+      background: transparent;
+      border: none;
+      color: #a8b8ad;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .psp-mode-tab.active {
+      background: linear-gradient(135deg, #d4af37 0%, #997d25 100%);
+      color: #050a07;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+
+    /* Croix Directionnelle 3x3 Grid Parfaite */
+    .psp-dpad {
+      display: grid;
+      grid-template-columns: 40px 40px 40px;
+      grid-template-rows: 40px 40px 40px;
+      grid-template-areas:
+        ".    up    ."
+        "left core  right"
+        ".    down  .";
+      width: 120px;
+      height: 120px;
+      margin: 0 auto;
+      touch-action: none;
+    }
+    .psp-dpad-btn {
+      width: 40px;
+      height: 40px;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      background: #14281c;
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: #d4af37;
+      font-size: 1.15rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      touch-action: none;
+      transition: all 0.08s;
+    }
+    .psp-dpad-u { grid-area: up; border-radius: 6px 6px 0 0; border-bottom: none; }
+    .psp-dpad-d { grid-area: down; border-radius: 0 0 6px 6px; border-top: none; }
+    .psp-dpad-l { grid-area: left; border-radius: 6px 0 0 6px; border-right: none; }
+    .psp-dpad-r { grid-area: right; border-radius: 0 6px 6px 0; border-left: none; }
+    .psp-dpad-core {
+      grid-area: core;
+      width: 40px;
+      height: 40px;
+      background: #0e1d14;
+      border: none;
+    }
+    .psp-dpad-btn:active, .psp-dpad-btn.pressed {
+      background: #d4af37 !important;
+      color: #050a07 !important;
+      box-shadow: 0 0 14px rgba(212, 175, 55, 0.8);
+    }
+
+    /* Joystick Analogique Tactile 360° */
+    .psp-analog-container {
+      width: 120px;
+      height: 120px;
+      position: relative;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, #14281c 0%, #060e08 100%);
+      border: 2px solid rgba(212, 175, 55, 0.45);
+      touch-action: none;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.8), 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+    .psp-analog-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1f3d2b 0%, #0e1d14 100%);
+      border: 2px solid #d4af37;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+      position: absolute;
+      pointer-events: none;
+      transition: transform 0.04s ease-out;
+    }
+
+    /* Losange d'Actions PlayStation 3x3 Grid */
+    .psp-actions-pad {
+      display: grid;
+      grid-template-columns: 40px 40px 40px;
+      grid-template-rows: 40px 40px 40px;
+      grid-template-areas:
+        ".    top   ."
+        "left . right"
+        ".  bottom  .";
+      width: 120px;
+      height: 120px;
+      margin: 0 auto;
+      touch-action: none;
+    }
+    .psp-act-btn {
+      width: 40px;
+      height: 40px;
+      margin: auto;
+      padding: 0;
+      box-sizing: border-box;
+      border-radius: 50%;
+      font-family: 'Cinzel', serif;
+      font-size: 1.15rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      touch-action: none;
+      transition: all 0.08s;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.6);
+    }
+    .psp-act-btn.top {
+      grid-area: top;
+      background: rgba(52, 211, 153, 0.15);
+      border: 2px solid #34d399;
+      color: #34d399;
+    }
+    .psp-act-btn.left {
+      grid-area: left;
+      background: rgba(244, 114, 182, 0.15);
+      border: 2px solid #f472b6;
+      color: #f472b6;
+    }
+    .psp-act-btn.right {
+      grid-area: right;
+      background: rgba(239, 68, 68, 0.15);
+      border: 2px solid #ef4444;
+      color: #ef4444;
+    }
+    .psp-act-btn.bottom {
+      grid-area: bottom;
+      background: rgba(96, 165, 250, 0.15);
+      border: 2px solid #60a5fa;
+      color: #60a5fa;
+    }
+    .psp-act-btn:active, .psp-act-btn.pressed {
+      filter: brightness(1.5);
+      transform: scale(0.92);
+      box-shadow: 0 0 16px currentColor;
+    }
+
+    /* Centre Bas : Select et Start */
+    .psp-vpad-center {
+      pointer-events: auto;
+      display: flex;
+      gap: 14px;
+      margin-bottom: 4px;
+      align-items: center;
+    }
+    .psp-pill-btn {
+      background: #0e1d14;
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: #d4af37;
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      touch-action: none;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
+      transition: all 0.08s;
+    }
+    .psp-pill-btn:active, .psp-pill-btn.pressed {
+      background: #d4af37 !important;
+      color: #050a07 !important;
+      box-shadow: 0 0 12px rgba(212, 175, 55, 0.8);
+      transform: translateY(1px);
+    }
+
+    /* ========================================================
+       MODAL GUIDE DES TOUCHES ET OPTIONS CLAVIER / MANETTE
+       ======================================================== */
+    .psp-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 8, 6, 0.88);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .psp-modal-backdrop.open {
+      display: flex;
+    }
+
+    .psp-modal-card {
+      background: linear-gradient(180deg, #0e1d14 0%, #060e08 100%);
+      border: 1px solid rgba(212, 175, 55, 0.5);
+      border-radius: 10px;
+      max-width: 580px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 22px;
+      box-sizing: border-box;
+      box-shadow: 0 12px 50px rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .psp-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+      padding-bottom: 10px;
+    }
+    .psp-modal-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.15rem;
+      color: #d4af37;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .psp-modal-close {
+      background: transparent;
+      border: none;
+      color: #a8b8ad;
+      font-size: 1.4rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 8px;
+      transition: color 0.15s;
+    }
+    .psp-modal-close:hover {
+      color: #ef4444;
+    }
+
+    .psp-key-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .psp-key-table th {
+      text-align: left;
+      color: #d4af37;
+      font-family: 'Cinzel', serif;
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+      font-size: 0.78rem;
+    }
+    .psp-key-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+      color: #e2e8f0;
+    }
+    kbd {
+      background: #14281c;
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: #d4af37;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+    .psp-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding-top: 10px;
+      border-top: 1px solid rgba(212, 175, 55, 0.2);
     }
   </style>
 </head>
@@ -280,15 +631,18 @@
   <!-- En-tête Sanctuaire Standalone -->
   <header class="psp-header">
     <div class="psp-brand">
-      <span style="font-size: 1.2rem;">🔴</span>
-      <h1 class="psp-title">Sanctuaire PlayStation Portable</h1>
-      <span class="psp-badge" id="psp-version-badge">PPSSPP WebAssembly</span>
+      <a href="/" class="psp-btn-icon" title="Retourner au Portfolio">🦉 Portfolio</a>
+      <h1 class="psp-title">PlayStation Portable</h1>
+      <span class="psp-badge" id="psp-version-badge">PPSSPP 60 FPS</span>
       <span class="psp-status-bar" id="psp-status-bar">En attente de relique...</span>
     </div>
     <div class="psp-actions">
-      <span class="psp-badge" id="psp-gp-badge">🎮 Clavier</span>
-      <button class="psp-btn-icon" id="psp-btn-speed" title="Changer la vitesse">⚡ 1.0x</button>
-      <button class="psp-btn-icon" id="psp-btn-save" title="Sauvegarder">💾 Sauvegarder</button>
+      <button class="psp-btn-icon" id="psp-btn-controls" title="Guide des touches clavier et manettes">⌨️ Touches</button>
+      <button class="psp-btn-icon" id="psp-btn-pad" title="Afficher ou masquer la manette virtuelle tactile">📱 Manette</button>
+      <button class="psp-btn-icon" id="psp-btn-fps" title="Afficher ou masquer le compteur FPS">🟢 FPS</button>
+      <button class="psp-btn-icon" id="psp-btn-speed" title="Changer la vitesse d'émulation">⚡ 1.0x</button>
+      <button class="psp-btn-icon" id="psp-btn-save" title="Sauvegarder l'état dans le Cloud VPS">💾 Sauvegarder</button>
+      <button class="psp-btn-icon" id="psp-btn-restart" title="Recharger la relique PSP">🔄 Redémarrer</button>
       <button class="psp-btn-icon" id="psp-btn-fs" title="Plein Écran">⛶ Plein Écran</button>
     </div>
   </header>
@@ -309,12 +663,53 @@
     <!-- Canvas WebGL PPSSPP -->
     <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="0"></canvas>
 
+    <!-- MANETTE VIRTUELLE TACTILE -->
+    <div class="psp-vpad" id="psp-vpad">
+      <!-- Aile Gauche : Gâchette L + Croix Directionnelle / Joystick -->
+      <div class="psp-vpad-wing left">
+        <button type="button" class="psp-shoulder-btn" id="psp-btn-l" data-key="L">L</button>
+        <div class="psp-mode-tabs">
+          <button type="button" class="psp-mode-tab active" id="psp-tab-dpad">CROIX</button>
+          <button type="button" class="psp-mode-tab" id="psp-tab-analog">STICK</button>
+        </div>
+        <!-- Croix 3x3 -->
+        <div class="psp-dpad" id="psp-dpad">
+          <button type="button" class="psp-dpad-btn psp-dpad-u" id="psp-btn-up" data-key="Up">▲</button>
+          <button type="button" class="psp-dpad-btn psp-dpad-l" id="psp-btn-left" data-key="Left">◀</button>
+          <div class="psp-dpad-core"></div>
+          <button type="button" class="psp-dpad-btn psp-dpad-r" id="psp-btn-right" data-key="Right">▶</button>
+          <button type="button" class="psp-dpad-btn psp-dpad-d" id="psp-btn-down" data-key="Down">▼</button>
+        </div>
+        <!-- Joystick 360° -->
+        <div class="psp-analog-container" id="psp-analog">
+          <div class="psp-analog-thumb" id="psp-analog-thumb"></div>
+        </div>
+      </div>
+
+      <!-- Centre Bas : Select et Start -->
+      <div class="psp-vpad-center">
+        <button type="button" class="psp-pill-btn" id="psp-btn-select" data-key="Select">SELECT</button>
+        <button type="button" class="psp-pill-btn" id="psp-btn-start" data-key="Start">START</button>
+      </div>
+
+      <!-- Aile Droite : Gâchette R + Losange PlayStation -->
+      <div class="psp-vpad-wing right">
+        <button type="button" class="psp-shoulder-btn" id="psp-btn-r" data-key="R">R</button>
+        <div class="psp-actions-pad" id="psp-actions-pad">
+          <button type="button" class="psp-act-btn top" id="psp-btn-triangle" data-key="Triangle">△</button>
+          <button type="button" class="psp-act-btn left" id="psp-btn-square" data-key="Square">▢</button>
+          <button type="button" class="psp-act-btn right" id="psp-btn-circle" data-key="Circle">◯</button>
+          <button type="button" class="psp-act-btn bottom" id="psp-btn-cross" data-key="Cross">✕</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Reliquaire / Dropzone si aucun jeu chargé -->
     <div class="psp-dropzone" id="psp-dropzone">
       <div class="psp-dropzone-icon">🔴</div>
       <h2>Sanctuaire PlayStation Portable</h2>
       <p>Glissez-déposez une relique PSP (.chd, .iso, .cso) ou touchez ici pour ouvrir le sélecteur.</p>
-      <button type="button" id="psp-pick-btn">Sélectionner une ROM PSP</button>
+      <button type="button" id="psp-pick-btn" class="psp-btn-icon" style="padding: 10px 20px; font-size: 0.9rem;">Sélectionner une ROM PSP</button>
       <input type="file" id="psp-file-input" accept=".chd,.iso,.cso,.pbp" style="display: none;">
     </div>
 
@@ -324,6 +719,104 @@
       <div class="psp-loader-text" id="psp-loader-text">Invocation de la relique PSP...</div>
     </div>
   </main>
+
+  <!-- MODAL GUIDE DES TOUCHES -->
+  <div class="psp-modal-backdrop" id="psp-modal-controls">
+    <div class="psp-modal-card">
+      <div class="psp-modal-header">
+        <h3 class="psp-modal-title">⚔️ Grimoire des Commandes PSP</h3>
+        <button type="button" class="psp-modal-close" id="psp-modal-close">&times;</button>
+      </div>
+      <div>
+        <table class="psp-key-table">
+          <thead>
+            <tr>
+              <th>Bouton PSP</th>
+              <th>Clavier AZERTY</th>
+              <th>Clavier QWERTY</th>
+              <th>Action (ex: LocoRoco)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong style="color:#60a5fa;">✕ Croix</strong></td>
+              <td><kbd>W</kbd> ou <kbd>Espace</kbd></td>
+              <td><kbd>Z</kbd> ou <kbd>Espace</kbd></td>
+              <td>Sauter / Valider</td>
+            </tr>
+            <tr>
+              <td><strong style="color:#ef4444;">◯ Rond</strong></td>
+              <td><kbd>X</kbd> ou <kbd>C</kbd></td>
+              <td><kbd>X</kbd> ou <kbd>C</kbd></td>
+              <td>Séparer / Rassembler</td>
+            </tr>
+            <tr>
+              <td><strong style="color:#f472b6;">▢ Carré</strong></td>
+              <td><kbd>Q</kbd></td>
+              <td><kbd>A</kbd></td>
+              <td>Action secondaire</td>
+            </tr>
+            <tr>
+              <td><strong style="color:#34d399;">△ Triangle</strong></td>
+              <td><kbd>S</kbd></td>
+              <td><kbd>S</kbd></td>
+              <td>Menu / Observer</td>
+            </tr>
+            <tr>
+              <td><strong style="color:#d4af37;">Gâchette L</strong></td>
+              <td><kbd>A</kbd></td>
+              <td><kbd>Q</kbd></td>
+              <td>Pencher le monde à gauche</td>
+            </tr>
+            <tr>
+              <td><strong style="color:#d4af37;">Gâchette R</strong></td>
+              <td><kbd>Z</kbd></td>
+              <td><kbd>W</kbd></td>
+              <td>Pencher le monde à droite</td>
+            </tr>
+            <tr>
+              <td><strong>L + R ensemble</strong></td>
+              <td><kbd>A</kbd> + <kbd>Z</kbd></td>
+              <td><kbd>Q</kbd> + <kbd>W</kbd></td>
+              <td>Grand Saut LocoRoco</td>
+            </tr>
+            <tr>
+              <td><strong>Croix Dir. (D-Pad)</strong></td>
+              <td colspan="2"><kbd>Flèches ↑ ↓ ← →</kbd></td>
+              <td>Se déplacer</td>
+            </tr>
+            <tr>
+              <td><strong>Stick Analogique</strong></td>
+              <td colspan="2"><kbd>I</kbd> (Haut), <kbd>K</kbd> (Bas), <kbd>J</kbd> (G), <kbd>L</kbd> (D)</td>
+              <td>Vue / Direction 360°</td>
+            </tr>
+            <tr>
+              <td><strong>START</strong></td>
+              <td colspan="2"><kbd>Espace</kbd> ou <kbd>Entrée</kbd></td>
+              <td>Pause / Démarrer</td>
+            </tr>
+            <tr>
+              <td><strong>SELECT</strong></td>
+              <td colspan="2"><kbd>V</kbd> ou <kbd>Maj (Shift)</kbd></td>
+              <td>Sélecteur</td>
+            </tr>
+            <tr>
+              <td><strong>Menu PPSSPP</strong></td>
+              <td colspan="2"><kbd>Échap</kbd></td>
+              <td>Paramètres de l'émulateur</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size: 0.8rem; color: #a8b8ad; line-height: 1.5; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.2);">
+        💡 <strong>Manettes USB / Bluetooth :</strong> Détection automatique (PlayStation DualSense, Xbox, Switch Pro). Les touches sont mappées nativement.<br>
+        📱 <strong>Tactile & Mobile :</strong> La manette virtuelle est activable à tout moment avec le bouton <strong>📱 Manette</strong> dans la barre supérieure.
+      </div>
+      <div class="psp-modal-footer">
+        <button type="button" class="psp-btn-icon active" id="psp-modal-ok" style="padding: 8px 18px;">Compris</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     (function() {
@@ -343,19 +836,36 @@
       const loader = document.getElementById("psp-loader");
       const loaderText = document.getElementById("psp-loader-text");
       const statusBar = document.getElementById("psp-status-bar");
+      const hud = document.getElementById("psp-hud");
       const hudText = document.getElementById("psp-hud-text");
-      const hudDot = document.getElementById("psp-hud-dot");
-      const gpBadge = document.getElementById("psp-gp-badge");
       const btnFs = document.getElementById("psp-btn-fs");
       const btnSpeed = document.getElementById("psp-btn-speed");
       const btnSave = document.getElementById("psp-btn-save");
+      const btnRestart = document.getElementById("psp-btn-restart");
+      const btnControls = document.getElementById("psp-btn-controls");
+      const btnPad = document.getElementById("psp-btn-pad");
+      const btnFps = document.getElementById("psp-btn-fps");
+      const modalControls = document.getElementById("psp-modal-controls");
+      const modalClose = document.getElementById("psp-modal-close");
+      const modalOk = document.getElementById("psp-modal-ok");
+      const vpad = document.getElementById("psp-vpad");
+      const tabDpad = document.getElementById("psp-tab-dpad");
+      const tabAnalog = document.getElementById("psp-tab-analog");
+      const dpadEl = document.getElementById("psp-dpad");
+      const analogEl = document.getElementById("psp-analog");
+      const analogThumb = document.getElementById("psp-analog-thumb");
 
       let currentRomName = "";
       let emulatorStarted = false;
       let emulatorReady = false;
-      let pendingRom = null;
       let ppssppAudioCtx = null;
       let currentSpeed = 1.0;
+
+      // Détection tactile automatique pour la manette
+      const isTouchDevice = () => window.matchMedia("(pointer: coarse)").matches || window.innerWidth <= 900;
+      if (!isTouchDevice() && vpad) {
+        vpad.classList.add("hidden");
+      }
 
       function setStatus(text, color) {
         if (statusBar) {
@@ -501,7 +1011,47 @@
         }
       }
 
-      // 4. Initialisation du Module Emscripten
+      // 4. Injecteur d'événements clavier pour les touches virtuelles
+      function sendKeyEvent(isDown, code, key, keyCode) {
+        try {
+          const type = isDown ? "keydown" : "keyup";
+          const ev = new KeyboardEvent(type, {
+            code: code,
+            key: key,
+            keyCode: keyCode,
+            which: keyCode,
+            bubbles: true,
+            cancelable: true
+          });
+          window.dispatchEvent(ev);
+          document.dispatchEvent(ev);
+          if (canvas) canvas.dispatchEvent(ev);
+        } catch(err) {
+          console.warn("[PPSSPP Input]", err);
+        }
+      }
+
+      // Table des touches virtuelles
+      const VIRTUAL_KEY_MAP = {
+        "Up":       { code: "ArrowUp",    key: "ArrowUp",   keyCode: 38 },
+        "Down":     { code: "ArrowDown",  key: "ArrowDown", keyCode: 40 },
+        "Left":     { code: "ArrowLeft",  key: "ArrowLeft", keyCode: 37 },
+        "Right":    { code: "ArrowRight", key: "ArrowRight",keyCode: 39 },
+        "Cross":    { code: "KeyZ",       key: "z",         keyCode: 90 },
+        "Circle":   { code: "KeyX",       key: "x",         keyCode: 88 },
+        "Square":   { code: "KeyA",       key: "a",         keyCode: 65 },
+        "Triangle": { code: "KeyS",       key: "s",         keyCode: 83 },
+        "L":        { code: "KeyQ",       key: "q",         keyCode: 81 },
+        "R":        { code: "KeyW",       key: "w",         keyCode: 87 },
+        "Start":    { code: "Space",      key: " ",         keyCode: 32 },
+        "Select":   { code: "Enter",      key: "Enter",     keyCode: 13 },
+        "AnUp":     { code: "KeyI",       key: "i",         keyCode: 73 },
+        "AnDown":   { code: "KeyK",       key: "k",         keyCode: 75 },
+        "AnLeft":   { code: "KeyJ",       key: "j",         keyCode: 74 },
+        "AnRight":  { code: "KeyL",       key: "l",         keyCode: 76 }
+      };
+
+      // 5. Initialisation du Module Emscripten
       function configureEmscriptenModule(romName, romBytes) {
         const safeName = (romName || "game.chd").replace(/[^a-zA-Z0-9._-]/g, "_");
         const gamePath = "/games/" + safeName;
@@ -545,12 +1095,12 @@
                 console.log("[PPSSPP] Relique injectée dans MEMFS :", gamePath, "(" + romBytes.byteLength + " octets)");
               }
 
-              // Configuration optimale Dark Fantasy & Mobile
-              const isMobile = !!window.matchMedia?.("(pointer: coarse)")?.matches;
               const iniDir = "/home/web_user/.config/ppsspp/PSP/SYSTEM";
               try {
                 FS.mkdirTree(iniDir);
-                let iniContent = `
+
+                // ppsspp.ini optimal
+                const iniContent = `
 [General]
 CurrentDirectory = /games
 ForceLagSync2 = True
@@ -569,13 +1119,36 @@ AudioBufferSize = 1024
 FillAudioGaps = True
 
 [Control]
-ShowTouchControls = ${isMobile ? "True" : "False"}
-TouchButtonStyle = 1
-TouchButtonOpacity = 75
+ShowTouchControls = False
 `;
                 FS.writeFile(iniDir + "/ppsspp.ini", new TextEncoder().encode(iniContent));
+
+                // controls.ini complet (AZERTY + QWERTY + Gamepad)
+                const controlsContent = `
+[ControlMapping]
+Up = 1-19
+Down = 1-20
+Left = 1-21
+Right = 1-22
+Circle = 1-52,1-31,10-189
+Cross = 1-54,1-51,1-62,10-190
+Square = 1-29,1-45,10-193
+Triangle = 1-47,10-191
+Start = 1-62,1-66,10-106
+Select = 1-50,1-66,1-59,10-4
+L = 1-45,1-29,10-196
+R = 1-51,1-54,10-197
+An.Up = 1-37
+An.Down = 1-39
+An.Left = 1-38
+An.Right = 1-40
+Pause = 1-111
+FastForward = 1-61
+`;
+                FS.writeFile(iniDir + "/controls.ini", new TextEncoder().encode(controlsContent));
+                console.log("[PPSSPP Config] Configuration ppsspp.ini & controls.ini injectée avec succès !");
               } catch(e) {
-                console.warn("[PPSSPP Config] Erreur ppsspp.ini :", e);
+                console.warn("[PPSSPP Config] Erreur configuration INI :", e);
               }
             } catch(e) {
               console.error("[PPSSPP preRun] Échec montage :", e);
@@ -589,14 +1162,12 @@ TouchButtonOpacity = 75
             canvas.focus();
             setStatus("🎮 En jeu : " + (currentRomName || "PlayStation Portable"), "#34d399");
 
-            // Notifier le Sanctuaire parent
             try {
               if (window.parent && window.parent !== window) {
                 window.parent.postMessage({ type: "PSP_READY", name: currentRomName }, "*");
               }
             } catch(e) {}
 
-            // Surveillance des sauvegardes toutes les 15 secondes
             setInterval(checkAndSyncSaves, 15000);
           },
           onAbort(err) {
@@ -610,7 +1181,7 @@ TouchButtonOpacity = 75
         };
       }
 
-      // 5. Sauvegardes & Restauration Cloud VPS
+      // 6. Sauvegardes Cloud VPS
       function checkAndSyncSaves() {
         if (!window.Module || !window.Module.FS) return;
         try {
@@ -645,7 +1216,7 @@ TouchButtonOpacity = 75
         } catch(e) {}
       }
 
-      // 6. Lancement du Moteur PPSSPP
+      // 7. Lancement du Moteur PPSSPP
       async function launchEmulator(romBlob, romName) {
         if (emulatorStarted) return;
         emulatorStarted = true;
@@ -653,7 +1224,6 @@ TouchButtonOpacity = 75
         showLoader("Invocation de " + currentRomName + "...");
 
         try {
-          // AudioContext pré-initialisé (non bloquant pour éviter les deadlocks de user gesture)
           if (!ppssppAudioCtx) {
             ppssppAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" });
             ppssppAudioCtx.resume().catch(() => {});
@@ -662,7 +1232,6 @@ TouchButtonOpacity = 75
           console.warn("[PPSSPP Audio] Init fallback :", e);
         }
 
-        // Conversion du blob ROM en Uint8Array (optimisation zéro duplication mémoire)
         showLoader("Préparation de la relique en mémoire...");
         let romBytes = null;
         if (romBlob instanceof Uint8Array) {
@@ -674,10 +1243,8 @@ TouchButtonOpacity = 75
           romBytes = new Uint8Array(buf);
         }
 
-        // Configuration Module
         configureEmscriptenModule(currentRomName, romBytes);
 
-        // Injection du script PPSSPPSDL.js
         showLoader("Chargement du binaire WebAssembly...");
         const script = document.createElement("script");
         script.src = "build-wasm/PPSSPPSDL.js?v=" + Date.now();
@@ -688,37 +1255,164 @@ TouchButtonOpacity = 75
         document.body.appendChild(script);
       }
 
-      // 7. Écoute des contrôles et de la manette physique
-      function updateGamepadBadge() {
-        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-        let hasGp = false;
-        for (const gp of gamepads) {
-          if (gp && gp.connected) {
-            hasGp = true;
-            if (gpBadge) {
-              gpBadge.textContent = "🎮 " + (gp.id.includes("Xbox") ? "Xbox" : gp.id.includes("Dual") ? "PlayStation" : "Manette Active");
-              gpBadge.style.color = "#34d399";
+      // 8. Gestion de la Manette Virtuelle (Touch / Multi-Touch)
+      function setupVirtualPad() {
+        const buttons = vpad.querySelectorAll("[data-key]");
+        buttons.forEach(btn => {
+          const k = btn.getAttribute("data-key");
+          const mapping = VIRTUAL_KEY_MAP[k];
+          if (!mapping) return;
+
+          const press = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (btn.setPointerCapture && e.pointerId) {
+              try { btn.setPointerCapture(e.pointerId); } catch(err) {}
             }
-            break;
-          }
+            btn.classList.add("pressed");
+            sendKeyEvent(true, mapping.code, mapping.key, mapping.keyCode);
+          };
+
+          const release = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            btn.classList.remove("pressed");
+            sendKeyEvent(false, mapping.code, mapping.key, mapping.keyCode);
+            if (btn.releasePointerCapture && e.pointerId) {
+              try { btn.releasePointerCapture(e.pointerId); } catch(err) {}
+            }
+          };
+
+          btn.addEventListener("pointerdown", press);
+          btn.addEventListener("pointerup", release);
+          btn.addEventListener("pointercancel", release);
+          btn.addEventListener("pointerleave", release);
+        });
+
+        // Bascule entre D-Pad et Joystick Analogique
+        if (tabDpad && tabAnalog && dpadEl && analogEl) {
+          tabDpad.addEventListener("click", () => {
+            tabDpad.classList.add("active");
+            tabAnalog.classList.remove("active");
+            dpadEl.style.display = "grid";
+            analogEl.style.display = "none";
+          });
+          tabAnalog.addEventListener("click", () => {
+            tabAnalog.classList.add("active");
+            tabDpad.classList.remove("active");
+            dpadEl.style.display = "none";
+            analogEl.style.display = "flex";
+          });
         }
-        if (!hasGp && gpBadge) {
-          gpBadge.textContent = "⌨ Clavier";
-          gpBadge.style.color = "#d4af37";
+
+        // Gestion du Stick Analogique 360°
+        if (analogEl && analogThumb) {
+          let stickPointerId = null;
+          let stickCenter = { x: 0, y: 0 };
+          let activeDirs = { up: false, down: false, left: false, right: false };
+
+          const startStick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            stickPointerId = e.pointerId;
+            const rect = analogEl.getBoundingClientRect();
+            stickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+            if (analogEl.setPointerCapture) analogEl.setPointerCapture(e.pointerId);
+            moveStick(e);
+          };
+
+          const moveStick = (e) => {
+            if (stickPointerId === null || e.pointerId !== stickPointerId) return;
+            e.preventDefault();
+            e.stopPropagation();
+
+            const dx = e.clientX - stickCenter.x;
+            const dy = e.clientY - stickCenter.y;
+            const dist = Math.hypot(dx, dy);
+            const maxRadius = 38;
+            const clampedDist = Math.min(dist, maxRadius);
+            const angle = Math.atan2(dy, dx);
+
+            const tx = Math.cos(angle) * clampedDist;
+            const ty = Math.sin(angle) * clampedDist;
+            analogThumb.style.transform = `translate(${tx}px, ${ty}px)`;
+
+            const threshold = 12;
+            const newUp = dy < -threshold;
+            const newDown = dy > threshold;
+            const newLeft = dx < -threshold;
+            const newRight = dx > threshold;
+
+            if (newUp !== activeDirs.up) {
+              activeDirs.up = newUp;
+              sendKeyEvent(newUp, VIRTUAL_KEY_MAP["AnUp"].code, VIRTUAL_KEY_MAP["AnUp"].key, VIRTUAL_KEY_MAP["AnUp"].keyCode);
+            }
+            if (newDown !== activeDirs.down) {
+              activeDirs.down = newDown;
+              sendKeyEvent(newDown, VIRTUAL_KEY_MAP["AnDown"].code, VIRTUAL_KEY_MAP["AnDown"].key, VIRTUAL_KEY_MAP["AnDown"].keyCode);
+            }
+            if (newLeft !== activeDirs.left) {
+              activeDirs.left = newLeft;
+              sendKeyEvent(newLeft, VIRTUAL_KEY_MAP["AnLeft"].code, VIRTUAL_KEY_MAP["AnLeft"].key, VIRTUAL_KEY_MAP["AnLeft"].keyCode);
+            }
+            if (newRight !== activeDirs.right) {
+              activeDirs.right = newRight;
+              sendKeyEvent(newRight, VIRTUAL_KEY_MAP["AnRight"].code, VIRTUAL_KEY_MAP["AnRight"].key, VIRTUAL_KEY_MAP["AnRight"].keyCode);
+            }
+          };
+
+          const endStick = (e) => {
+            if (stickPointerId === null || e.pointerId !== stickPointerId) return;
+            e.preventDefault();
+            e.stopPropagation();
+            stickPointerId = null;
+            analogThumb.style.transform = "translate(0px, 0px)";
+
+            if (activeDirs.up) { activeDirs.up = false; sendKeyEvent(false, VIRTUAL_KEY_MAP["AnUp"].code, VIRTUAL_KEY_MAP["AnUp"].key, VIRTUAL_KEY_MAP["AnUp"].keyCode); }
+            if (activeDirs.down) { activeDirs.down = false; sendKeyEvent(false, VIRTUAL_KEY_MAP["AnDown"].code, VIRTUAL_KEY_MAP["AnDown"].key, VIRTUAL_KEY_MAP["AnDown"].keyCode); }
+            if (activeDirs.left) { activeDirs.left = false; sendKeyEvent(false, VIRTUAL_KEY_MAP["AnLeft"].code, VIRTUAL_KEY_MAP["AnLeft"].key, VIRTUAL_KEY_MAP["AnLeft"].keyCode); }
+            if (activeDirs.right) { activeDirs.right = false; sendKeyEvent(false, VIRTUAL_KEY_MAP["AnRight"].code, VIRTUAL_KEY_MAP["AnRight"].key, VIRTUAL_KEY_MAP["AnRight"].keyCode); }
+
+            if (analogEl.releasePointerCapture) {
+              try { analogEl.releasePointerCapture(e.pointerId); } catch(err) {}
+            }
+          };
+
+          analogEl.addEventListener("pointerdown", startStick);
+          analogEl.addEventListener("pointermove", moveStick);
+          analogEl.addEventListener("pointerup", endStick);
+          analogEl.addEventListener("pointercancel", endStick);
         }
       }
-      window.addEventListener("gamepadconnected", updateGamepadBadge);
-      window.addEventListener("gamepaddisconnected", updateGamepadBadge);
-      setInterval(updateGamepadBadge, 2500);
+      setupVirtualPad();
 
-      // 8. Boutons d'action
-      if (btnFs) {
-        btnFs.addEventListener("click", () => {
-          if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(() => {});
-          } else {
-            document.exitFullscreen().catch(() => {});
-          }
+      // 9. Boutons d'Action & En-tête
+      if (btnControls && modalControls) {
+        btnControls.addEventListener("click", () => modalControls.classList.add("open"));
+      }
+      if (modalClose && modalControls) {
+        modalClose.addEventListener("click", () => modalControls.classList.remove("open"));
+      }
+      if (modalOk && modalControls) {
+        modalOk.addEventListener("click", () => modalControls.classList.remove("open"));
+      }
+      if (modalControls) {
+        modalControls.addEventListener("click", (e) => {
+          if (e.target === modalControls) modalControls.classList.remove("open");
+        });
+      }
+
+      if (btnPad && vpad) {
+        btnPad.addEventListener("click", () => {
+          vpad.classList.toggle("hidden");
+          btnPad.classList.toggle("active", !vpad.classList.contains("hidden"));
+        });
+      }
+
+      if (btnFps && hud) {
+        btnFps.addEventListener("click", () => {
+          hud.classList.toggle("hidden");
+          btnFps.classList.toggle("active", !hud.classList.contains("hidden"));
         });
       }
 
@@ -726,7 +1420,7 @@ TouchButtonOpacity = 75
         btnSpeed.addEventListener("click", () => {
           currentSpeed = (currentSpeed === 1.0) ? 1.5 : (currentSpeed === 1.5) ? 2.0 : 1.0;
           btnSpeed.textContent = "⚡ " + currentSpeed.toFixed(1) + "x";
-          setStatus("⚡ Vitesse accélérée : " + currentSpeed.toFixed(1) + "x", "#34d399");
+          setStatus("⚡ Vitesse d'émulation : " + currentSpeed.toFixed(1) + "x", "#34d399");
         });
       }
 
@@ -737,7 +1431,25 @@ TouchButtonOpacity = 75
         });
       }
 
-      // 9. Sélecteur de fichier manuel / Drag & Drop
+      if (btnRestart) {
+        btnRestart.addEventListener("click", () => {
+          if (confirm("Redémarrer la relique PSP ?")) {
+            window.location.reload();
+          }
+        });
+      }
+
+      if (btnFs) {
+        btnFs.addEventListener("click", () => {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          } else {
+            document.exitFullscreen().catch(() => {});
+          }
+        });
+      }
+
+      // 10. Sélecteur de fichier manuel / Drag & Drop
       if (pickBtn) pickBtn.addEventListener("click", () => fileInput && fileInput.click());
       if (dropzone) {
         dropzone.addEventListener("click", (e) => {
@@ -767,37 +1479,17 @@ TouchButtonOpacity = 75
         });
       }
 
-      // 10. Communication Inter-Fenetre postMessage (RetroVault Sanctuaire)
+      // 11. Communication Inter-Fenêtre postMessage (RetroVault Sanctuaire)
       window.addEventListener("message", async (e) => {
         if (!e.data) return;
-
         if (e.data.type === "LOAD_ROM" && e.data.blob) {
           launchEmulator(e.data.blob, e.data.name);
-        } else if (e.data.type === "SET_VOLUME") {
-          const vol = parseFloat(e.data.volume);
-          if (ppssppAudioCtx && !isNaN(vol)) {
-            // Volume ajusté
-          }
-        } else if (e.data.type === "LOAD_PSP_SAVE" && e.data.data) {
-          // Restauration de sauvegarde passée par le Sanctuaire parent
-          if (window.Module && window.Module.FS) {
-            try {
-              const FS = window.Module.FS;
-              const targetPath = e.data.path || ("/home/web_user/.config/ppsspp/PSP/SAVEDATA/" + (e.data.slot || "SAVE.BIN"));
-              const dir = targetPath.substring(0, targetPath.lastIndexOf("/"));
-              FS.mkdirTree(dir);
-              FS.writeFile(targetPath, new Uint8Array(e.data.data));
-              console.log("[PPSSPP] Sauvegarde restaurée depuis le Cloud VPS :", targetPath);
-            } catch(err) {
-              console.warn("[PPSSPP] Erreur restauration sauvegarde :", err);
-            }
-          }
         } else if (e.data.type === "REQUEST_SAVE") {
           checkAndSyncSaves();
         }
       });
 
-      // 11. Gestion des erreurs et rejections globales
+      // 12. Gestion des erreurs et rejections globales
       window.addEventListener("error", (e) => {
         console.error("[PPSSPP Error]", e.message, e.filename, e.lineno);
         if (loaderText) {
@@ -822,7 +1514,7 @@ TouchButtonOpacity = 75
       window.addEventListener("pointerdown", unlockAudio, { passive: true });
       window.addEventListener("keydown", unlockAudio, { passive: true });
 
-      // 12. Récupération automatique de la relique depuis les paramètres d'URL (?game=...&token=...)
+      // 13. Récupération automatique de la relique depuis les paramètres d'URL (?game=...&token=...)
       const urlParams = new URLSearchParams(window.location.search);
       const gameParam = urlParams.get("game");
       const tokenParam = urlParams.get("token") || (window.localStorage ? localStorage.getItem("rv_vps_token") : null);
@@ -886,25 +1578,10 @@ TouchButtonOpacity = 75
         }
       }
 
-      // Si isolation non disponible (iframe restreinte par le navigateur parent), afficher un message clair
-      if (!window.crossOriginIsolated && isEmbedded) {
-        if (dropzone) {
-          dropzone.innerHTML = `
-            <div class="psp-crest" style="font-size: 2.5rem; margin-bottom: 8px;">🦉</div>
-            <h3 style="font-family: 'Cinzel', serif; color: #d4af37; margin: 0 0 8px;">Sanctuaire PlayStation Portable</h3>
-            <p style="font-size: 0.85rem; color: #a8b8ad; max-width: 440px; margin: 0 auto 16px;">
-              L'architecture PSP nécessite l'isolation mémoire native (SharedArrayBuffer) pour atteindre 60 FPS constants.
-            </p>
-            <a href="/emulators/psp/index.html?v=1.1${gameParam ? `&game=${encodeURIComponent(gameParam)}` : ''}${tokenParam ? `&token=${encodeURIComponent(tokenParam)}` : ''}" target="_blank" class="psp-btn psp-btn-gold" style="display: inline-flex; text-decoration: none; padding: 10px 22px; font-weight: 700; font-size: 0.95rem; border-radius: 6px; box-shadow: 0 4px 15px rgba(212,175,55,0.4);">
-              ⚡ Lancer dans le Sanctuaire Dédié (Plein Écran)
-            </a>
-          `;
-        }
-      } else if (gameParam) {
+      if (gameParam) {
         autoLoadGameFromVault(gameParam, tokenParam);
       }
 
-      // Notifier le parent que l'iframe est prête à recevoir la ROM
       try {
         if (window.parent && window.parent !== window) {
           window.parent.postMessage({ type: "PSP_RUNNER_READY" }, "*");
