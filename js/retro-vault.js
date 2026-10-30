@@ -2282,6 +2282,113 @@
           box-shadow: 0 0 14px rgba(212, 175, 55, 0.7);
         }
 
+        /* ========================================================
+           LAYOUTS AUTHENTIQUES PAR CONSOLE (2 BOUTONS, 3 BOUTONS, 4 BOUTONS, PLAYSTATION)
+           ======================================================== */
+        /* LAYOUT 2 BOUTONS (GBA, NES, GB, GBC, PCE) : B en bas à gauche, A en haut à droite */
+        .rv-actions.rv-layout-2btn {
+          display: block !important;
+          position: relative !important;
+          width: 120px !important;
+          height: 120px !important;
+          margin: 0 auto !important;
+        }
+        .rv-actions.rv-layout-2btn .rv-act-x,
+        .rv-actions.rv-layout-2btn .rv-act-y {
+          display: none !important;
+        }
+        .rv-actions.rv-layout-2btn .rv-act-b {
+          position: absolute !important;
+          left: 6px !important;
+          bottom: 14px !important;
+          width: 48px !important;
+          height: 48px !important;
+          font-size: 1.15rem !important;
+          border-radius: 50% !important;
+          background: rgba(212, 175, 55, 0.22) !important;
+          border: 2px solid #d4af37 !important;
+          color: #f3e5ab !important;
+        }
+        .rv-actions.rv-layout-2btn .rv-act-a {
+          position: absolute !important;
+          right: 6px !important;
+          top: 14px !important;
+          width: 48px !important;
+          height: 48px !important;
+          font-size: 1.15rem !important;
+          border-radius: 50% !important;
+          background: rgba(212, 175, 55, 0.22) !important;
+          border: 2px solid #d4af37 !important;
+          color: #f3e5ab !important;
+        }
+
+        /* LAYOUT 3 BOUTONS (SEGA MEGA DRIVE) : A, B, C en arc */
+        .rv-actions.rv-layout-3btn {
+          display: block !important;
+          position: relative !important;
+          width: 120px !important;
+          height: 120px !important;
+          margin: 0 auto !important;
+        }
+        .rv-actions.rv-layout-3btn .rv-act-x {
+          display: none !important;
+        }
+        .rv-actions.rv-layout-3btn .rv-act-y {
+          position: absolute !important;
+          left: 4px !important;
+          top: 56px !important;
+          width: 38px !important;
+          height: 38px !important;
+          font-size: 1rem !important;
+        }
+        .rv-actions.rv-layout-3btn .rv-act-b {
+          position: absolute !important;
+          left: 41px !important;
+          top: 40px !important;
+          width: 38px !important;
+          height: 38px !important;
+          font-size: 1rem !important;
+        }
+        .rv-actions.rv-layout-3btn .rv-act-a {
+          position: absolute !important;
+          right: 4px !important;
+          top: 24px !important;
+          width: 38px !important;
+          height: 38px !important;
+          font-size: 1rem !important;
+        }
+
+        /* LAYOUT PLAYSTATION (PS1, PSP) : SYMBOLES OFFICIELS △, ▢, ◯, ✕ */
+        .rv-actions.rv-layout-playstation .rv-act-x {
+          background: rgba(52, 211, 153, 0.18) !important;
+          border-color: #34d399 !important;
+          color: #34d399 !important;
+        }
+        .rv-actions.rv-layout-playstation .rv-act-y {
+          background: rgba(244, 114, 182, 0.18) !important;
+          border-color: #f472b6 !important;
+          color: #f472b6 !important;
+        }
+        .rv-actions.rv-layout-playstation .rv-act-a {
+          background: rgba(239, 68, 68, 0.18) !important;
+          border-color: #ef4444 !important;
+          color: #ef4444 !important;
+        }
+        .rv-actions.rv-layout-playstation .rv-act-b {
+          background: rgba(96, 165, 250, 0.18) !important;
+          border-color: #60a5fa !important;
+          color: #60a5fa !important;
+        }
+
+        /* Visibilité des gâchettes selon la console */
+        .rv-play-zone.rv-console-nes .rv-wing-shoulder,
+        .rv-play-zone.rv-console-gb .rv-wing-shoulder,
+        .rv-play-zone.rv-console-gbc .rv-wing-shoulder,
+        .rv-play-zone.rv-console-pce .rv-wing-shoulder,
+        .rv-play-zone.rv-console-megadrive .rv-wing-shoulder {
+          display: none !important;
+        }
+
         /* BARRE RAPIDE DISCRÈTE (PAYSAGE) */
         .rv-landscape-bar {
           display: none;
@@ -2703,9 +2810,6 @@
           .rv-toolbar { justify-content: center; gap: 5px; padding: 6px 8px; }
           .rv-btn { padding: 5px 8px; font-size: 0.72rem; }
           .rv-controls-guide { display: none; }
-          .rv-dpad-btn, .rv-dpad-core { width: 44px; height: 44px; }
-          .rv-act-btn { width: 44px; height: 44px; font-size: 0.95rem; }
-          .rv-act-mid { gap: 16px; }
           .rv-pad-shoulder { padding: 6px 14px; font-size: 0.85rem; }
           .rv-pad-pill { padding: 5px 10px; font-size: 0.68rem; }
           .rv-grid { grid-template-columns: 1fr; }
@@ -2826,6 +2930,59 @@
             width: 38px !important;
             height: 38px !important;
             font-size: 1.05rem !important;
+          }
+          .rv-actions.rv-layout-2btn {
+            display: block !important;
+            width: 114px !important;
+            height: 114px !important;
+          }
+          .rv-actions.rv-layout-2btn .rv-act-b,
+          .rv-actions.rv-layout-2btn .rv-act-a {
+            width: 44px !important;
+            height: 44px !important;
+            font-size: 1.1rem !important;
+          }
+          .rv-actions.rv-layout-2btn .rv-act-b {
+            left: 4px !important;
+            bottom: 12px !important;
+          }
+          .rv-actions.rv-layout-2btn .rv-act-a {
+            right: 4px !important;
+            top: 12px !important;
+          }
+          .rv-actions.rv-layout-3btn {
+            display: block !important;
+            position: relative !important;
+            width: 114px !important;
+            height: 114px !important;
+            margin: auto !important;
+          }
+          .rv-actions.rv-layout-3btn .rv-act-x {
+            display: none !important;
+          }
+          .rv-actions.rv-layout-3btn .rv-act-y {
+            position: absolute !important;
+            left: 2px !important;
+            top: 56px !important;
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 0.95rem !important;
+          }
+          .rv-actions.rv-layout-3btn .rv-act-b {
+            position: absolute !important;
+            left: 39px !important;
+            top: 38px !important;
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 0.95rem !important;
+          }
+          .rv-actions.rv-layout-3btn .rv-act-a {
+            position: absolute !important;
+            right: 2px !important;
+            top: 20px !important;
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 0.95rem !important;
           }
 
           /* PILL BUTTONS (SELECT & START) */
@@ -3724,8 +3881,8 @@
         el.addEventListener("touchcancel", release, { passive: false });
       };
 
-      // Liaison des boutons de la manette (ailes gauche et droite)
-      document.querySelectorAll(".rv-wing button[data-btn]").forEach(bindBtn);
+      // Liaison des boutons de la manette (ailes gauche et droite, hors D-Pad géré par son moteur vectoriel)
+      document.querySelectorAll(".rv-wing button[data-btn]:not(.rv-dpad-btn)").forEach(bindBtn);
 
       // Gestion haute précision du D-Pad avec support des 8 directions (diagonales) et multi-touch
       const dpad = document.getElementById("rv-dpad");
@@ -4104,7 +4261,7 @@
             if (stickLeftEl) stickLeftEl.style.display = "flex";
           } else {
             if (stickLeftEl) stickLeftEl.style.display = "none";
-            if (dpadEl) dpadEl.style.display = "block";
+            if (dpadEl) dpadEl.style.display = "";
           }
         });
       });
@@ -4122,7 +4279,7 @@
             if (stickRightEl) stickRightEl.style.display = "flex";
           } else {
             if (stickRightEl) stickRightEl.style.display = "none";
-            if (actionsEl) actionsEl.style.display = "flex";
+            if (actionsEl) actionsEl.style.display = "";
           }
         });
       });
@@ -4477,7 +4634,7 @@
       const badgeTriggers = document.getElementById("rv-badge-triggers");
 
       if (badgeB && badgeA) {
-        if (consoleType === "nes" || consoleType === "gb") {
+        if (consoleType === "nes" || consoleType === "gb" || consoleType === "gbc") {
           if (badgeY) badgeY.style.display = "none";
           if (badgeX) badgeX.style.display = "none";
           if (badgeTriggers) badgeTriggers.style.display = "none";
@@ -4556,42 +4713,70 @@
         }
       }
 
-      // 2. Boutons de la manette tactile
+      // 2. Boutons de la manette tactile & agencement fidèle par console
+      const playZone = document.getElementById("rv-play-zone");
+      if (playZone) {
+        playZone.className = playZone.className.replace(/\brv-console-\w+\b/g, "").trim();
+        if (consoleType) playZone.classList.add("rv-console-" + consoleType);
+      }
+
       const touchX = document.getElementById("rv-touch-x");
       const touchY = document.getElementById("rv-touch-y");
       const touchB = document.getElementById("rv-touch-b");
       const touchA = document.getElementById("rv-touch-a");
       const touchL = document.getElementById("rv-touch-l");
       const touchR = document.getElementById("rv-touch-r");
+      const actionsCont = document.getElementById("rv-actions");
+      const dpadCont = document.getElementById("rv-dpad");
+
+      // Nettoyage de l'opacité inline éventuelle pour laisser le CSS agir proprement
+      [touchX, touchY, touchB, touchA, touchL, touchR].forEach((btn) => {
+        if (btn) btn.style.opacity = "";
+      });
+
+      if (actionsCont) {
+        actionsCont.classList.remove("rv-layout-2btn", "rv-layout-3btn", "rv-layout-playstation", "rv-layout-4btn");
+      }
 
       const isPlayStation = consoleType === "ps1" || consoleType === "psp";
-      if (touchX) touchX.textContent = isPlayStation ? "△" : "X";
-      if (touchY) touchY.textContent = isPlayStation ? "□" : (consoleType === "megadrive" ? "A" : "Y");
-      if (touchB) touchB.textContent = isPlayStation ? "✕" : (consoleType === "pce" ? "II" : "B");
-      if (touchA) touchA.textContent = isPlayStation ? "○" : (consoleType === "pce" ? "I" : (consoleType === "megadrive" ? "C" : "A"));
-      if (touchL) touchL.textContent = isPlayStation ? "L1" : "L";
-      if (touchR) touchR.textContent = isPlayStation ? "R1" : "R";
-
-      if (consoleType === "nes" || consoleType === "gb" || consoleType === "pce") {
-        if (touchX) touchX.style.opacity = "0.15";
-        if (touchY) touchY.style.opacity = "0.15";
-        if (touchL) touchL.style.opacity = "0.15";
-        if (touchR) touchR.style.opacity = "0.15";
-      } else if (consoleType === "gba") {
-        if (touchX) touchX.style.opacity = "0.15";
-        if (touchY) touchY.style.opacity = "0.15";
-        if (touchL) touchL.style.opacity = "1";
-        if (touchR) touchR.style.opacity = "1";
+      if (isPlayStation) {
+        if (actionsCont) actionsCont.classList.add("rv-layout-playstation");
+        if (touchX) touchX.textContent = "△";
+        if (touchY) touchY.textContent = "□";
+        if (touchA) touchA.textContent = "○";
+        if (touchB) touchB.textContent = "✕";
+        if (touchL) touchL.textContent = "L1";
+        if (touchR) touchR.textContent = "R1";
       } else if (consoleType === "megadrive") {
-        if (touchX) touchX.style.opacity = "0.15";
-        if (touchY) touchY.style.opacity = "1";
-        if (touchL) touchL.style.opacity = "0.15";
-        if (touchR) touchR.style.opacity = "0.15";
+        if (actionsCont) actionsCont.classList.add("rv-layout-3btn");
+        if (touchY) touchY.textContent = "A";
+        if (touchB) touchB.textContent = "B";
+        if (touchA) touchA.textContent = "C";
+        if (touchX) touchX.textContent = "";
+        if (touchL) touchL.textContent = "L";
+        if (touchR) touchR.textContent = "R";
+      } else if (["nes", "gb", "gbc", "gba", "pce"].includes(consoleType)) {
+        if (actionsCont) actionsCont.classList.add("rv-layout-2btn");
+        if (consoleType === "pce") {
+          if (touchB) touchB.textContent = "II";
+          if (touchA) touchA.textContent = "I";
+        } else {
+          if (touchB) touchB.textContent = "B";
+          if (touchA) touchA.textContent = "A";
+        }
+        if (touchX) touchX.textContent = "";
+        if (touchY) touchY.textContent = "";
+        if (touchL) touchL.textContent = "L";
+        if (touchR) touchR.textContent = "R";
       } else {
-        if (touchX) touchX.style.opacity = "1";
-        if (touchY) touchY.style.opacity = "1";
-        if (touchL) touchL.style.opacity = "1";
-        if (touchR) touchR.style.opacity = "1";
+        // SNES, NDS et autres (disposition 4 boutons Nintendo classique)
+        if (actionsCont) actionsCont.classList.add("rv-layout-4btn");
+        if (touchX) touchX.textContent = "X";
+        if (touchY) touchY.textContent = "Y";
+        if (touchB) touchB.textContent = "B";
+        if (touchA) touchA.textContent = "A";
+        if (touchL) touchL.textContent = "L";
+        if (touchR) touchR.textContent = "R";
       }
 
       // 3. Spécificités PlayStation (L2/R2, sticks analogiques 360°, stick caméra)
@@ -4601,8 +4786,6 @@
       const rightModeSel = document.getElementById("rv-right-mode-selector");
       const stickLeftCont = document.getElementById("rv-stick-left");
       const stickRightCont = document.getElementById("rv-stick-right");
-      const dpadCont = document.getElementById("rv-dpad");
-      const actionsCont = document.getElementById("rv-actions");
       const badgePsExtras = document.getElementById("rv-badge-ps-extras");
 
       if (consoleType === "ps1") {
@@ -4612,18 +4795,18 @@
         if (rightModeSel) rightModeSel.style.display = "flex";
         if (badgePsExtras) badgePsExtras.style.display = "inline";
 
-        // Par défaut sur PS1 : Stick analogique à gauche pour déplacement 360° et boutons d'action à droite
+        // Par défaut sur PS1 : D-Pad visible et actif (croix directionnelle classique), sticks en option
         document.querySelectorAll("#rv-left-mode-selector .rv-mode-tab").forEach((t) => {
-          t.classList.toggle("active", t.getAttribute("data-target") === "stick");
+          t.classList.toggle("active", t.getAttribute("data-target") === "dpad");
         });
-        if (dpadCont) dpadCont.style.display = "none";
-        if (stickLeftCont) stickLeftCont.style.display = "flex";
+        if (dpadCont) dpadCont.style.display = "";
+        if (stickLeftCont) stickLeftCont.style.display = "none";
 
         document.querySelectorAll("#rv-right-mode-selector .rv-mode-tab").forEach((t) => {
           t.classList.toggle("active", t.getAttribute("data-target") === "actions");
         });
         if (stickRightCont) stickRightCont.style.display = "none";
-        if (actionsCont) actionsCont.style.display = "flex";
+        if (actionsCont) actionsCont.style.display = "";
       } else if (consoleType === "psp") {
         if (touchL2) touchL2.style.display = "none";
         if (touchR2) touchR2.style.display = "none";
@@ -4639,7 +4822,7 @@
         if (stickLeftCont) stickLeftCont.style.display = "flex";
 
         if (stickRightCont) stickRightCont.style.display = "none";
-        if (actionsCont) actionsCont.style.display = "flex";
+        if (actionsCont) actionsCont.style.display = "";
       } else {
         if (touchL2) touchL2.style.display = "none";
         if (touchR2) touchR2.style.display = "none";
@@ -4649,8 +4832,8 @@
 
         if (stickLeftCont) stickLeftCont.style.display = "none";
         if (stickRightCont) stickRightCont.style.display = "none";
-        if (dpadCont) dpadCont.style.display = "block";
-        if (actionsCont) actionsCont.style.display = "flex";
+        if (dpadCont) dpadCont.style.display = "";
+        if (actionsCont) actionsCont.style.display = "";
       }
     }
 
