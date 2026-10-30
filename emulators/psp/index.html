@@ -529,7 +529,12 @@
             if (!/WASM audio count=/.test(text)) console.warn("[PPSSPP stderr]", text);
           },
           setStatus(text) {
-            if (text) setStatus("PPSSPP : " + text);
+            if (text) {
+              setStatus("PPSSPP : " + text);
+              if (loaderText) loaderText.textContent = text;
+            } else {
+              hideLoader();
+            }
           },
           preRun: [function() {
             try {
@@ -596,7 +601,10 @@ TouchButtonOpacity = 75
           },
           onAbort(err) {
             console.error("[PPSSPP Abort]", err);
-            hideLoader();
+            if (loaderText) {
+              loaderText.textContent = "❌ Moteur PPSSPP interrompu : " + (err || "Vérifiez la compatibilité WebAssembly");
+              loaderText.style.color = "#ef4444";
+            }
             setStatus("❌ Échec d'exécution du moteur PPSSPP", "#ef4444");
           }
         };
@@ -645,26 +653,25 @@ TouchButtonOpacity = 75
         showLoader("Invocation de " + currentRomName + "...");
 
         try {
-          // AudioContext pré-initialisé
+          // AudioContext pré-initialisé (non bloquant pour éviter les deadlocks de user gesture)
           if (!ppssppAudioCtx) {
             ppssppAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" });
-            await ppssppAudioCtx.resume();
-            await installAudioShim(ppssppAudioCtx);
+            ppssppAudioCtx.resume().catch(() => {});
           }
         } catch(e) {
           console.warn("[PPSSPP Audio] Init fallback :", e);
         }
 
-        // Conversion du blob ROM en Uint8Array
+        // Conversion du blob ROM en Uint8Array (optimisation zéro duplication mémoire)
         showLoader("Préparation de la relique en mémoire...");
         let romBytes = null;
-        if (romBlob instanceof Blob) {
-          const buf = await romBlob.arrayBuffer();
-          romBytes = new Uint8Array(buf);
+        if (romBlob instanceof Uint8Array) {
+          romBytes = romBlob;
         } else if (romBlob instanceof ArrayBuffer) {
           romBytes = new Uint8Array(romBlob);
-        } else if (romBlob instanceof Uint8Array) {
-          romBytes = romBlob;
+        } else if (romBlob instanceof Blob) {
+          const buf = await romBlob.arrayBuffer();
+          romBytes = new Uint8Array(buf);
         }
 
         // Configuration Module
@@ -789,6 +796,113 @@ TouchButtonOpacity = 75
           checkAndSyncSaves();
         }
       });
+
+      // 11. Gestion des erreurs et rejections globales
+      window.addEventListener("error", (e) => {
+        console.error("[PPSSPP Error]", e.message, e.filename, e.lineno);
+        if (loaderText) {
+          loaderText.textContent = "❌ " + (e.message || "Erreur WebAssembly");
+          loaderText.style.color = "#ef4444";
+        }
+      });
+      window.addEventListener("unhandledrejection", (e) => {
+        console.error("[PPSSPP Unhandled Rejection]", e.reason);
+        if (loaderText) {
+          loaderText.textContent = "❌ " + (e.reason?.message || e.reason || "Erreur d'initialisation");
+          loaderText.style.color = "#ef4444";
+        }
+      });
+
+      // Déverrouillage AudioContext lors de toute interaction utilisateur
+      const unlockAudio = () => {
+        if (ppssppAudioCtx && ppssppAudioCtx.state === "suspended") {
+          ppssppAudioCtx.resume().catch(() => {});
+        }
+      };
+      window.addEventListener("pointerdown", unlockAudio, { passive: true });
+      window.addEventListener("keydown", unlockAudio, { passive: true });
+
+      // 12. Récupération automatique de la relique depuis les paramètres d'URL (?game=...&token=...)
+      const urlParams = new URLSearchParams(window.location.search);
+      const gameParam = urlParams.get("game");
+      const tokenParam = urlParams.get("token") || (window.localStorage ? localStorage.getItem("rv_vps_token") : null);
+
+      window.launchEmulator = launchEmulator;
+
+      async function autoLoadGameFromVault(gameName, token) {
+        if (!gameName) return;
+        showLoader("Connexion au Sanctuaire pour \"" + gameName + "\"...");
+
+        try {
+          const headers = {};
+          if (token) headers["Authorization"] = "Bearer " + token;
+          const url = "/assets/vault/" + encodeURIComponent(gameName) + (token ? "?token=" + encodeURIComponent(token) : "");
+
+          const res = await fetch(url, { headers });
+          if (!res.ok) {
+            throw new Error(`Échec de récupération de la relique (${res.status} ${res.statusText})`);
+          }
+
+          const total = parseInt(res.headers.get("content-length") || "0", 10);
+          if (!res.body || !total) {
+            showLoader("Chargement de la relique en mémoire...");
+            const blob = await res.blob();
+            launchEmulator(blob, gameName);
+            return;
+          }
+
+          const reader = res.body.getReader();
+          const chunks = [];
+          let received = 0;
+          let lastTick = 0;
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            received += value.length;
+            const now = Date.now();
+            if (now - lastTick > 150) {
+              lastTick = now;
+              const pct = total > 0 ? Math.round((received / total) * 100) : 0;
+              const mbRec = (received / (1024 * 1024)).toFixed(1);
+              const mbTot = (total / (1024 * 1024)).toFixed(1);
+              showLoader(`Téléchargement de "${gameName}" : ${pct}% (${mbRec} / ${mbTot} Mo)...`);
+            }
+          }
+
+          showLoader("Préparation de la relique en mémoire vive...");
+          const romBytes = new Uint8Array(total || received);
+          let offset = 0;
+          for (const chunk of chunks) {
+            romBytes.set(chunk, offset);
+            offset += chunk.length;
+          }
+          chunks.length = 0;
+          launchEmulator(romBytes, gameName);
+        } catch(err) {
+          console.error("[PPSSPP AutoLoad] Échec :", err);
+          showLoader("❌ " + (err.message || "Échec de récupération"));
+        }
+      }
+
+      // Si isolation non disponible (iframe restreinte par le navigateur parent), afficher un message clair
+      if (!window.crossOriginIsolated && isEmbedded) {
+        if (dropzone) {
+          dropzone.innerHTML = `
+            <div class="psp-crest" style="font-size: 2.5rem; margin-bottom: 8px;">🦉</div>
+            <h3 style="font-family: 'Cinzel', serif; color: #d4af37; margin: 0 0 8px;">Sanctuaire PlayStation Portable</h3>
+            <p style="font-size: 0.85rem; color: #a8b8ad; max-width: 440px; margin: 0 auto 16px;">
+              L'architecture PSP nécessite l'isolation mémoire native (SharedArrayBuffer) pour atteindre 60 FPS constants.
+            </p>
+            <a href="/emulators/psp/index.html?v=1.1${gameParam ? `&game=${encodeURIComponent(gameParam)}` : ''}${tokenParam ? `&token=${encodeURIComponent(tokenParam)}` : ''}" target="_blank" class="psp-btn psp-btn-gold" style="display: inline-flex; text-decoration: none; padding: 10px 22px; font-weight: 700; font-size: 0.95rem; border-radius: 6px; box-shadow: 0 4px 15px rgba(212,175,55,0.4);">
+              ⚡ Lancer dans le Sanctuaire Dédié (Plein Écran)
+            </a>
+          `;
+        }
+      } else if (gameParam) {
+        autoLoadGameFromVault(gameParam, tokenParam);
+      }
 
       // Notifier le parent que l'iframe est prête à recevoir la ROM
       try {

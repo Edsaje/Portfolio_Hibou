@@ -4789,7 +4789,7 @@
         const isLauncher = nomFichier.includes("console-nds-launcher") || nomFichier.includes("console-psp-launcher");
         let romBlob = customBlob;
 
-        if (!romBlob && !isLauncher) {
+        if (!romBlob && !isLauncher && cType !== "psp") {
           if (!this.isCloudConnected()) {
             throw new Error("Relique inaccessible en mode invité.");
           }
@@ -4885,73 +4885,50 @@
           container.classList.add("rv-is-psp");
           container.classList.remove("rv-is-nds");
 
+          const token = this.getCloudToken() || "";
+          const gameParam = !isLauncher ? `&game=${encodeURIComponent(nomFichier)}` : "";
+          const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
+          const pspDedicatedUrl = `emulators/psp/index.html?v=1.1${gameParam}${tokenParam}`;
+
           container.innerHTML = `
             <div class="rv-perf-hud" id="rv-perf-hud">
               <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
               <span class="rv-perf-text" id="rv-perf-text">60 FPS | 16.6 ms</span>
             </div>
-            <div class="rv-psp-wrapper">
-              <div class="rv-psp-ext-btn-wrap" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
-                <a href="emulators/psp/index.html?v=1.0" target="_blank" class="rv-btn rv-psp-ext-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
+            <div class="rv-psp-wrapper" style="position: relative; width: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #111a14 0%, #080d0a 100%); border: 1px solid rgba(212,175,55,0.3); border-radius: 8px; overflow: hidden; padding: 28px 16px; text-align: center;">
+              <div style="font-size: 3rem; margin-bottom: 8px; filter: drop-shadow(0 0 16px rgba(212,175,55,0.6));">🦉</div>
+              <h3 style="font-family: 'Cinzel', serif; font-size: 1.4rem; color: #d4af37; margin: 0 0 6px; letter-spacing: 1px;">
+                Sanctuaire PlayStation Portable
+              </h3>
+              <p style="font-family: 'Cinzel', serif; font-size: 1rem; color: #e2e8f0; margin: 0 0 12px; font-weight: 600;">
+                ${isLauncher ? "Moteur PPSSPP WebAssembly 60 FPS" : `Relique : "${nomFichier}"`}
+              </p>
+              <p style="font-size: 0.88rem; color: #94a3b8; max-width: 520px; line-height: 1.5; margin: 0 auto 20px;">
+                L'émulation 3D Sony PSP exploite le multithreading WebAssembly natif (<strong style="color:#34d399;">SharedArrayBuffer 60 FPS</strong>). Pour activer l'isolation mémoire haute performance de votre navigateur sans latence, la relique s'exécute dans son Sanctuaire Dédié.
+              </p>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px;">
+                <a href="${pspDedicatedUrl}" target="_blank" class="rv-btn" style="background: linear-gradient(135deg, #d4af37 0%, #aa8212 100%); color: #0b0f0c; font-weight: 700; font-size: 1rem; padding: 12px 30px; border-radius: 6px; text-decoration: none; box-shadow: 0 4px 20px rgba(212,175,55,0.45); display: inline-flex; align-items: center; gap: 8px;">
+                  ⚡ Lancer dans le Sanctuaire Dédié (Plein Écran)
+                </a>
               </div>
-              <iframe id="rv-psp-frame" class="rv-embedded-frame" src="emulators/psp/index.html?v=1.0&embedded=1" allow="autoplay; fullscreen; gamepad; cross-origin-isolated" credentialless></iframe>
+              <div style="width: 100%; max-width: 620px; margin-top: 8px;">
+                <details style="background: rgba(0,0,0,0.4); border: 1px solid rgba(212,175,55,0.2); border-radius: 6px; padding: 10px 14px; font-size: 0.8rem; color: #a8b8ad; cursor: pointer; text-align: left;">
+                  <summary style="outline: none; font-weight: 600; color: #d4af37; cursor: pointer;">ℹ️ Contrôles, Manettes & Sauvegardes Cloud</summary>
+                  <p style="margin: 8px 0 4px; line-height: 1.5;">
+                    • <strong>Manettes reconnues :</strong> DualSense, DualShock 4, Xbox One/Series, Nintendo Switch Pro et manettes Bluetooth.<br>
+                    • <strong>Mobile :</strong> Stick analogique tactile 360° et boutons PlayStation tactiles intégrés.<br>
+                    • <strong>Sauvegardes :</strong> Rapatriement et synchronisation automatique avec votre Cloud VPS.
+                  </p>
+                </details>
+              </div>
             </div>
           `;
 
-          const frame = document.getElementById("rv-psp-frame");
-          this.pendingPspRom = romBlob ? { blob: romBlob, name: nomFichier } : null;
-
-          // Si connecté au Cloud VPS, rapatrier la dernière sauvegarde si disponible
-          if (this.isCloudConnected()) {
-            await this.verifierSauvegardeDistante(nomFichier);
-          }
-
-          // Charger la sauvegarde locale existante depuis IndexedDB
-          try {
-            const existingSave = await this.loadStateDB(nomFichier);
-            this.pendingPspSave = (existingSave && (existingSave.sram || existingSave.state)) ? (existingSave.sram || existingSave.state) : null;
-          } catch(e) {
-            this.pendingPspSave = null;
-          }
-
-          if (frame) {
-            const sendRomAndVolume = () => {
-              try {
-                if (frame.contentWindow) {
-                  frame.contentWindow.postMessage({
-                    type: "SET_VOLUME",
-                    volume: this.volumeActuel
-                  }, "*");
-                  if (this.pendingPspSave) {
-                    frame.contentWindow.postMessage({
-                      type: "LOAD_PSP_SAVE",
-                      data: Array.from(this.pendingPspSave)
-                    }, "*");
-                  }
-                  if (this.pendingPspRom) {
-                    frame.contentWindow.postMessage({
-                      type: "LOAD_ROM",
-                      blob: this.pendingPspRom.blob,
-                      name: this.pendingPspRom.name
-                    }, "*");
-                  }
-                }
-              } catch (e) {}
-            };
-            frame.onload = () => setTimeout(sendRomAndVolume, 400);
-          }
-
           status.textContent = isLauncher
-            ? "🎮 Console PlayStation Portable (PPSSPP) prête | Insérez un disque ou glissez un .chd/.iso !"
-            : `🎮 Relique PSP : "${nomFichier}". Moteur PPSSPP 60 FPS actif.`;
+            ? "🎮 Sanctuaire PlayStation Portable prêt | Cliquez sur Lancer dans le Sanctuaire Dédié."
+            : `🎮 Relique PSP "${nomFichier}" prête | Cliquez sur Lancer dans le Sanctuaire Dédié 60 FPS.`;
           status.style.color = "#d4af37";
           this.jeuEnCoursNom = nomFichier;
-          if (this.vitesseActuelle !== 1.0) {
-            this.changerVitesse(this.vitesseActuelle);
-          }
-          if (this.afficherPerfFps) {
-            this.demarrerMesurePerf();
-          }
           this.rendreGrille();
           return;
         }
