@@ -2160,24 +2160,34 @@
           box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
         }
 
-        /* D-PAD DIRECTIONNEL (GAUCHE) */
+        /* D-PAD DIRECTIONNEL (GAUCHE) - GRILLE 3x3 PARFAITE */
         .rv-dpad {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
+          display: grid;
+          grid-template-columns: 40px 40px 40px;
+          grid-template-rows: 40px 40px 40px;
+          grid-template-areas:
+            ".    up    ."
+            "left core  right"
+            ".    down  .";
+          width: 120px;
+          height: 120px;
+          margin: 0 auto;
+          box-sizing: border-box;
           touch-action: none;
           user-select: none;
           -webkit-user-select: none;
         }
         .rv-dpad-mid {
-          display: flex;
-          align-items: center;
+          display: contents;
         }
         .rv-dpad-btn {
-          width: 50px;
-          height: 50px;
+          width: 40px;
+          height: 40px;
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
           background: #14281c;
-          border: 1px solid rgba(212, 175, 55, 0.35);
+          border: 1px solid rgba(212, 175, 55, 0.4);
           color: #d4af37;
           font-size: 1.15rem;
           font-weight: bold;
@@ -2190,16 +2200,19 @@
           user-select: none;
           transition: all 0.08s;
         }
-        .rv-dpad-u { border-radius: 5px 5px 0 0; }
-        .rv-dpad-d { border-radius: 0 0 5px 5px; }
-        .rv-dpad-l { border-radius: 5px 0 0 5px; }
-        .rv-dpad-r { border-radius: 0 5px 5px 0; }
+        .rv-dpad-u { grid-area: up; border-radius: 6px 6px 0 0; border-bottom: none; }
+        .rv-dpad-d { grid-area: down; border-radius: 0 0 6px 6px; border-top: none; }
+        .rv-dpad-l { grid-area: left; border-radius: 6px 0 0 6px; border-right: none; }
+        .rv-dpad-r { grid-area: right; border-radius: 0 6px 6px 0; border-left: none; }
         .rv-dpad-core {
-          width: 50px;
-          height: 50px;
+          grid-area: core;
+          width: 40px;
+          height: 40px;
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
           background: #0e1d14;
-          border-top: 1px solid rgba(212, 175, 55, 0.1);
-          border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+          border: none;
         }
         .rv-dpad-btn:active, .rv-dpad-btn.pressed {
           background: #d4af37 !important;
@@ -2207,24 +2220,32 @@
           box-shadow: 0 0 14px rgba(212, 175, 55, 0.7);
         }
 
-        /* CLUSTER D'ACTIONS EN LOSANGE (DROITE) */
+        /* CLUSTER D'ACTIONS EN LOSANGE (DROITE) - GRILLE 3x3 PARFAITE */
         .rv-actions {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
+          display: grid;
+          grid-template-columns: 40px 40px 40px;
+          grid-template-rows: 40px 40px 40px;
+          grid-template-areas:
+            ".    top   ."
+            "left . right"
+            ".  bottom  .";
+          width: 120px;
+          height: 120px;
+          margin: 0 auto;
+          box-sizing: border-box;
           touch-action: none;
           user-select: none;
           -webkit-user-select: none;
         }
         .rv-act-mid {
-          display: flex;
-          align-items: center;
-          gap: 24px;
-          margin: 4px 0;
+          display: contents;
         }
         .rv-act-btn {
-          width: 48px;
-          height: 48px;
+          width: 40px;
+          height: 40px;
+          margin: auto;
+          padding: 0;
+          box-sizing: border-box;
           border-radius: 50%;
           font-family: var(--font-heading, 'Cinzel', serif);
           font-size: 1.05rem;
@@ -2238,6 +2259,10 @@
           user-select: none;
           transition: all 0.08s;
         }
+        .rv-act-x { grid-area: top; }
+        .rv-act-y { grid-area: left; }
+        .rv-act-a { grid-area: right; }
+        .rv-act-b { grid-area: bottom; }
         .rv-act-b, .rv-act-a {
           background: rgba(212, 175, 55, 0.2);
           border: 2px solid #d4af37;
@@ -2713,7 +2738,7 @@
           .rv-play-zone {
             display: grid !important;
             grid-template-areas: "wing-left screen wing-right" !important;
-            grid-template-columns: minmax(105px, 16vw) 1fr minmax(105px, 16vw) !important;
+            grid-template-columns: clamp(140px, 18vw, 175px) 1fr clamp(140px, 18vw, 175px) !important;
             width: 100vw !important;
             max-width: 100vw !important;
             height: 100vh !important;
@@ -2743,7 +2768,7 @@
             border: none !important;
             border-right: 1px solid rgba(212, 175, 55, 0.25) !important;
             border-radius: 0 !important;
-            padding: 8px 6px 12px !important;
+            padding: 8px 10px 12px !important;
             z-index: 20 !important;
             box-shadow: 4px 0 20px rgba(0, 0, 0, 0.8) !important;
             box-sizing: border-box !important;
@@ -2760,7 +2785,7 @@
             border: none !important;
             border-left: 1px solid rgba(212, 175, 55, 0.25) !important;
             border-radius: 0 !important;
-            padding: 8px 6px 12px !important;
+            padding: 8px 10px 12px !important;
             z-index: 20 !important;
             box-shadow: -4px 0 20px rgba(0, 0, 0, 0.8) !important;
             box-sizing: border-box !important;
@@ -2778,25 +2803,29 @@
 
           /* D-PAD ERGONOMIQUE FLANC GAUCHE */
           .rv-dpad {
-            margin: auto 0 !important;
+            grid-template-columns: 38px 38px 38px !important;
+            grid-template-rows: 38px 38px 38px !important;
+            width: 114px !important;
+            height: 114px !important;
+            margin: auto !important;
           }
           .rv-dpad-btn, .rv-dpad-core {
-            width: 44px !important;
-            height: 44px !important;
+            width: 38px !important;
+            height: 38px !important;
           }
 
           /* ACTIONS ERGONOMIQUES FLANC DROIT */
           .rv-actions {
-            margin: auto 0 !important;
+            grid-template-columns: 38px 38px 38px !important;
+            grid-template-rows: 38px 38px 38px !important;
+            width: 114px !important;
+            height: 114px !important;
+            margin: auto !important;
           }
           .rv-act-btn {
-            width: 46px !important;
-            height: 46px !important;
+            width: 38px !important;
+            height: 38px !important;
             font-size: 1.05rem !important;
-          }
-          .rv-act-mid {
-            gap: 18px !important;
-            margin: 2px 0 !important;
           }
 
           /* PILL BUTTONS (SELECT & START) */
@@ -2930,7 +2959,7 @@
         :-webkit-full-screen #rv-play-zone {
           display: grid !important;
           grid-template-areas: "wing-left screen wing-right" !important;
-          grid-template-columns: minmax(110px, 16vw) 1fr minmax(110px, 16vw) !important;
+          grid-template-columns: clamp(140px, 18vw, 175px) 1fr clamp(140px, 18vw, 175px) !important;
           width: 100vw !important;
           max-width: 100vw !important;
           height: 100vh !important;
@@ -3331,6 +3360,9 @@
         #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-wing {
           display: flex !important;
           height: 100% !important;
+          width: clamp(140px, 18vw, 175px) !important;
+          flex: 0 0 clamp(140px, 18vw, 175px) !important;
+          box-sizing: border-box !important;
           z-index: 20 !important;
         }
         #retro-vault-modal.rv-mobile-landscape-fullscreen .rv-center-stage {
@@ -3623,16 +3655,16 @@
               else this.partieEnCours.pressUp(btnName);
             } catch (err) {}
           }
-          if (code && typeof this.partieEnCours.keyboardDown === "function") {
+          const emulator = typeof this.partieEnCours.getEmulator === "function" ? this.partieEnCours.getEmulator() : null;
+          if (code && emulator && typeof emulator.keyboardDown === "function") {
             try {
-              if (isDown) this.partieEnCours.keyboardDown(code);
-              else this.partieEnCours.keyboardUp(code);
+              if (isDown) emulator.keyboardDown(code);
+              else emulator.keyboardUp(code);
             } catch (err) {}
           }
         }
 
-        const canvas = document.getElementById("rv-canvas");
-        if (canvas) {
+        if (code) {
           try {
             const synth = new KeyboardEvent(isDown ? "keydown" : "keyup", {
               code: code,
@@ -3641,7 +3673,9 @@
               cancelable: true
             });
             synth._isRvBridge = true;
-            canvas.dispatchEvent(synth);
+            window.dispatchEvent(synth);
+            const canvas = document.getElementById("rv-canvas");
+            if (canvas) canvas.dispatchEvent(synth);
           } catch (e) {}
         }
       };
@@ -4033,6 +4067,11 @@
               if (newDirs[d] !== rightActiveDirs[d]) {
                 rightActiveDirs[d] = newDirs[d];
                 triggerKey(rightCamKeyMap[d].btn, rightCamKeyMap[d].code, rightCamKeyMap[d].key, newDirs[d]);
+                // Sur PS1 : Relier également la rotation horizontale de caméra sur L2 et R2 (compatible MediEvil, Spyro...)
+                if (this.jeuEnCoursType === "ps1") {
+                  if (d === "left") triggerKey("l2", "Numpad1", "1", newDirs[d]);
+                  if (d === "right") triggerKey("r2", "Numpad3", "3", newDirs[d]);
+                }
               }
             }
           },
@@ -4041,6 +4080,10 @@
               if (rightActiveDirs[d]) {
                 rightActiveDirs[d] = false;
                 triggerKey(rightCamKeyMap[d].btn, rightCamKeyMap[d].code, rightCamKeyMap[d].key, false);
+                if (this.jeuEnCoursType === "ps1") {
+                  if (d === "left") triggerKey("l2", "Numpad1", "1", false);
+                  if (d === "right") triggerKey("r2", "Numpad3", "3", false);
+                }
               }
             }
           }
@@ -4098,6 +4141,10 @@
             if (swipeActiveDirs[d]) {
               swipeActiveDirs[d] = false;
               triggerKey(rightCamKeyMap[d].btn, rightCamKeyMap[d].code, rightCamKeyMap[d].key, false);
+              if (this.jeuEnCoursType === "ps1") {
+                if (d === "left") triggerKey("l2", "Numpad1", "1", false);
+                if (d === "right") triggerKey("r2", "Numpad3", "3", false);
+              }
             }
           }
         };
@@ -4130,6 +4177,10 @@
             if (newDirs[d] !== swipeActiveDirs[d]) {
               swipeActiveDirs[d] = newDirs[d];
               triggerKey(rightCamKeyMap[d].btn, rightCamKeyMap[d].code, rightCamKeyMap[d].key, newDirs[d]);
+              if (this.jeuEnCoursType === "ps1") {
+                if (d === "left") triggerKey("l2", "Numpad1", "1", newDirs[d]);
+                if (d === "right") triggerKey("r2", "Numpad3", "3", newDirs[d]);
+              }
             }
           }
         });
