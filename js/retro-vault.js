@@ -1983,10 +1983,12 @@
           width: 100%;
           display: flex;
           justify-content: center;
+          gap: 6px;
         }
         .rv-wing-center {
           width: 100%;
           display: flex;
+          flex-direction: column;
           justify-content: center;
           align-items: center;
           min-height: 125px;
@@ -2003,8 +2005,8 @@
           color: #d4af37;
           font-family: var(--font-heading, 'Cinzel', serif);
           font-weight: 700;
-          font-size: 0.95rem;
-          padding: 8px 26px;
+          font-size: 0.85rem;
+          padding: 7px 14px;
           border-radius: 4px;
           cursor: pointer;
           touch-action: none;
@@ -2012,12 +2014,129 @@
           user-select: none;
           -webkit-user-select: none;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+          flex: 1;
+          max-width: 74px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
         }
         .rv-pad-shoulder:active, .rv-pad-shoulder.pressed {
           background: #d4af37 !important;
           color: #050a07 !important;
           transform: translateY(1px);
           box-shadow: 0 0 12px rgba(212, 175, 55, 0.6);
+        }
+
+        /* SÉLECTEUR DE MODE TACTILE (D-PAD / STICK / ACTIONS / CAMÉRA) */
+        .rv-mode-selector {
+          display: flex;
+          gap: 4px;
+          margin-bottom: 8px;
+          background: #060e08;
+          padding: 2px;
+          border-radius: 12px;
+          border: 1px solid rgba(212, 175, 55, 0.25);
+        }
+        .rv-mode-tab {
+          background: transparent !important;
+          border: none !important;
+          color: #a8b8ad !important;
+          font-size: 0.65rem !important;
+          font-weight: 700 !important;
+          padding: 3px 8px !important;
+          border-radius: 10px !important;
+          cursor: pointer !important;
+          transition: all 0.15s ease !important;
+          box-shadow: none !important;
+          transform: none !important;
+        }
+        .rv-mode-tab:hover {
+          color: #d4af37 !important;
+        }
+        .rv-mode-tab.active {
+          background: linear-gradient(135deg, #d4af37 0%, #997d25 100%) !important;
+          color: #050a07 !important;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        /* STICKS ANALOGIQUES TACTILES 360° */
+        .rv-stick-container {
+          width: 120px;
+          height: 120px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          touch-action: none;
+          user-select: none;
+          -webkit-user-select: none;
+        }
+        .rv-stick-base {
+          width: 110px;
+          height: 110px;
+          border-radius: 50%;
+          background: radial-gradient(circle at center, rgba(14, 29, 20, 0.85) 0%, rgba(5, 10, 7, 0.95) 100%);
+          border: 2px solid rgba(212, 175, 55, 0.4);
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7), inset 0 0 15px rgba(0, 0, 0, 0.9);
+          position: relative;
+          cursor: pointer;
+          touch-action: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .rv-stick-base.active {
+          border-color: #34d399;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), 0 0 12px rgba(52, 211, 153, 0.35);
+        }
+        .rv-stick-base.rv-stick-camera {
+          border-color: rgba(14, 165, 233, 0.45);
+        }
+        .rv-stick-base.rv-stick-camera.active {
+          border-color: #38bdf8;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), 0 0 12px rgba(56, 189, 248, 0.35);
+        }
+        .rv-stick-ring {
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          border: 1px dashed rgba(212, 175, 55, 0.2);
+          pointer-events: none;
+          position: absolute;
+        }
+        .rv-stick-camera .rv-stick-ring {
+          border-color: rgba(14, 165, 233, 0.2);
+        }
+        .rv-stick-knob {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: radial-gradient(circle at 35% 35%, #1e462c 0%, #0e1d14 70%, #050a07 100%);
+          border: 2px solid #d4af37;
+          box-shadow: 0 3px 10px rgba(0, 0, 0, 0.8), inset 0 0 6px rgba(212, 175, 55, 0.3);
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          pointer-events: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .rv-stick-camera .rv-stick-knob {
+          background: radial-gradient(circle at 35% 35%, #0369a1 0%, #0c2d48 70%, #050a07 100%);
+          border-color: #38bdf8;
+          box-shadow: 0 3px 10px rgba(0, 0, 0, 0.8), inset 0 0 6px rgba(56, 189, 248, 0.3);
+        }
+        .rv-stick-knob::after {
+          content: "";
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: rgba(212, 175, 55, 0.4);
+        }
+        .rv-stick-camera .rv-stick-knob::after {
+          background: rgba(56, 189, 248, 0.4);
         }
 
         .rv-pad-pill {
@@ -3275,12 +3394,18 @@
 
           <!-- Zone de Jeu Unifiée (Écran + Flancs Manette Ailes Latérales) -->
           <div class="rv-play-zone" id="rv-play-zone">
-            <!-- Flanc Gauche (D-Pad & L) -->
+            <!-- Flanc Gauche (D-Pad, Stick L, L1 & L2) -->
             <div class="rv-wing rv-wing-left" id="rv-wing-left">
               <div class="rv-wing-shoulder">
-                <button class="rv-pad-shoulder rv-pad-l" data-btn="l" data-code="KeyU" data-key="u" id="rv-touch-l" aria-label="Gâchette L">L</button>
+                <button class="rv-pad-shoulder rv-pad-l" data-btn="l" data-code="KeyU" data-key="u" id="rv-touch-l" aria-label="Gâchette L1">L1</button>
+                <button class="rv-pad-shoulder rv-pad-l2" data-btn="l2" data-code="Numpad1" data-key="1" id="rv-touch-l2" aria-label="Gâchette L2" style="display: none;">L2</button>
               </div>
               <div class="rv-wing-center">
+                <!-- Sélecteur de mode Gauche (D-Pad / Stick L) -->
+                <div class="rv-mode-selector" id="rv-left-mode-selector" style="display: none;">
+                  <button type="button" class="rv-mode-tab active" data-target="dpad" title="Croix Directionnelle">🔲 D-Pad</button>
+                  <button type="button" class="rv-mode-tab" data-target="stick" title="Stick Analogique">🕹️ Stick L</button>
+                </div>
                 <!-- D-Pad Directionnel tactile (Gauche) -->
                 <div class="rv-dpad" id="rv-dpad">
                   <button class="rv-dpad-btn rv-dpad-u" data-btn="up" data-code="KeyW" data-key="w" aria-label="Haut">▲</button>
@@ -3290,6 +3415,13 @@
                     <button class="rv-dpad-btn rv-dpad-r" data-btn="right" data-code="KeyD" data-key="d" aria-label="Droite">▶</button>
                   </div>
                   <button class="rv-dpad-btn rv-dpad-d" data-btn="down" data-code="KeyS" data-key="s" aria-label="Bas">▼</button>
+                </div>
+                <!-- Stick Analogique Gauche (Déplacement 360°) -->
+                <div class="rv-stick-container" id="rv-stick-left" style="display: none;">
+                  <div class="rv-stick-base" id="rv-stick-left-base" title="Stick Déplacement 360°">
+                    <div class="rv-stick-ring"></div>
+                    <div class="rv-stick-knob" id="rv-stick-left-knob"></div>
+                  </div>
                 </div>
               </div>
               <div class="rv-wing-menu">
@@ -3364,12 +3496,18 @@
               </div>
             </div>
 
-            <!-- Flanc Droit (Actions A/B/X/Y & R) -->
+            <!-- Flanc Droit (Actions A/B/X/Y, Stick Caméra, R1 & R2) -->
             <div class="rv-wing rv-wing-right" id="rv-wing-right">
               <div class="rv-wing-shoulder">
-                <button class="rv-pad-shoulder rv-pad-r" data-btn="r" data-code="KeyP" data-key="p" id="rv-touch-r" aria-label="Gâchette R">R</button>
+                <button class="rv-pad-shoulder rv-pad-r2" data-btn="r2" data-code="Numpad3" data-key="3" id="rv-touch-r2" aria-label="Gâchette R2" style="display: none;">R2</button>
+                <button class="rv-pad-shoulder rv-pad-r" data-btn="r" data-code="KeyP" data-key="p" id="rv-touch-r" aria-label="Gâchette R1">R1</button>
               </div>
               <div class="rv-wing-center">
+                <!-- Sélecteur de mode Droit (Actions / Caméra) -->
+                <div class="rv-mode-selector" id="rv-right-mode-selector" style="display: none;">
+                  <button type="button" class="rv-mode-tab active" data-target="actions" title="Touches d'action">⚔️ Actions</button>
+                  <button type="button" class="rv-mode-tab" data-target="camera" title="Stick Caméra 360°">🎥 Caméra</button>
+                </div>
                 <!-- Cluster d'actions en losange (Droite) -->
                 <div class="rv-actions" id="rv-actions">
                   <button class="rv-act-btn rv-act-x" data-btn="x" data-code="KeyO" data-key="o" id="rv-touch-x">X</button>
@@ -3378,6 +3516,13 @@
                     <button class="rv-act-btn rv-act-a" data-btn="a" data-code="KeyL" data-key="l" id="rv-touch-a">A</button>
                   </div>
                   <button class="rv-act-btn rv-act-b" data-btn="b" data-code="KeyK" data-key="k" id="rv-touch-b">B</button>
+                </div>
+                <!-- Stick Analogique Droit (Caméra 360°) -->
+                <div class="rv-stick-container" id="rv-stick-right" style="display: none;">
+                  <div class="rv-stick-base rv-stick-camera" id="rv-stick-right-base" title="Stick Caméra 360°">
+                    <div class="rv-stick-ring"></div>
+                    <div class="rv-stick-knob" id="rv-stick-right-knob"></div>
+                  </div>
                 </div>
               </div>
               <div class="rv-wing-menu">
@@ -3404,6 +3549,7 @@
                 <span id="rv-badge-a"><span class="rv-kbd rv-kbd-pri">6</span> A</span>
                 <span id="rv-badge-x"><span class="rv-kbd">8</span> X</span>
                 <span id="rv-badge-triggers"><span class="rv-kbd">7</span> L / <span class="rv-kbd">9</span> R</span>
+                <span id="rv-badge-ps-extras" style="display: none;"><span class="rv-kbd">1</span> L2 / <span class="rv-kbd">3</span> R2 / 🎥 Caméra : <span class="rv-kbd">Flèches</span></span>
               </div>
               <div class="rv-ctrl-box">
                 <span class="rv-ctrl-lbl">⏯️ :</span>
@@ -3731,6 +3877,271 @@
             currentTouchActBtn = null;
           }
         });
+      }
+
+      // --- STICKS ANALOGIQUES TACTILES 360° ---
+      const initAnalogStick = (baseEl, knobEl, onVectorChange, onRelease) => {
+        if (!baseEl || !knobEl) return;
+        const maxRadius = 36;
+        let activePointerId = null;
+
+        const handlePointer = (clientX, clientY) => {
+          const rect = baseEl.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          const dx = clientX - centerX;
+          const dy = clientY - centerY;
+          const dist = Math.hypot(dx, dy);
+          const clampedDist = Math.min(dist, maxRadius);
+          const angle = Math.atan2(dy, dx);
+          const clampedX = Math.cos(angle) * clampedDist;
+          const clampedY = Math.sin(angle) * clampedDist;
+
+          knobEl.style.transform = `translate(calc(-50% + ${clampedX.toFixed(1)}px), calc(-50% + ${clampedY.toFixed(1)}px))`;
+
+          const normX = clampedX / maxRadius;
+          const normY = clampedY / maxRadius;
+          onVectorChange(normX, normY);
+        };
+
+        const handleDown = (e) => {
+          if (e.cancelable) e.preventDefault();
+          activePointerId = e.pointerId ?? (e.touches ? e.touches[0].identifier : 1);
+          baseEl.classList.add("active");
+          try { if (e.setPointerCapture) baseEl.setPointerCapture(e.pointerId); } catch (err) {}
+          const cx = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+          const cy = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+          handlePointer(cx, cy);
+        };
+
+        const handleMove = (e) => {
+          if (activePointerId === null) return;
+          if (e.cancelable) e.preventDefault();
+          let cx = e.clientX;
+          let cy = e.clientY;
+          if (e.touches) {
+            let found = false;
+            for (let i = 0; i < e.touches.length; i++) {
+              if (e.touches[i].identifier === activePointerId) {
+                cx = e.touches[i].clientX;
+                cy = e.touches[i].clientY;
+                found = true;
+                break;
+              }
+            }
+            if (!found) return;
+          }
+          handlePointer(cx, cy);
+        };
+
+        const handleUp = (e) => {
+          if (activePointerId === null) return;
+          activePointerId = null;
+          baseEl.classList.remove("active");
+          try { if (e.releasePointerCapture) baseEl.releasePointerCapture(e.pointerId); } catch (err) {}
+          knobEl.style.transform = "translate(-50%, -50%)";
+          if (onRelease) onRelease();
+        };
+
+        baseEl.addEventListener("pointerdown", handleDown);
+        baseEl.addEventListener("pointermove", handleMove);
+        baseEl.addEventListener("pointerup", handleUp);
+        baseEl.addEventListener("pointercancel", handleUp);
+
+        // Fallbacks tactiles directs
+        baseEl.addEventListener("touchstart", handleDown, { passive: false });
+        baseEl.addEventListener("touchmove", handleMove, { passive: false });
+        baseEl.addEventListener("touchend", handleUp, { passive: false });
+        baseEl.addEventListener("touchcancel", handleUp, { passive: false });
+      };
+
+      // 1. Stick Analogique Gauche (Déplacement 360°)
+      const stickLeftBase = document.getElementById("rv-stick-left-base");
+      const stickLeftKnob = document.getElementById("rv-stick-left-knob");
+      const leftActiveDirs = { up: false, down: false, left: false, right: false };
+
+      const leftKeyMap = {
+        up: { code: "KeyW", key: "w" },
+        down: { code: "KeyS", key: "s" },
+        left: { code: "KeyA", key: "a" },
+        right: { code: "KeyD", key: "d" }
+      };
+
+      if (stickLeftBase && stickLeftKnob) {
+        initAnalogStick(
+          stickLeftBase,
+          stickLeftKnob,
+          (nx, ny) => {
+            const dist = Math.hypot(nx, ny);
+            const deadzone = 0.20;
+            const threshold = 0.38;
+            const newDirs = {
+              up: dist > deadzone && ny < -threshold,
+              down: dist > deadzone && ny > threshold,
+              left: dist > deadzone && nx < -threshold,
+              right: dist > deadzone && nx > threshold
+            };
+            for (const d of ["up", "down", "left", "right"]) {
+              if (newDirs[d] !== leftActiveDirs[d]) {
+                leftActiveDirs[d] = newDirs[d];
+                triggerKey(d, leftKeyMap[d].code, leftKeyMap[d].key, newDirs[d]);
+                const psBtn = d === "up" ? "l_y_minus" : (d === "down" ? "l_y_plus" : (d === "left" ? "l_x_minus" : "l_x_plus"));
+                triggerKey(psBtn, leftKeyMap[d].code, leftKeyMap[d].key, newDirs[d]);
+              }
+            }
+          },
+          () => {
+            for (const d of ["up", "down", "left", "right"]) {
+              if (leftActiveDirs[d]) {
+                leftActiveDirs[d] = false;
+                triggerKey(d, leftKeyMap[d].code, leftKeyMap[d].key, false);
+                const psBtn = d === "up" ? "l_y_minus" : (d === "down" ? "l_y_plus" : (d === "left" ? "l_x_minus" : "l_x_plus"));
+                triggerKey(psBtn, leftKeyMap[d].code, leftKeyMap[d].key, false);
+              }
+            }
+          }
+        );
+      }
+
+      // 2. Stick Analogique Droit (Caméra 360° pour PS1)
+      const stickRightBase = document.getElementById("rv-stick-right-base");
+      const stickRightKnob = document.getElementById("rv-stick-right-knob");
+      const rightActiveDirs = { up: false, down: false, left: false, right: false };
+
+      const rightCamKeyMap = {
+        up: { btn: "r_y_minus", code: "ArrowUp", key: "ArrowUp" },
+        down: { btn: "r_y_plus", code: "ArrowDown", key: "ArrowDown" },
+        left: { btn: "r_x_minus", code: "ArrowLeft", key: "ArrowLeft" },
+        right: { btn: "r_x_plus", code: "ArrowRight", key: "ArrowRight" }
+      };
+
+      if (stickRightBase && stickRightKnob) {
+        initAnalogStick(
+          stickRightBase,
+          stickRightKnob,
+          (nx, ny) => {
+            const dist = Math.hypot(nx, ny);
+            const deadzone = 0.20;
+            const threshold = 0.38;
+            const newDirs = {
+              up: dist > deadzone && ny < -threshold,
+              down: dist > deadzone && ny > threshold,
+              left: dist > deadzone && nx < -threshold,
+              right: dist > deadzone && nx > threshold
+            };
+            for (const d of ["up", "down", "left", "right"]) {
+              if (newDirs[d] !== rightActiveDirs[d]) {
+                rightActiveDirs[d] = newDirs[d];
+                triggerKey(rightCamKeyMap[d].btn, rightCamKeyMap[d].code, rightCamKeyMap[d].key, newDirs[d]);
+              }
+            }
+          },
+          () => {
+            for (const d of ["up", "down", "left", "right"]) {
+              if (rightActiveDirs[d]) {
+                rightActiveDirs[d] = false;
+                triggerKey(rightCamKeyMap[d].btn, rightCamKeyMap[d].code, rightCamKeyMap[d].key, false);
+              }
+            }
+          }
+        );
+      }
+
+      // 3. Sélecteurs d'onglets de mode (D-Pad vs Stick L & Actions vs Caméra)
+      const leftModeTabs = document.querySelectorAll("#rv-left-mode-selector .rv-mode-tab");
+      const dpadEl = document.getElementById("rv-dpad");
+      const stickLeftEl = document.getElementById("rv-stick-left");
+      leftModeTabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          leftModeTabs.forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+          const target = tab.getAttribute("data-target");
+          if (target === "stick") {
+            if (dpadEl) dpadEl.style.display = "none";
+            if (stickLeftEl) stickLeftEl.style.display = "flex";
+          } else {
+            if (stickLeftEl) stickLeftEl.style.display = "none";
+            if (dpadEl) dpadEl.style.display = "block";
+          }
+        });
+      });
+
+      const rightModeTabs = document.querySelectorAll("#rv-right-mode-selector .rv-mode-tab");
+      const actionsEl = document.getElementById("rv-actions");
+      const stickRightEl = document.getElementById("rv-stick-right");
+      rightModeTabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          rightModeTabs.forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+          const target = tab.getAttribute("data-target");
+          if (target === "camera") {
+            if (actionsEl) actionsEl.style.display = "none";
+            if (stickRightEl) stickRightEl.style.display = "flex";
+          } else {
+            if (stickRightEl) stickRightEl.style.display = "none";
+            if (actionsEl) actionsEl.style.display = "flex";
+          }
+        });
+      });
+
+      // 4. Gestuelle tactile de rotation caméra (Swipe-to-look sur les 50% droits de l'écran) pour PS1
+      const gameContainerEl = document.getElementById("rv-game-container");
+      if (gameContainerEl) {
+        let swipePointerId = null;
+        let swipeStartX = 0;
+        let swipeStartY = 0;
+        const swipeActiveDirs = { up: false, down: false, left: false, right: false };
+
+        const releaseSwipeCamera = () => {
+          swipePointerId = null;
+          for (const d of ["up", "down", "left", "right"]) {
+            if (swipeActiveDirs[d]) {
+              swipeActiveDirs[d] = false;
+              triggerKey(rightCamKeyMap[d].btn, rightCamKeyMap[d].code, rightCamKeyMap[d].key, false);
+            }
+          }
+        };
+
+        gameContainerEl.addEventListener("pointerdown", (e) => {
+          if (this.jeuEnCoursType !== "ps1") return;
+          const rect = gameContainerEl.getBoundingClientRect();
+          if (e.clientX < rect.left + rect.width * 0.45) return;
+
+          swipePointerId = e.pointerId;
+          swipeStartX = e.clientX;
+          swipeStartY = e.clientY;
+          try { if (gameContainerEl.setPointerCapture) gameContainerEl.setPointerCapture(e.pointerId); } catch(err) {}
+        });
+
+        gameContainerEl.addEventListener("pointermove", (e) => {
+          if (swipePointerId === null || e.pointerId !== swipePointerId) return;
+          const dx = e.clientX - swipeStartX;
+          const dy = e.clientY - swipeStartY;
+          const swipeThreshold = 18;
+
+          const newDirs = {
+            up: dy < -swipeThreshold,
+            down: dy > swipeThreshold,
+            left: dx < -swipeThreshold,
+            right: dx > swipeThreshold
+          };
+
+          for (const d of ["up", "down", "left", "right"]) {
+            if (newDirs[d] !== swipeActiveDirs[d]) {
+              swipeActiveDirs[d] = newDirs[d];
+              triggerKey(rightCamKeyMap[d].btn, rightCamKeyMap[d].code, rightCamKeyMap[d].key, newDirs[d]);
+            }
+          }
+        });
+
+        const handleSwipeEnd = (e) => {
+          if (swipePointerId === null || (e && e.pointerId !== swipePointerId)) return;
+          try { if (gameContainerEl.releasePointerCapture) gameContainerEl.releasePointerCapture(e.pointerId); } catch(err) {}
+          releaseSwipeCamera();
+        };
+
+        gameContainerEl.addEventListener("pointerup", handleSwipeEnd);
+        gameContainerEl.addEventListener("pointercancel", handleSwipeEnd);
       }
 
       // Bouton pour afficher/masquer la manette (ailes latérales)
@@ -4131,6 +4542,65 @@
         if (touchL) touchL.style.opacity = "1";
         if (touchR) touchR.style.opacity = "1";
       }
+
+      // 3. Spécificités PlayStation (L2/R2, sticks analogiques 360°, stick caméra)
+      const touchL2 = document.getElementById("rv-touch-l2");
+      const touchR2 = document.getElementById("rv-touch-r2");
+      const leftModeSel = document.getElementById("rv-left-mode-selector");
+      const rightModeSel = document.getElementById("rv-right-mode-selector");
+      const stickLeftCont = document.getElementById("rv-stick-left");
+      const stickRightCont = document.getElementById("rv-stick-right");
+      const dpadCont = document.getElementById("rv-dpad");
+      const actionsCont = document.getElementById("rv-actions");
+      const badgePsExtras = document.getElementById("rv-badge-ps-extras");
+
+      if (consoleType === "ps1") {
+        if (touchL2) touchL2.style.display = "inline-flex";
+        if (touchR2) touchR2.style.display = "inline-flex";
+        if (leftModeSel) leftModeSel.style.display = "flex";
+        if (rightModeSel) rightModeSel.style.display = "flex";
+        if (badgePsExtras) badgePsExtras.style.display = "inline";
+
+        // Par défaut sur PS1 : Stick analogique à gauche pour déplacement 360° et boutons d'action à droite
+        document.querySelectorAll("#rv-left-mode-selector .rv-mode-tab").forEach((t) => {
+          t.classList.toggle("active", t.getAttribute("data-target") === "stick");
+        });
+        if (dpadCont) dpadCont.style.display = "none";
+        if (stickLeftCont) stickLeftCont.style.display = "flex";
+
+        document.querySelectorAll("#rv-right-mode-selector .rv-mode-tab").forEach((t) => {
+          t.classList.toggle("active", t.getAttribute("data-target") === "actions");
+        });
+        if (stickRightCont) stickRightCont.style.display = "none";
+        if (actionsCont) actionsCont.style.display = "flex";
+      } else if (consoleType === "psp") {
+        if (touchL2) touchL2.style.display = "none";
+        if (touchR2) touchR2.style.display = "none";
+        if (leftModeSel) leftModeSel.style.display = "flex";
+        if (rightModeSel) rightModeSel.style.display = "none";
+        if (badgePsExtras) badgePsExtras.style.display = "none";
+
+        // Par défaut sur PSP : Stick analogique à gauche, actions classiques à droite
+        document.querySelectorAll("#rv-left-mode-selector .rv-mode-tab").forEach((t) => {
+          t.classList.toggle("active", t.getAttribute("data-target") === "stick");
+        });
+        if (dpadCont) dpadCont.style.display = "none";
+        if (stickLeftCont) stickLeftCont.style.display = "flex";
+
+        if (stickRightCont) stickRightCont.style.display = "none";
+        if (actionsCont) actionsCont.style.display = "flex";
+      } else {
+        if (touchL2) touchL2.style.display = "none";
+        if (touchR2) touchR2.style.display = "none";
+        if (leftModeSel) leftModeSel.style.display = "none";
+        if (rightModeSel) rightModeSel.style.display = "none";
+        if (badgePsExtras) badgePsExtras.style.display = "none";
+
+        if (stickLeftCont) stickLeftCont.style.display = "none";
+        if (stickRightCont) stickRightCont.style.display = "none";
+        if (dpadCont) dpadCont.style.display = "block";
+        if (actionsCont) actionsCont.style.display = "flex";
+      }
     }
 
     async rendreGrille() {
@@ -4507,7 +4977,7 @@
         const existingSave = await this.loadStateDB(nomFichier);
         const sramToInject = existingSave?.sram || (existingSave?.state && cType === "nds" ? existingSave.state : null);
 
-        // Configuration RetroArch ergonomique (ZSQD + Pavé Numérique 8546 + Start B / Select V)
+        // Configuration RetroArch ergonomique (ZSQD + Pavé Numérique 8546 + Start B / Select V + DualShock analogique PS1)
         const retroConfig = {
           input_player1_up: "w",
           input_player1_down: "s",
@@ -4519,6 +4989,18 @@
           input_player1_x: "o",
           input_player1_l: "u",
           input_player1_r: "p",
+          input_player1_l2: "num1",
+          input_player1_r2: "num3",
+          input_player1_l_x_plus: "d",
+          input_player1_l_x_minus: "a",
+          input_player1_l_y_plus: "s",
+          input_player1_l_y_minus: "w",
+          input_player1_r_x_plus: "right",
+          input_player1_r_x_minus: "left",
+          input_player1_r_y_plus: "down",
+          input_player1_r_y_minus: "up",
+          input_libretro_device_p1: cType === "ps1" ? "5" : "1",
+          input_player1_analog_dpad_mode: "1",
           input_player1_start: "b",
           input_player1_select: "v",
           input_load_state_key: "nul",
@@ -4541,7 +5023,8 @@
         const nostalgistOptions = {
           element: canvasEl,
           rom: romFile,
-          retroarchConfig: retroConfig
+          retroarchConfig: retroConfig,
+          retroarchCoreConfig: cType === "ps1" ? { pcsx_rearmed_pad1type: "dualshock" } : {}
         };
         if (activeCheats.length > 0) {
           nostalgistOptions.cheats = activeCheats.map(c => ({
@@ -5028,6 +5511,13 @@
       // Touches Start (B) et Select (V)
       if (e.code === "KeyB") { btn = "start"; targetCode = "KeyB"; targetKey = "b"; }
       else if (e.code === "KeyV") { btn = "select"; targetCode = "KeyV"; targetKey = "v"; }
+      else if (this.jeuEnCoursType === "ps1" && (e.code === "ArrowUp" || e.code === "ArrowDown" || e.code === "ArrowLeft" || e.code === "ArrowRight")) {
+        // Pour PS1 : Les flèches contrôlent la caméra 360° (Stick Droit)
+        if (e.code === "ArrowUp") { btn = "r_y_minus"; targetCode = "ArrowUp"; targetKey = "ArrowUp"; }
+        else if (e.code === "ArrowDown") { btn = "r_y_plus"; targetCode = "ArrowDown"; targetKey = "ArrowDown"; }
+        else if (e.code === "ArrowLeft") { btn = "r_x_minus"; targetCode = "ArrowLeft"; targetKey = "ArrowLeft"; }
+        else if (e.code === "ArrowRight") { btn = "r_x_plus"; targetCode = "ArrowRight"; targetKey = "ArrowRight"; }
+      }
       else if (e.code === "ArrowUp" || e.code === "KeyW") { btn = "up"; targetCode = "KeyW"; targetKey = "w"; }
       else if (e.code === "ArrowDown" || e.code === "KeyS") { btn = "down"; targetCode = "KeyS"; targetKey = "s"; }
       else if (e.code === "ArrowLeft" || e.code === "KeyA") { btn = "left"; targetCode = "KeyA"; targetKey = "a"; }
@@ -5040,6 +5530,8 @@
       else if (e.code === "Numpad6" || e.code === "Digit6" || e.code === "KeyL") { btn = "a"; targetCode = "KeyL"; targetKey = "l"; }
       else if (e.code === "Numpad7" || e.code === "Digit7" || e.code === "KeyU") { btn = "l"; targetCode = "KeyU"; targetKey = "u"; }
       else if (e.code === "Numpad9" || e.code === "Digit9" || e.code === "KeyP") { btn = "r"; targetCode = "KeyP"; targetKey = "p"; }
+      else if (e.code === "Numpad1" || e.code === "Digit1") { btn = "l2"; targetCode = "Numpad1"; targetKey = "1"; }
+      else if (e.code === "Numpad3" || e.code === "Digit3" || e.code === "KeyE") { btn = "r2"; targetCode = "Numpad3"; targetKey = "3"; }
       else if ((e.code === "Numpad4" || e.code === "Digit4" || e.code === "KeyI") && ["nes", "gb", "pce"].includes(this.jeuEnCoursType)) {
         btn = "b";
         targetCode = "KeyK";
