@@ -26,6 +26,17 @@ if (!is_dir($storageDir) || !is_writable($storageDir)) {
     if (!is_dir($storageDir)) @mkdir($storageDir, 0755, true);
 }
 
+// Fonction utilitaire pour isoler le dossier de sauvegarde par utilisateur
+function getUserStorageDir($baseStorageDir, $username) {
+    $cleanUser = preg_replace('/[^a-zA-Z0-9_-]/', '', $username);
+    if (empty($cleanUser)) $cleanUser = 'Hibouxe';
+    $userDir = $baseStorageDir . '/' . $cleanUser;
+    if (!is_dir($userDir)) {
+        @mkdir($userDir, 0755, true);
+    }
+    return $userDir;
+}
+
 // Clé secrète serveur pour signature HMAC
 $secretFile = is_file('/var/www/storage/.secret') ? '/var/www/storage/.secret' : __DIR__ . '/.secret';
 function getServerSecret($secretFile) {
@@ -39,22 +50,39 @@ function getServerSecret($secretFile) {
 }
 $serverSecret = getServerSecret($secretFile);
 
-// Hashes autorisés pour le compte Hibouxe (wg-easy et Caddy)
-$allowedHashes = [
-    '$2y$12$aFxdy7F1O4Aho.5O3GIdCeFJbkhTgyIjxModeRSv7iI4UL.Re5Ydy', // wg-easy ($2y)
-    '$2a$12$aFxdy7F1O4Aho.5O3GIdCeFJbkhTgyIjxModeRSv7iI4UL.Re5Ydy', // wg-easy ($2a)
-    '$2y$14$0rbWyca233uu1sp4aXxdTuXw.z/HLc3BWzbK.qjAvPPCRYu5Pn6De', // caddy / monitor ($2y)
-    '$2a$14$0rbWyca233uu1sp4aXxdTuXw.z/HLc3BWzbK.qjAvPPCRYu5Pn6De', // caddy / monitor ($2a)
+// Comptes autorisés avec leurs hashes bcrypt
+$accounts = [
+    'Hibouxe' => [
+        '$2y$12$aFxdy7F1O4Aho.5O3GIdCeFJbkhTgyIjxModeRSv7iI4UL.Re5Ydy', // wg-easy ($2y)
+        '$2a$12$aFxdy7F1O4Aho.5O3GIdCeFJbkhTgyIjxModeRSv7iI4UL.Re5Ydy', // wg-easy ($2a)
+        '$2y$14$0rbWyca233uu1sp4aXxdTuXw.z/HLc3BWzbK.qjAvPPCRYu5Pn6De', // caddy / monitor ($2y)
+        '$2a$14$0rbWyca233uu1sp4aXxdTuXw.z/HLc3BWzbK.qjAvPPCRYu5Pn6De', // caddy / monitor ($2a)
+    ],
+    'Moineau' => [
+        '$2y$10$49a2eAjQTlf42lHMMW7Z1eNxGEDtPrdjoXdpc/0Er3eZy.HeO4QwK', // bcrypt ($2y)
+        '$2a$14$nYr1BpbxkJNcjSC1iFv1VO98pH/3V9q1lZ07MzSz2jBK9OO6Ppa/K', // caddy bcrypt ($2a)
+    ]
 ];
 
 // Vérification du token HMAC
-function verifyAuthToken($token, $serverSecret) {
+function verifyAuthToken($token, $serverSecret, $allowedUsers = ['Hibouxe', 'Moineau']) {
     if (empty($token) || strpos($token, '.') === false) return false;
     list($b64, $sig) = explode('.', $token, 2);
     $expected = hash_hmac('sha256', $b64, $serverSecret);
     if (!hash_equals($expected, $sig)) return false;
     $data = json_decode(base64_decode(strtr($b64, '-_', '+/')), true);
-    if (!$data || ($data['user'] ?? '') !== 'Hibouxe') return false;
+    if (!$data || empty($data['user'])) return false;
+
+    $matchedCanonical = null;
+    foreach ($allowedUsers as $au) {
+        if (strcasecmp($data['user'], $au) === 0) {
+            $matchedCanonical = $au;
+            break;
+        }
+    }
+    if ($matchedCanonical === null) return false;
+    $data['user'] = $matchedCanonical;
+
     // Token valide 365 jours
     if (time() - ($data['t'] ?? 0) > 365 * 86400) return false;
     return $data;
@@ -80,14 +108,22 @@ if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = trim($input['username'] ?? '');
     $pass = $input['password'] ?? '';
 
-    if (strcasecmp($user, 'Hibouxe') !== 0) {
+    $matchedUser = null;
+    foreach ($accounts as $accountName => $hashes) {
+        if (strcasecmp($user, $accountName) === 0) {
+            $matchedUser = $accountName;
+            break;
+        }
+    }
+
+    if ($matchedUser === null) {
         http_response_code(401);
-        echo json_encode(['ok' => false, 'error' => 'Identifiant inconnu (veuillez saisir "Hibouxe").']);
+        echo json_encode(['ok' => false, 'error' => 'Identifiant inconnu.']);
         exit;
     }
 
     $verified = false;
-    foreach ($allowedHashes as $h) {
+    foreach ($accounts[$matchedUser] as $h) {
         if (password_verify($pass, $h)) {
             $verified = true;
             break;
@@ -100,10 +136,10 @@ if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $token = generateAuthToken('Hibouxe', $serverSecret);
+    $token = generateAuthToken($matchedUser, $serverSecret);
     echo json_encode([
         'ok' => true,
-        'user' => 'Hibouxe',
+        'user' => $matchedUser,
         'token' => $token,
         'message' => 'Liaison Céleste avec le VPS établie !'
     ]);
@@ -142,9 +178,12 @@ if (!$authData) {
     exit;
 }
 
+$currentUser = $authData['user'] ?? 'Hibouxe';
+$userDir = getUserStorageDir($storageDir, $currentUser);
+
 if ($action === 'auth_check') {
     http_response_code(200);
-    echo json_encode(['ok' => true, 'user' => $authData['user'] ?? 'Hibouxe']);
+    echo json_encode(['ok' => true, 'user' => $currentUser]);
     exit;
 }
 
@@ -188,16 +227,24 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $isSram = ($saveType === 'sram');
     $subExt = $isSram ? '.sram.bin' : '.state.bin';
-    $savePath = $storageDir . '/' . $key . $subExt;
-    $metaPath = $storageDir . '/' . $key . '.meta.json';
+    $savePath = $userDir . '/' . $key . $subExt;
+    $metaPath = $userDir . '/' . $key . '.meta.json';
 
     file_put_contents($savePath, $data, LOCK_EX);
 
-    $meta = file_exists($metaPath) ? json_decode(file_get_contents($metaPath), true) : [
-        'game' => $gameName,
-        'date' => date('d/m/Y H:i:s'),
-        'timestamp' => $timestamp
-    ];
+    $meta = null;
+    if (file_exists($metaPath)) {
+        $meta = json_decode(file_get_contents($metaPath), true);
+    } elseif ($currentUser === 'Hibouxe' && file_exists($storageDir . '/' . $key . '.meta.json')) {
+        $meta = json_decode(file_get_contents($storageDir . '/' . $key . '.meta.json'), true);
+    }
+    if (!is_array($meta)) {
+        $meta = [
+            'game' => $gameName,
+            'date' => date('d/m/Y H:i:s'),
+            'timestamp' => $timestamp
+        ];
+    }
 
     if ($isSram) {
         $meta['has_sram'] = true;
@@ -220,6 +267,7 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
     echo json_encode([
         'ok' => true,
+        'user' => $currentUser,
         'game' => $gameName,
         'type' => $saveType,
         'size' => strlen($data),
@@ -240,9 +288,19 @@ if ($action === 'load' && $_SERVER['REQUEST_METHOD'] === 'GET') {
 
     $key = getGameKey($gameName);
     $reqType = $_GET['type'] ?? 'sram';
-    $sramPath = $storageDir . '/' . $key . '.sram.bin';
-    $statePath = $storageDir . '/' . $key . '.state.bin';
-    $legacyPath = $storageDir . '/' . $key . '.bin';
+    $sramPath = $userDir . '/' . $key . '.sram.bin';
+    $statePath = $userDir . '/' . $key . '.state.bin';
+    $legacyPath = $userDir . '/' . $key . '.bin';
+
+    if ($currentUser === 'Hibouxe') {
+        if ($reqType === 'sram' && !file_exists($sramPath) && !file_exists($legacyPath)) {
+            if (file_exists($storageDir . '/' . $key . '.sram.bin')) $sramPath = $storageDir . '/' . $key . '.sram.bin';
+            elseif (file_exists($storageDir . '/' . $key . '.bin')) $legacyPath = $storageDir . '/' . $key . '.bin';
+        } elseif ($reqType === 'state' && !file_exists($statePath) && !file_exists($legacyPath)) {
+            if (file_exists($storageDir . '/' . $key . '.state.bin')) $statePath = $storageDir . '/' . $key . '.state.bin';
+            elseif (file_exists($storageDir . '/' . $key . '.bin')) $legacyPath = $storageDir . '/' . $key . '.bin';
+        }
+    }
 
     $savePath = '';
     if ($reqType === 'sram') {
@@ -259,7 +317,11 @@ if ($action === 'load' && $_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
-    $meta = file_exists($metaPath = $storageDir . '/' . $key . '.meta.json') ? json_decode(file_get_contents($metaPath), true) : [];
+    $metaPath = $userDir . '/' . $key . '.meta.json';
+    if (!file_exists($metaPath) && $currentUser === 'Hibouxe' && file_exists($storageDir . '/' . $key . '.meta.json')) {
+        $metaPath = $storageDir . '/' . $key . '.meta.json';
+    }
+    $meta = file_exists($metaPath) ? json_decode(file_get_contents($metaPath), true) : [];
     $data = file_get_contents($savePath);
 
     header('Content-Type: application/octet-stream');
@@ -277,7 +339,7 @@ if ($action === 'load' && $_SERVER['REQUEST_METHOD'] === 'GET') {
 // 4. ROUTE LIST
 if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $saves = [];
-    $files = glob($storageDir . '/*.meta.json');
+    $files = glob($userDir . '/*.meta.json');
     if ($files) {
         foreach ($files as $mf) {
             $meta = json_decode(@file_get_contents($mf), true);
@@ -286,7 +348,18 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
             }
         }
     }
-    echo json_encode(['ok' => true, 'saves' => $saves]);
+    if ($currentUser === 'Hibouxe') {
+        $legacyFiles = glob($storageDir . '/*.meta.json');
+        if ($legacyFiles) {
+            foreach ($legacyFiles as $lmf) {
+                $meta = json_decode(@file_get_contents($lmf), true);
+                if ($meta && !empty($meta['game']) && !isset($saves[$meta['game']])) {
+                    $saves[$meta['game']] = $meta;
+                }
+            }
+        }
+    }
+    echo json_encode(['ok' => true, 'user' => $currentUser, 'saves' => $saves]);
     exit;
 }
 
@@ -299,17 +372,23 @@ if ($action === 'delete') {
         exit;
     }
     $key = getGameKey($gameName);
-    @unlink($storageDir . '/' . $key . '.sram.bin');
-    @unlink($storageDir . '/' . $key . '.state.bin');
-    @unlink($storageDir . '/' . $key . '.bin');
-    @unlink($storageDir . '/' . $key . '.meta.json');
+    @unlink($userDir . '/' . $key . '.sram.bin');
+    @unlink($userDir . '/' . $key . '.state.bin');
+    @unlink($userDir . '/' . $key . '.bin');
+    @unlink($userDir . '/' . $key . '.meta.json');
+    if ($currentUser === 'Hibouxe') {
+        @unlink($storageDir . '/' . $key . '.sram.bin');
+        @unlink($storageDir . '/' . $key . '.state.bin');
+        @unlink($storageDir . '/' . $key . '.bin');
+        @unlink($storageDir . '/' . $key . '.meta.json');
+    }
     echo json_encode(['ok' => true]);
     exit;
 }
 
 // 6. ROUTE LIBRARY (Catalogue privé des reliques souveraines)
 if ($action === 'library' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-    // Accessible uniquement aux porteurs d'un token HMAC valide (Hibouxe)
+    // Accessible uniquement aux porteurs d'un token HMAC valide (Hibouxe ou Moineau)
     $candidateFiles = [
         '/var/www/storage/vault_catalog.json',
         $storageDir . '/vault_catalog.json',
@@ -469,7 +548,7 @@ if ($action === 'library' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     }
     echo json_encode([
         'ok' => true,
-        'user' => $authData['user'] ?? 'Hibouxe',
+        'user' => $currentUser,
         'count' => count($roms),
         'roms' => $roms
     ]);
