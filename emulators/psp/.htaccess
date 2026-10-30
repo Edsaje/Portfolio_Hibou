@@ -1,0 +1,12 @@
+# Headers d'isolation stricte pour SharedArrayBuffer & WebAssembly pthreads
+<IfModule mod_headers.c>
+  Header set Cross-Origin-Opener-Policy "same-origin"
+  Header set Cross-Origin-Embedder-Policy "require-corp"
+</IfModule>
+
+# Types MIME pour WebAssembly et données de build PPSSPP
+<IfModule mod_mime.c>
+  AddType application/wasm .wasm
+  AddType application/octet-stream .data
+  AddType application/javascript .js
+</IfModule>

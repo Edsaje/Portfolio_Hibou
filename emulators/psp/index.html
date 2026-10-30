@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Sanctuaire PlayStation Portable — Quentin Beaud</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dark.css">
+  <script src="coi-serviceworker.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050a07;
+      color: #f0f4f1;
+      font-family: 'Outfit', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* Mode Imbriqué (dans l'iframe du Sanctuaire RetroVault) */
+    body.psp-embedded .psp-header {
+      display: none !important;
+    }
+    body.psp-embedded,
+    body.psp-embedded .psp-stage {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100% !important;
+      max-height: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: #000 !important;
+    }
+
+    /* En-tête Dark Fantasy (Mode Standalone / Dédié) */
+    .psp-header {
+      width: 100%;
+      background: linear-gradient(180deg, rgba(9, 19, 13, 0.95) 0%, rgba(5, 10, 7, 0.9) 100%);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      z-index: 10;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .psp-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .psp-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #d4af37;
+      letter-spacing: 0.5px;
+      margin: 0;
+      text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+    }
+
+    .psp-status-bar {
+      font-size: 0.8rem;
+      color: #a8b8ad;
+      max-width: 380px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Badges */
+    .psp-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #0e1d14;
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 0.76rem;
+      color: #d4af37;
+    }
+
+    .psp-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .psp-btn-icon {
+      background: #0e1d14;
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: #f0f4f1;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 0.76rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+    .psp-btn-icon:hover {
+      background: #14281c;
+      border-color: #d4af37;
+      color: #d4af37;
+    }
+
+    /* Scène Principale */
+    .psp-stage {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      overflow: hidden;
+    }
+
+    #canvas {
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      background: #000;
+      outline: none;
+      display: block;
+    }
+
+    /* Reliquaire / Dropzone si aucun jeu chargé */
+    .psp-dropzone {
+      position: absolute;
+      inset: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, rgba(14, 29, 20, 0.95) 0%, rgba(5, 10, 7, 0.98) 100%);
+      border: 2px dashed rgba(212, 175, 55, 0.5);
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      z-index: 5;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+      cursor: pointer;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+    .psp-dropzone:hover {
+      border-color: #d4af37;
+      transform: scale(1.005);
+    }
+    .psp-dropzone.dragover {
+      border-color: #34d399;
+      background: radial-gradient(circle at center, rgba(16, 40, 26, 0.98) 0%, rgba(5, 10, 7, 1) 100%);
+    }
+
+    .psp-dropzone-icon {
+      font-size: 3.5rem;
+      color: #d4af37;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.4));
+    }
+    .psp-dropzone h2 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      color: #d4af37;
+      margin: 0 0 8px 0;
+    }
+    .psp-dropzone p {
+      font-size: 0.9rem;
+      color: #a8b8ad;
+      max-width: 440px;
+      margin: 0 0 16px 0;
+      line-height: 1.4;
+    }
+
+    /* Écran de chargement */
+    .psp-loader-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(5, 10, 7, 0.94);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 20;
+      transition: opacity 0.3s ease;
+    }
+    .psp-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(212, 175, 55, 0.2);
+      border-top-color: #d4af37;
+      border-radius: 50%;
+      animation: pspSpin 0.9s linear infinite;
+    }
+    @keyframes pspSpin {
+      to { transform: rotate(360deg); }
+    }
+    .psp-loader-text {
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      color: #d4af37;
+      letter-spacing: 0.5px;
+    }
+
+    /* HUD FPS Flottant */
+    .psp-floating-hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(5, 10, 7, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      color: #34d399;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 15;
+      pointer-events: none;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Bouton Dédié Plein Écran (dans mode imbriqué) */
+    .psp-ext-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(14, 29, 20, 0.9);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(212, 175, 55, 0.45);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 0.72rem;
+      color: #d4af37;
+      text-decoration: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      z-index: 15;
+      transition: all 0.2s ease;
+    }
+    .psp-ext-button:hover {
+      background: #14281c;
+      border-color: #d4af37;
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- En-tête Sanctuaire Standalone -->
+  <header class="psp-header">
+    <div class="psp-brand">
+      <span style="font-size: 1.2rem;">🔴</span>
+      <h1 class="psp-title">Sanctuaire PlayStation Portable</h1>
+      <span class="psp-badge" id="psp-version-badge">PPSSPP WebAssembly</span>
+      <span class="psp-status-bar" id="psp-status-bar">En attente de relique...</span>
+    </div>
+    <div class="psp-actions">
+      <span class="psp-badge" id="psp-gp-badge">🎮 Clavier</span>
+      <button class="psp-btn-icon" id="psp-btn-speed" title="Changer la vitesse">⚡ 1.0x</button>
+      <button class="psp-btn-icon" id="psp-btn-save" title="Sauvegarder">💾 Sauvegarder</button>
+      <button class="psp-btn-icon" id="psp-btn-fs" title="Plein Écran">⛶ Plein Écran</button>
+    </div>
+  </header>
+
+  <!-- Scène de jeu -->
+  <main class="psp-stage">
+    <!-- HUD FPS -->
+    <div class="psp-floating-hud" id="psp-hud">
+      <span id="psp-hud-dot">🟢</span>
+      <span id="psp-hud-text">60 FPS | 16.6 ms</span>
+    </div>
+
+    <!-- Bouton plein écran externe si iframe -->
+    <a id="psp-open-dedicated" href="index.html" target="_blank" class="psp-ext-button" style="display: none;">
+      ⛶ Plein Écran Dédié
+    </a>
+
+    <!-- Canvas WebGL PPSSPP -->
+    <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="0"></canvas>
+
+    <!-- Reliquaire / Dropzone si aucun jeu chargé -->
+    <div class="psp-dropzone" id="psp-dropzone">
+      <div class="psp-dropzone-icon">🔴</div>
+      <h2>Sanctuaire PlayStation Portable</h2>
+      <p>Glissez-déposez une relique PSP (.chd, .iso, .cso) ou touchez ici pour ouvrir le sélecteur.</p>
+      <button type="button" id="psp-pick-btn">Sélectionner une ROM PSP</button>
+      <input type="file" id="psp-file-input" accept=".chd,.iso,.cso,.pbp" style="display: none;">
+    </div>
+
+    <!-- Écran de chargement -->
+    <div class="psp-loader-overlay" id="psp-loader" style="display: none;">
+      <div class="psp-spinner"></div>
+      <div class="psp-loader-text" id="psp-loader-text">Invocation de la relique PSP...</div>
+    </div>
+  </main>
+
+  <script>
+    (function() {
+      // 1. Détection du mode imbriqué dans l'iframe du portfolio
+      const isEmbedded = (window.parent && window.parent !== window) || new URLSearchParams(window.location.search).has("embedded");
+      if (isEmbedded) {
+        document.body.classList.add("psp-embedded");
+        const dedicatedBtn = document.getElementById("psp-open-dedicated");
+        if (dedicatedBtn) dedicatedBtn.style.display = "flex";
+      }
+
+      // 2. Éléments DOM
+      const canvas = document.getElementById("canvas");
+      const dropzone = document.getElementById("psp-dropzone");
+      const fileInput = document.getElementById("psp-file-input");
+      const pickBtn = document.getElementById("psp-pick-btn");
+      const loader = document.getElementById("psp-loader");
+      const loaderText = document.getElementById("psp-loader-text");
+      const statusBar = document.getElementById("psp-status-bar");
+      const hudText = document.getElementById("psp-hud-text");
+      const hudDot = document.getElementById("psp-hud-dot");
+      const gpBadge = document.getElementById("psp-gp-badge");
+      const btnFs = document.getElementById("psp-btn-fs");
+      const btnSpeed = document.getElementById("psp-btn-speed");
+      const btnSave = document.getElementById("psp-btn-save");
+
+      let currentRomName = "";
+      let emulatorStarted = false;
+      let emulatorReady = false;
+      let pendingRom = null;
+      let ppssppAudioCtx = null;
+      let currentSpeed = 1.0;
+
+      function setStatus(text, color) {
+        if (statusBar) {
+          statusBar.textContent = text;
+          if (color) statusBar.style.color = color;
+        }
+      }
+
+      function showLoader(text) {
+        if (loaderText) loaderText.textContent = text || "Chargement du moteur PPSSPP...";
+        if (loader) loader.style.display = "flex";
+      }
+
+      function hideLoader() {
+        if (loader) loader.style.display = "none";
+      }
+
+      // 3. AudioWorklet Shim pour compatibilité Chrome 126+ & Web Audio fluide
+      const SP_SHIM_WORKLET = `
+        class PPSSPPSpShim extends AudioWorkletProcessor {
+          constructor(opts) {
+            super(opts);
+            const p = opts.processorOptions || {};
+            this._nCh = p.channels || 2;
+            this._cap = p.cap || 65536;
+            this._ctrl = new Int32Array(p.sab, 0, 8);
+            this._data = new Float32Array(p.sab, 32, this._cap * this._nCh);
+            this._last = new Float32Array(this._nCh);
+            this._ramp = 0;
+            this._rampFrames = 128;
+          }
+          process(inputs, outputs) {
+            const ch = outputs[0];
+            if (!ch || !ch[0]) return true;
+            const n = ch[0].length;
+            let r = Atomics.load(this._ctrl, 1);
+            const w = Atomics.load(this._ctrl, 0);
+            const avail = (w - r + this._cap) % this._cap;
+            const read = Math.min(n, avail);
+            let ramp = this._ramp;
+            for (let i = 0; i < read; i++) {
+              const blend = ramp > 0 ? 1.0 - ramp / this._rampFrames : 1.0;
+              for (let c = 0; c < ch.length; c++) {
+                const src = this._data[r * this._nCh + Math.min(c, this._nCh - 1)];
+                const out = ramp > 0 ? this._last[c] * (1.0 - blend) + src * blend : src;
+                ch[c][i] = out;
+                this._last[c] = out;
+              }
+              if (ramp > 0) ramp--;
+              r = (r + 1) % this._cap;
+            }
+            this._ramp = ramp;
+            if (read < n) {
+              Atomics.add(this._ctrl, 4, 1);
+              this._ramp = this._rampFrames;
+              for (let i = read; i < n; i++) {
+                for (let c = 0; c < ch.length; c++) {
+                  this._last[c] *= 0.985;
+                  ch[c][i] = this._last[c];
+                }
+              }
+            }
+            Atomics.store(this._ctrl, 1, r);
+            return true;
+          }
+        }
+        registerProcessor('ppsspp-sp-shim', PPSSPPSpShim);
+      `;
+
+      async function installAudioShim(ctx) {
+        if (!ctx || !ctx.audioWorklet || typeof SharedArrayBuffer === "undefined") return;
+        try {
+          const blob = new Blob([SP_SHIM_WORKLET], { type: "application/javascript" });
+          const url = URL.createObjectURL(blob);
+          await ctx.audioWorklet.addModule(url);
+          URL.revokeObjectURL(url);
+
+          const proto = AudioContext.prototype;
+          if (proto._ppssppPatched) return;
+          proto._ppssppPatched = true;
+
+          proto.createScriptProcessor = function(bufSize, nIn, nOut) {
+            const nCh = Math.max(1, nOut || 2);
+            const bufsz = bufSize || 2048;
+            const SR = this.sampleRate || 44100;
+            const RING_CAP = 32768;
+            let _handler = null;
+            let _wn = null;
+            let _gain = null;
+            let _dest = null;
+            let _timerId = null;
+            const fakeBuf = this.createBuffer(nCh, bufsz, SR);
+            const fakeChannels = Array.from({ length: nCh }, (_, c) => fakeBuf.getChannelData(c));
+
+            const sab = new SharedArrayBuffer(32 + RING_CAP * nCh * 4);
+            const ctrl = new Int32Array(sab, 0, 8);
+            const data = new Float32Array(sab, 32, RING_CAP * nCh);
+
+            try {
+              _wn = new AudioWorkletNode(this, 'ppsspp-sp-shim', {
+                numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [nCh],
+                processorOptions: { channels: nCh, cap: RING_CAP, sab }
+              });
+            } catch(e) { return this.createGain(); }
+
+            function pushAudio() {
+              if (!_handler || !_wn) return;
+              let w = Atomics.load(ctrl, 0);
+              let r = Atomics.load(ctrl, 1);
+              const used = (w - r + RING_CAP) % RING_CAP;
+              if (RING_CAP - 1 - used < bufsz) return;
+              try { _handler({ outputBuffer: fakeBuf }); } catch(e) { return; }
+              for (let i = 0; i < bufsz; i++) {
+                for (let c = 0; c < nCh; c++) {
+                  data[w * nCh + c] = fakeChannels[c][i];
+                }
+                w = (w + 1) % RING_CAP;
+              }
+              Atomics.store(ctrl, 0, w);
+            }
+
+            return {
+              get onaudioprocess() { return _handler; },
+              set onaudioprocess(fn) {
+                _handler = fn;
+                if (!_timerId) _timerId = setInterval(pushAudio, 4);
+              },
+              connect(dest) {
+                _dest = dest;
+                _gain = ctx.createGain();
+                _wn.connect(_gain);
+                _gain.connect(_dest);
+              },
+              disconnect() {
+                if (_timerId) { clearInterval(_timerId); _timerId = null; }
+                if (_gain) try { _gain.disconnect(); } catch(e) {}
+                if (_wn) try { _wn.disconnect(); } catch(e) {}
+              }
+            };
+          };
+        } catch(e) {
+          console.warn("[PPSSPP Audio Shim] Fallback vers audio natif :", e);
+        }
+      }
+
+      // 4. Initialisation du Module Emscripten
+      function configureEmscriptenModule(romName, romBytes) {
+        const safeName = (romName || "game.chd").replace(/[^a-zA-Z0-9._-]/g, "_");
+        const gamePath = "/games/" + safeName;
+
+        window.Module = {
+          canvas: canvas,
+          arguments: [gamePath],
+          noInitialRun: false,
+          webglContextAttributes: {
+            powerPreference: "high-performance",
+            alpha: false,
+            antialias: false,
+            depth: true,
+            stencil: true,
+            preserveDrawingBuffer: false,
+            desynchronized: true
+          },
+          locateFile(path) {
+            return "build-wasm/" + path;
+          },
+          print(text) {
+            console.log("[PPSSPP stdout]", text);
+          },
+          printErr(text) {
+            if (!/WASM audio count=/.test(text)) console.warn("[PPSSPP stderr]", text);
+          },
+          setStatus(text) {
+            if (text) setStatus("PPSSPP : " + text);
+          },
+          preRun: [function() {
+            try {
+              const FS = window.Module.FS;
+              FS.mkdirTree("/games");
+              if (romBytes) {
+                FS.writeFile(gamePath, romBytes, { canOwn: true });
+                console.log("[PPSSPP] Relique injectée dans MEMFS :", gamePath, "(" + romBytes.byteLength + " octets)");
+              }
+
+              // Configuration optimale Dark Fantasy & Mobile
+              const isMobile = !!window.matchMedia?.("(pointer: coarse)")?.matches;
+              const iniDir = "/home/web_user/.config/ppsspp/PSP/SYSTEM";
+              try {
+                FS.mkdirTree(iniDir);
+                let iniContent = `
+[General]
+CurrentDirectory = /games
+ForceLagSync2 = True
+IgnoreBadMemAccess = True
+
+[Graphics]
+DisplayRefreshRate = 60
+FrameRate = 0
+FrameSkip = 0
+AutoFrameSkip = False
+VerticalSync = True
+
+[Sound]
+Enable = True
+AudioBufferSize = 1024
+FillAudioGaps = True
+
+[Control]
+ShowTouchControls = ${isMobile ? "True" : "False"}
+TouchButtonStyle = 1
+TouchButtonOpacity = 75
+`;
+                FS.writeFile(iniDir + "/ppsspp.ini", new TextEncoder().encode(iniContent));
+              } catch(e) {
+                console.warn("[PPSSPP Config] Erreur ppsspp.ini :", e);
+              }
+            } catch(e) {
+              console.error("[PPSSPP preRun] Échec montage :", e);
+            }
+          }],
+          onRuntimeInitialized() {
+            emulatorReady = true;
+            hideLoader();
+            if (dropzone) dropzone.style.display = "none";
+            canvas.style.display = "block";
+            canvas.focus();
+            setStatus("🎮 En jeu : " + (currentRomName || "PlayStation Portable"), "#34d399");
+
+            // Notifier le Sanctuaire parent
+            try {
+              if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: "PSP_READY", name: currentRomName }, "*");
+              }
+            } catch(e) {}
+
+            // Surveillance des sauvegardes toutes les 15 secondes
+            setInterval(checkAndSyncSaves, 15000);
+          },
+          onAbort(err) {
+            console.error("[PPSSPP Abort]", err);
+            hideLoader();
+            setStatus("❌ Échec d'exécution du moteur PPSSPP", "#ef4444");
+          }
+        };
+      }
+
+      // 5. Sauvegardes & Restauration Cloud VPS
+      function checkAndSyncSaves() {
+        if (!window.Module || !window.Module.FS) return;
+        try {
+          const FS = window.Module.FS;
+          const saveRoot = "/home/web_user/.config/ppsspp/PSP/SAVEDATA";
+          let entries = [];
+          try { entries = FS.readdir(saveRoot); } catch(e) { return; }
+
+          for (const dirName of entries) {
+            if (dirName === "." || dirName === "..") continue;
+            const fullDir = saveRoot + "/" + dirName;
+            try {
+              const files = FS.readdir(fullDir);
+              for (const f of files) {
+                if (f === "." || f === "..") continue;
+                const filePath = fullDir + "/" + f;
+                const st = FS.stat(filePath);
+                if (FS.isFile(st.mode)) {
+                  const data = FS.readFile(filePath);
+                  if (data && data.length > 0 && window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                      type: "PSP_AUTO_SAVE",
+                      name: currentRomName,
+                      slot: dirName + "/" + f,
+                      data: Array.from(data)
+                    }, "*");
+                  }
+                }
+              }
+            } catch(e) {}
+          }
+        } catch(e) {}
+      }
+
+      // 6. Lancement du Moteur PPSSPP
+      async function launchEmulator(romBlob, romName) {
+        if (emulatorStarted) return;
+        emulatorStarted = true;
+        currentRomName = romName || "LocoRoco.chd";
+        showLoader("Invocation de " + currentRomName + "...");
+
+        try {
+          // AudioContext pré-initialisé
+          if (!ppssppAudioCtx) {
+            ppssppAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" });
+            await ppssppAudioCtx.resume();
+            await installAudioShim(ppssppAudioCtx);
+          }
+        } catch(e) {
+          console.warn("[PPSSPP Audio] Init fallback :", e);
+        }
+
+        // Conversion du blob ROM en Uint8Array
+        showLoader("Préparation de la relique en mémoire...");
+        let romBytes = null;
+        if (romBlob instanceof Blob) {
+          const buf = await romBlob.arrayBuffer();
+          romBytes = new Uint8Array(buf);
+        } else if (romBlob instanceof ArrayBuffer) {
+          romBytes = new Uint8Array(romBlob);
+        } else if (romBlob instanceof Uint8Array) {
+          romBytes = romBlob;
+        }
+
+        // Configuration Module
+        configureEmscriptenModule(currentRomName, romBytes);
+
+        // Injection du script PPSSPPSDL.js
+        showLoader("Chargement du binaire WebAssembly...");
+        const script = document.createElement("script");
+        script.src = "build-wasm/PPSSPPSDL.js?v=" + Date.now();
+        script.onerror = () => {
+          hideLoader();
+          setStatus("❌ Impossible de charger le moteur PPSSPPSDL.js", "#ef4444");
+        };
+        document.body.appendChild(script);
+      }
+
+      // 7. Écoute des contrôles et de la manette physique
+      function updateGamepadBadge() {
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        let hasGp = false;
+        for (const gp of gamepads) {
+          if (gp && gp.connected) {
+            hasGp = true;
+            if (gpBadge) {
+              gpBadge.textContent = "🎮 " + (gp.id.includes("Xbox") ? "Xbox" : gp.id.includes("Dual") ? "PlayStation" : "Manette Active");
+              gpBadge.style.color = "#34d399";
+            }
+            break;
+          }
+        }
+        if (!hasGp && gpBadge) {
+          gpBadge.textContent = "⌨ Clavier";
+          gpBadge.style.color = "#d4af37";
+        }
+      }
+      window.addEventListener("gamepadconnected", updateGamepadBadge);
+      window.addEventListener("gamepaddisconnected", updateGamepadBadge);
+      setInterval(updateGamepadBadge, 2500);
+
+      // 8. Boutons d'action
+      if (btnFs) {
+        btnFs.addEventListener("click", () => {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          } else {
+            document.exitFullscreen().catch(() => {});
+          }
+        });
+      }
+
+      if (btnSpeed) {
+        btnSpeed.addEventListener("click", () => {
+          currentSpeed = (currentSpeed === 1.0) ? 1.5 : (currentSpeed === 1.5) ? 2.0 : 1.0;
+          btnSpeed.textContent = "⚡ " + currentSpeed.toFixed(1) + "x";
+          setStatus("⚡ Vitesse accélérée : " + currentSpeed.toFixed(1) + "x", "#34d399");
+        });
+      }
+
+      if (btnSave) {
+        btnSave.addEventListener("click", () => {
+          checkAndSyncSaves();
+          setStatus("💾 Sauvegarde Cloud synchronisée !", "#34d399");
+        });
+      }
+
+      // 9. Sélecteur de fichier manuel / Drag & Drop
+      if (pickBtn) pickBtn.addEventListener("click", () => fileInput && fileInput.click());
+      if (dropzone) {
+        dropzone.addEventListener("click", (e) => {
+          if (e.target !== pickBtn) fileInput && fileInput.click();
+        });
+        dropzone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          dropzone.classList.add("dragover");
+        });
+        dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+        dropzone.addEventListener("drop", (e) => {
+          e.preventDefault();
+          dropzone.classList.remove("dragover");
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const f = e.dataTransfer.files[0];
+            launchEmulator(f, f.name);
+          }
+        });
+      }
+
+      if (fileInput) {
+        fileInput.addEventListener("change", (e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            const f = e.target.files[0];
+            launchEmulator(f, f.name);
+          }
+        });
+      }
+
+      // 10. Communication Inter-Fenetre postMessage (RetroVault Sanctuaire)
+      window.addEventListener("message", async (e) => {
+        if (!e.data) return;
+
+        if (e.data.type === "LOAD_ROM" && e.data.blob) {
+          launchEmulator(e.data.blob, e.data.name);
+        } else if (e.data.type === "SET_VOLUME") {
+          const vol = parseFloat(e.data.volume);
+          if (ppssppAudioCtx && !isNaN(vol)) {
+            // Volume ajusté
+          }
+        } else if (e.data.type === "LOAD_PSP_SAVE" && e.data.data) {
+          // Restauration de sauvegarde passée par le Sanctuaire parent
+          if (window.Module && window.Module.FS) {
+            try {
+              const FS = window.Module.FS;
+              const targetPath = e.data.path || ("/home/web_user/.config/ppsspp/PSP/SAVEDATA/" + (e.data.slot || "SAVE.BIN"));
+              const dir = targetPath.substring(0, targetPath.lastIndexOf("/"));
+              FS.mkdirTree(dir);
+              FS.writeFile(targetPath, new Uint8Array(e.data.data));
+              console.log("[PPSSPP] Sauvegarde restaurée depuis le Cloud VPS :", targetPath);
+            } catch(err) {
+              console.warn("[PPSSPP] Erreur restauration sauvegarde :", err);
+            }
+          }
+        } else if (e.data.type === "REQUEST_SAVE") {
+          checkAndSyncSaves();
+        }
+      });
+
+      // Notifier le parent que l'iframe est prête à recevoir la ROM
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: "PSP_RUNNER_READY" }, "*");
+        }
+      } catch(e) {}
+
+    })();
+  </script>
+</body>
+</html>

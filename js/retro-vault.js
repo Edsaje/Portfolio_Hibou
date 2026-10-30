@@ -23,6 +23,7 @@
     megadrive: { label: "Mega Drive", core: "genesis_plus_gx", tag: "tag-md", hasExtra: true },
     ps1: { label: "PlayStation 1", core: "pcsx_rearmed", tag: "tag-ps1", hasExtra: true },
     nds: { label: "Nintendo DS", core: "desmume", tag: "tag-nds", hasExtra: true },
+    psp: { label: "PlayStation Portable", core: "ppsspp", tag: "tag-psp", hasExtra: true },
     pce: { label: "PC Engine", core: "mednafen_pce_fast", tag: "tag-pce", hasExtra: false },
     arcade: { label: "Arcade", core: "fbneo", tag: "tag-arcade", hasExtra: true }
   };
@@ -164,6 +165,47 @@
             } catch (err) {
               console.warn("Failed to persist DS save to IndexedDB:", err);
             }
+          }
+        } else if (e.data.type === "PSP_SAVE_DATA" || e.data.type === "PSP_AUTO_SAVE") {
+          const saveBytes = e.data.data;
+          const gameName = e.data.name || this.jeuEnCoursNom;
+          if (saveBytes && gameName) {
+            try {
+              const uint8 = new Uint8Array(saveBytes);
+              await this.saveSramDB(gameName, uint8);
+              await this.saveStateDB(gameName, uint8, null, true);
+              const status = document.getElementById("rv-status");
+              if (status && e.data.type === "PSP_SAVE_DATA") {
+                status.textContent = `💾 Sauvegarde PSP enregistrée dans le Sanctuaire (${new Date().toLocaleTimeString()}) !`;
+                status.style.color = "#34d399";
+              }
+              this.rendreGrille();
+            } catch (err) {
+              console.warn("Failed to persist PSP save to IndexedDB:", err);
+            }
+          }
+        } else if (e.data.type === "PSP_READY" || e.data.type === "PSP_RUNNER_READY") {
+          const frame = document.getElementById("rv-psp-frame");
+          if (frame && frame.contentWindow) {
+            try {
+              frame.contentWindow.postMessage({
+                type: "SET_VOLUME",
+                volume: this.volumeActuel
+              }, "*");
+              if (this.pendingPspSave) {
+                frame.contentWindow.postMessage({
+                  type: "LOAD_PSP_SAVE",
+                  data: Array.from(this.pendingPspSave)
+                }, "*");
+              }
+              if (this.pendingPspRom) {
+                frame.contentWindow.postMessage({
+                  type: "LOAD_ROM",
+                  blob: this.pendingPspRom.blob,
+                  name: this.pendingPspRom.name
+                }, "*");
+              }
+            } catch(err) {}
           }
         } else if (e.data.type === "NDS_READY") {
           if (this.pendingNdsSave) {
@@ -607,7 +649,7 @@
               });
               if (loadRes.ok) {
                 const buf = await loadRes.arrayBuffer();
-                const sramObj = (cType === "nds") ? new Uint8Array(buf) : new Blob([buf], { type: "application/octet-stream" });
+                const sramObj = (cType === "nds" || cType === "psp") ? new Uint8Array(buf) : new Blob([buf], { type: "application/octet-stream" });
                 await this.saveSramDB(key, sramObj, rMeta.sram_date || rMeta.date, true, rSramTime);
                 importedCount++;
               }
@@ -628,7 +670,7 @@
               });
               if (loadRes.ok) {
                 const buf = await loadRes.arrayBuffer();
-                const stateObj = (cType === "nds") ? new Uint8Array(buf) : new Blob([buf], { type: "application/octet-stream" });
+                const stateObj = (cType === "nds" || cType === "psp") ? new Uint8Array(buf) : new Blob([buf], { type: "application/octet-stream" });
                 await this.saveStateDB(key, stateObj, rMeta.state_date || rMeta.date, true, rStateTime);
                 importedCount++;
               }
@@ -766,7 +808,7 @@
           });
           if (loadRes.ok) {
             const buf = await loadRes.arrayBuffer();
-            const sramObj = (cType === "nds") ? new Uint8Array(buf) : new Blob([buf], { type: "application/octet-stream" });
+            const sramObj = (cType === "nds" || cType === "psp") ? new Uint8Array(buf) : new Blob([buf], { type: "application/octet-stream" });
             await this.saveSramDB(nomFichier, sramObj, rMeta.sram_date || rMeta.date, true, rSramTime);
             updated = true;
           }
@@ -783,7 +825,7 @@
           });
           if (loadRes.ok) {
             const buf = await loadRes.arrayBuffer();
-            const stateObj = (cType === "nds") ? new Uint8Array(buf) : new Blob([buf], { type: "application/octet-stream" });
+            const stateObj = (cType === "nds" || cType === "psp") ? new Uint8Array(buf) : new Blob([buf], { type: "application/octet-stream" });
             await this.saveStateDB(nomFichier, stateObj, rMeta.state_date || rMeta.date, true, rStateTime);
             updated = true;
           }
@@ -1374,8 +1416,8 @@
         else landSpeedBtn.classList.remove("rv-btn-active-speed");
       }
 
-      if (this.jeuEnCoursType === "nds") {
-        const frame = document.getElementById("rv-nds-frame");
+      if (this.jeuEnCoursType === "nds" || this.jeuEnCoursType === "psp") {
+        const frame = document.getElementById(this.jeuEnCoursType === "nds" ? "rv-nds-frame" : "rv-psp-frame");
         if (frame && frame.contentWindow) {
           try {
             frame.contentWindow.postMessage({
@@ -1581,8 +1623,13 @@
 
     // --- Détection console par extension ---
     identifierConsole(nom) {
+      if (this.tousLesJeux && Array.isArray(this.tousLesJeux)) {
+        const found = this.tousLesJeux.find(j => j.nom === nom);
+        if (found && found.console) return found.console;
+      }
       const ext = nom.split(".").pop().toLowerCase();
       if (["nds"].includes(ext) || nom.includes("console-nds-launcher")) return "nds";
+      if (["cso"].includes(ext) || nom.includes("console-psp-launcher") || /locoroco/i.test(nom)) return "psp";
       if (["sfc", "smc"].includes(ext)) return "snes";
       if (["gba"].includes(ext)) return "gba";
       if (["gb", "gbc"].includes(ext)) return "gb";
@@ -2380,6 +2427,32 @@
           height: 580px;
           max-height: 75vh;
           aspect-ratio: auto;
+        }
+        #rv-game-container.rv-is-psp {
+          width: 100%;
+          max-width: 920px;
+          aspect-ratio: 16 / 9;
+          height: auto;
+          max-height: 80vh;
+        }
+        .rv-psp-wrapper {
+          width: 100%;
+          height: 100%;
+          min-height: 200px;
+          position: relative;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: #000;
+        }
+        #rv-game-container.rv-is-psp .rv-embedded-frame {
+          width: 100%;
+          height: 100%;
+          max-height: 100%;
+          aspect-ratio: 16 / 9;
+          border: none;
+          display: block;
+          background: #000;
         }
         .rv-nds-layout {
           display: flex;
@@ -3353,6 +3426,7 @@
             </div>
             <div class="rv-tabs" id="rv-tabs">
               <button class="rv-tab active" data-filter="all">🔮 TOUTES</button>
+              <button class="rv-tab" data-filter="psp">🔴 PSP</button>
               <button class="rv-tab" data-filter="ps1">⚔️ PLAYSTATION 1</button>
               <button class="rv-tab" data-filter="nds">🕹️ NINTENDO DS</button>
               <button class="rv-tab" data-filter="snes">🍄 SUPER NINTENDO</button>
@@ -4077,7 +4151,7 @@
       grid.innerHTML = "";
 
       // Mise à jour dynamique des compteurs dans les onglets de consoles
-      const counts = { all: this.tousLesJeux.length, ps1: 0, nds: 0, snes: 0, gba: 0, gb: 0, nes: 0, megadrive: 0, pce: 0 };
+      const counts = { all: this.tousLesJeux.length, psp: 0, ps1: 0, nds: 0, snes: 0, gba: 0, gb: 0, nes: 0, megadrive: 0, pce: 0 };
       for (const j of this.tousLesJeux) {
         if (counts[j.console] !== undefined) counts[j.console]++;
       }
@@ -4089,6 +4163,7 @@
         }
       };
       updateTab("all", "🔮 TOUTES");
+      updateTab("psp", "🔴 PSP");
       updateTab("ps1", "⚔️ PLAYSTATION 1");
       updateTab("nds", "🕹️ NINTENDO DS");
       updateTab("snes", "🍄 SUPER NINTENDO");
@@ -4241,7 +4316,7 @@
           this.partieEnCours = null;
         }
 
-        const isLauncher = nomFichier.includes("console-nds-launcher");
+        const isLauncher = nomFichier.includes("console-nds-launcher") || nomFichier.includes("console-psp-launcher");
         let romBlob = customBlob;
 
         if (!romBlob && !isLauncher) {
@@ -4336,7 +4411,83 @@
           return;
         }
 
+        if (cType === "psp") {
+          container.classList.add("rv-is-psp");
+          container.classList.remove("rv-is-nds");
+
+          container.innerHTML = `
+            <div class="rv-perf-hud" id="rv-perf-hud">
+              <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
+              <span class="rv-perf-text" id="rv-perf-text">60 FPS | 16.6 ms</span>
+            </div>
+            <div class="rv-psp-wrapper">
+              <div class="rv-psp-ext-btn-wrap" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
+                <a href="emulators/psp/index.html?v=1.0" target="_blank" class="rv-btn rv-psp-ext-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
+              </div>
+              <iframe id="rv-psp-frame" class="rv-embedded-frame" src="emulators/psp/index.html?v=1.0&embedded=1" allow="autoplay; fullscreen; gamepad; cross-origin-isolated" credentialless></iframe>
+            </div>
+          `;
+
+          const frame = document.getElementById("rv-psp-frame");
+          this.pendingPspRom = romBlob ? { blob: romBlob, name: nomFichier } : null;
+
+          // Si connecté au Cloud VPS, rapatrier la dernière sauvegarde si disponible
+          if (this.isCloudConnected()) {
+            await this.verifierSauvegardeDistante(nomFichier);
+          }
+
+          // Charger la sauvegarde locale existante depuis IndexedDB
+          try {
+            const existingSave = await this.loadStateDB(nomFichier);
+            this.pendingPspSave = (existingSave && (existingSave.sram || existingSave.state)) ? (existingSave.sram || existingSave.state) : null;
+          } catch(e) {
+            this.pendingPspSave = null;
+          }
+
+          if (frame) {
+            const sendRomAndVolume = () => {
+              try {
+                if (frame.contentWindow) {
+                  frame.contentWindow.postMessage({
+                    type: "SET_VOLUME",
+                    volume: this.volumeActuel
+                  }, "*");
+                  if (this.pendingPspSave) {
+                    frame.contentWindow.postMessage({
+                      type: "LOAD_PSP_SAVE",
+                      data: Array.from(this.pendingPspSave)
+                    }, "*");
+                  }
+                  if (this.pendingPspRom) {
+                    frame.contentWindow.postMessage({
+                      type: "LOAD_ROM",
+                      blob: this.pendingPspRom.blob,
+                      name: this.pendingPspRom.name
+                    }, "*");
+                  }
+                }
+              } catch (e) {}
+            };
+            frame.onload = () => setTimeout(sendRomAndVolume, 400);
+          }
+
+          status.textContent = isLauncher
+            ? "🎮 Console PlayStation Portable (PPSSPP) prête | Insérez un disque ou glissez un .chd/.iso !"
+            : `🎮 Relique PSP : "${nomFichier}". Moteur PPSSPP 60 FPS actif.`;
+          status.style.color = "#d4af37";
+          this.jeuEnCoursNom = nomFichier;
+          if (this.vitesseActuelle !== 1.0) {
+            this.changerVitesse(this.vitesseActuelle);
+          }
+          if (this.afficherPerfFps) {
+            this.demarrerMesurePerf();
+          }
+          this.rendreGrille();
+          return;
+        }
+
         container.classList.remove("rv-is-nds");
+        container.classList.remove("rv-is-psp");
         container.innerHTML = `
           <div class="rv-perf-hud" id="rv-perf-hud">
             <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
@@ -4471,9 +4622,9 @@
         try { localStorage.setItem("rv_volume", String(this.volumeActuel)); } catch(e) {}
       }
 
-      // Si console DS (iframe)
-      if (this.jeuEnCoursType === "nds") {
-        const frame = document.getElementById("rv-nds-frame");
+      // Si console DS ou PSP (iframe)
+      if (this.jeuEnCoursType === "nds" || this.jeuEnCoursType === "psp") {
+        const frame = document.getElementById(this.jeuEnCoursType === "nds" ? "rv-nds-frame" : "rv-psp-frame");
         if (frame && frame.contentWindow) {
           try {
             frame.contentWindow.postMessage({
@@ -4630,6 +4781,17 @@
           return;
         }
 
+        if (this.jeuEnCoursType === "psp") {
+          const frame = document.getElementById("rv-psp-frame");
+          if (frame && frame.contentWindow) {
+            try {
+              frame.contentWindow.postMessage({ type: "REQUEST_SAVE" }, "*");
+              this.setStatutMessage("⏳ Sauvegarde du disque PSP vers le Sanctuaire...", "#d4af37");
+            } catch (e) {}
+          }
+          return;
+        }
+
         if (!this.partieEnCours) {
           this.setStatutMessage("💡 Sauvegarde intégrée dans le menu de la console.", "#d4af37");
           return;
@@ -4728,6 +4890,27 @@
             }
           } catch (e) {
             this.setStatutMessage("❌ Échec du chargement DS : " + e.message, "#ef4444", true);
+          }
+          return;
+        }
+
+        if (this.jeuEnCoursType === "psp") {
+          try {
+            const data = await this.loadStateDB(this.jeuEnCoursNom);
+            if (!data || !data.state) {
+              this.setStatutMessage("⚠️ Aucune sauvegarde trouvée pour cette relique PSP dans le Sanctuaire.", "#fbbf24", true);
+              return;
+            }
+            const frame = document.getElementById("rv-psp-frame");
+            if (frame && frame.contentWindow) {
+              frame.contentWindow.postMessage({
+                type: "LOAD_PSP_SAVE",
+                data: Array.from(data.state)
+              }, "*");
+              this.setStatutMessage(`📂 Sauvegarde PSP restaurée ! (${data.date})`, "#34d399", true);
+            }
+          } catch (e) {
+            this.setStatutMessage("❌ Échec du chargement PSP : " + e.message, "#ef4444", true);
           }
           return;
         }
