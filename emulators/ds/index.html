@@ -387,6 +387,7 @@
         </select>
       </div>
       <button class="ds-btn ds-btn-secondary ds-btn-active" id="btn-toggle-analog" title="Activer / Désactiver le stick analogique 360° (Pour Super Mario 64 DS en Mode Tactile)">🕹️ 360° : ACTIF</button>
+      <button class="ds-btn ds-btn-secondary" id="btn-toggle-layout" title="Changer la disposition des deux écrans (Côte à côte / Superposé)">↔️ Côte à côte</button>
       <button class="ds-btn" id="btn-open-rom">📁 Insérer ROM</button>
       <button class="ds-btn ds-btn-secondary" id="btn-save-dsv" title="Télécharger le fichier de sauvegarde DSV">💾 Sauvegarder</button>
       <button class="ds-btn ds-btn-secondary" id="btn-restart" title="Redémarrer la console">🔄 Reset</button>
@@ -421,6 +422,7 @@
       const btnReset = document.getElementById("btn-restart");
       const langSelect = document.getElementById("ds-lang");
       const btnToggleAnalog = document.getElementById("btn-toggle-analog");
+      const btnToggleLayout = document.getElementById("btn-toggle-layout");
       const gpBadge = document.getElementById("ds-gp-badge");
       const gpNameEl = document.getElementById("ds-gp-name");
       const volSlider = document.getElementById("ds-vol-slider");
@@ -810,30 +812,60 @@
             cursor: crosshair !important;
             border-color: rgba(212, 175, 55, 0.7) !important;
           }
-          /* Mode Paysage (Côte à côte : Écran haut à gauche, écran tactile à droite) */
+          /* Forçage Côte à côte explicite */
+          #player.ds-side-by-side {
+            flex-direction: row !important;
+            gap: 12px !important;
+            height: 100% !important;
+            max-height: 100% !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          #player.ds-side-by-side canvas {
+            max-height: calc(100vh - 10px) !important;
+            max-width: calc(50vw - 12px) !important;
+            width: auto !important;
+            height: auto !important;
+          }
+          /* Forçage Superposé vertical explicite */
+          #player.ds-vertical {
+            flex-direction: column !important;
+            gap: 6px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          #player.ds-vertical canvas {
+            max-width: calc(100vw - 10px) !important;
+            max-height: calc(50vh - 8px) !important;
+            width: auto !important;
+            height: auto !important;
+          }
+          /* Mode Paysage automatique (Côte à côte : Écran haut à gauche, écran tactile à droite) */
           @media (orientation: landscape), (min-aspect-ratio: 1/1) {
-            #player {
+            #player:not(.ds-vertical) {
               flex-direction: row !important;
               gap: 8px !important;
               height: 100% !important;
               max-height: 100% !important;
             }
-            canvas {
+            #player:not(.ds-vertical) canvas {
               max-height: calc(100vh - 6px) !important;
               max-width: calc(50vw - 8px) !important;
               width: auto !important;
               height: auto !important;
             }
           }
-          /* Mode Portrait (Superposé vertical : Écran haut au dessus, tactile en bas) */
+          /* Mode Portrait automatique (Superposé vertical : Écran haut au dessus, tactile en bas) */
           @media (orientation: portrait) and (max-aspect-ratio: 1/1) {
-            #player {
+            #player:not(.ds-side-by-side) {
               flex-direction: column !important;
               gap: 4px !important;
               width: 100% !important;
               max-width: 100% !important;
             }
-            canvas {
+            #player:not(.ds-side-by-side) canvas {
               max-width: calc(100vw - 6px) !important;
               max-height: calc(50vh - 6px) !important;
               width: auto !important;
@@ -843,6 +875,46 @@
         `;
         player.shadowRoot.appendChild(shadowStyle);
       }
+
+      // ====================================================================
+      // GESTION DE LA DISPOSITION DES DEUX ÉCRANS NINTENDO DS
+      // ====================================================================
+      let currentDsLayout = "side-by-side";
+      try {
+        const savedLayout = localStorage.getItem("rv_ds_layout");
+        if (savedLayout === "vertical" || savedLayout === "side-by-side") {
+          currentDsLayout = savedLayout;
+        }
+      } catch(e) {}
+
+      function applyDsLayout(mode) {
+        currentDsLayout = (mode === "vertical") ? "vertical" : "side-by-side";
+        const innerPlayer = player && player.shadowRoot ? player.shadowRoot.querySelector("#player") : null;
+        if (!innerPlayer) {
+          setTimeout(() => applyDsLayout(mode), 80);
+          return;
+        }
+        innerPlayer.classList.remove("ds-side-by-side", "ds-vertical");
+        if (currentDsLayout === "side-by-side") {
+          innerPlayer.classList.add("ds-side-by-side");
+        } else {
+          innerPlayer.classList.add("ds-vertical");
+        }
+        if (btnToggleLayout) {
+          btnToggleLayout.textContent = (currentDsLayout === "side-by-side") ? "↔️ Côte à côte" : "↕️ Superposé";
+        }
+        try { localStorage.setItem("rv_ds_layout", currentDsLayout); } catch(e) {}
+      }
+
+      if (btnToggleLayout) {
+        btnToggleLayout.addEventListener("click", () => {
+          const next = currentDsLayout === "side-by-side" ? "vertical" : "side-by-side";
+          applyDsLayout(next);
+          setStatus("📱 Disposition DS : " + (next === "side-by-side" ? "Côte à côte (Grand Format)" : "Superposé (Authentique)"), "#34d399");
+        });
+      }
+
+      applyDsLayout(currentDsLayout);
 
       function setStatus(text, color = "#d4af37") {
         if (statusEl) {
@@ -983,22 +1055,36 @@
         r: 87
       };
 
-      // Mappage direct clavier pour le jeu DS (standalone)
+      // Mappage direct clavier pour le jeu DS (standalone & unifié Sanctuaire)
+      const UNIFIED_DS_KEY_MAP = {
+        "KeyK": 6, "Numpad5": 6, // B
+        "KeyL": 7, "Numpad6": 7, // A
+        "KeyI": 8, "Numpad4": 8, // Y
+        "KeyO": 9, "Numpad8": 9, // X
+        "KeyU": 10, "Numpad7": 10, // L
+        "KeyP": 11, "Numpad9": 11, // R
+        "KeyB": 5, // Start
+        "KeyV": 4, // Select
+        "KeyW": 3, "KeyZ": 3, "ArrowUp": 3,    // Up
+        "KeyS": 2, "ArrowDown": 2,             // Down
+        "KeyA": 1, "KeyQ": 1, "ArrowLeft": 1,  // Left
+        "KeyD": 0, "ArrowRight": 0             // Right
+      };
+
       window.addEventListener("keydown", (e) => {
         unlockAudio();
-        if (e.code === "KeyB") {
-          if (window.emuKeyState) window.emuKeyState[5] = true; // Start
-          e.preventDefault();
-        } else if (e.code === "KeyV") {
-          if (window.emuKeyState) window.emuKeyState[4] = true; // Select
-          e.preventDefault();
+        const btnId = UNIFIED_DS_KEY_MAP[e.code];
+        if (btnId !== undefined && window.emuKeyState) {
+          window.emuKeyState[btnId] = true;
+          if (["KeyB", "KeyV", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+            e.preventDefault();
+          }
         }
       });
       window.addEventListener("keyup", (e) => {
-        if (e.code === "KeyB") {
-          if (window.emuKeyState) window.emuKeyState[5] = false;
-        } else if (e.code === "KeyV") {
-          if (window.emuKeyState) window.emuKeyState[4] = false;
+        const btnId = UNIFIED_DS_KEY_MAP[e.code];
+        if (btnId !== undefined && window.emuKeyState) {
+          window.emuKeyState[btnId] = false;
         }
       });
 
@@ -1008,6 +1094,8 @@
 
         if (e.data.type === "LOAD_ROM" && e.data.blob) {
           loadRomBlob(e.data.blob, e.data.name);
+        } else if (e.data.type === "SET_DS_LAYOUT") {
+          applyDsLayout(e.data.layout);
         } else if (e.data.type === "SET_SPEED") {
           const spd = parseFloat(e.data.speed) || 1;
           window.dsSpeedMultiplier = spd;

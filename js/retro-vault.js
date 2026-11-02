@@ -83,7 +83,7 @@
 
   class RetroVault {
     constructor() {
-      this.version = "10.2-options-perf";
+      this.version = "10.3-screen-controls";
       this.modal = null;
       this.partieEnCours = null;
       this.jeuEnCoursNom = "";
@@ -94,6 +94,8 @@
       this.estEnPause = false;
       this.vitesseActuelle = 1.0;
       this.isFastForward = false;
+      this.echelleEcran = localStorage.getItem("rv_screen_scale") || "1x";
+      this.dispositionDS = localStorage.getItem("rv_ds_layout") || "side-by-side";
       this.afficherPerfFps = localStorage.getItem("rv_show_fps") === "true";
       this.autoFullscreenPaysage = localStorage.getItem("rv_auto_landscape_fs") !== "false";
       this.fpsAnimId = null;
@@ -1474,6 +1476,109 @@
       }
     }
 
+    appliquerTailleEtDisposition() {
+      const modal = this.modal || document.getElementById("retro-vault-modal");
+      const container = document.getElementById("rv-game-container");
+      if (!modal) return;
+
+      // 1. Échelle d'écran (1x, 1.5x, Maxi)
+      modal.classList.remove("rv-scale-large", "rv-scale-maxi");
+      if (this.echelleEcran === "1.5x") {
+        modal.classList.add("rv-scale-large");
+      } else if (this.echelleEcran === "maxi") {
+        modal.classList.add("rv-scale-maxi");
+      }
+
+      // 2. Boutons d'échelle
+      const labelTaille = this.echelleEcran === "maxi" ? "Maxi" : (this.echelleEcran === "1.5x" ? "1.5x" : "1x");
+      const btnScreen = document.getElementById("rv-btn-screen-size");
+      if (btnScreen) {
+        btnScreen.textContent = `🔍 Écran : ${labelTaille}`;
+        btnScreen.title = `Taille de l'écran : ${labelTaille} (Cliquez pour alterner : 1x -> 1.5x -> Maxi)`;
+        if (this.echelleEcran !== "1x") btnScreen.classList.add("rv-btn-active-speed");
+        else btnScreen.classList.remove("rv-btn-active-speed");
+      }
+      const landBtnScreen = document.getElementById("rv-land-btn-screen");
+      if (landBtnScreen) {
+        landBtnScreen.textContent = `🔍 ${labelTaille}`;
+        landBtnScreen.title = `Taille de l'écran : ${labelTaille} (1x, 1.5x, Maxi)`;
+        if (this.echelleEcran !== "1x") landBtnScreen.classList.add("rv-btn-active-speed");
+        else landBtnScreen.classList.remove("rv-btn-active-speed");
+      }
+
+      // 3. Disposition Nintendo DS (Côte à côte vs Superposé)
+      modal.classList.remove("rv-nds-side-by-side", "rv-nds-vertical");
+      if (container) {
+        container.classList.remove("rv-nds-side-by-side", "rv-nds-vertical");
+      }
+      const dsClass = this.dispositionDS === "vertical" ? "rv-nds-vertical" : "rv-nds-side-by-side";
+      modal.classList.add(dsClass);
+      if (container) {
+        container.classList.add(dsClass);
+      }
+
+      // Affichage conditionnel des boutons DS (quand un jeu DS est lancé ou filtre DS actif)
+      const isDS = this.jeuEnCoursType === "nds" || (this.filtreActuel === "nds" && !this.partieEnCours);
+      const btnNds = document.getElementById("rv-btn-nds-layout");
+      const landBtnNds = document.getElementById("rv-land-btn-nds-layout");
+      const isSide = this.dispositionDS !== "vertical";
+      const labelNds = isSide ? "↔️ DS : Côte à côte" : "↕️ DS : Superposé";
+      const shortNds = isSide ? "↔️ DS" : "↕️ DS";
+
+      if (btnNds) {
+        btnNds.style.display = isDS ? "inline-flex" : "none";
+        btnNds.textContent = labelNds;
+        btnNds.title = isSide
+          ? "Disposition DS : Côte à côte (Cliquez pour passer en Superposé vertical)"
+          : "Disposition DS : Superposé (Cliquez pour passer en Côte à côte)";
+      }
+      if (landBtnNds) {
+        landBtnNds.style.display = isDS ? "inline-flex" : "none";
+        landBtnNds.textContent = shortNds;
+        landBtnNds.title = isSide
+          ? "Disposition DS : Côte à côte (Basculer vers Superposé)"
+          : "Disposition DS : Superposé (Basculer vers Côte à côte)";
+      }
+    }
+
+    changerTailleEcran(nouvelleTaille = null) {
+      if (!nouvelleTaille) {
+        const sequence = ["1x", "1.5x", "maxi"];
+        const curIdx = sequence.indexOf(this.echelleEcran);
+        this.echelleEcran = sequence[(curIdx + 1) % sequence.length];
+      } else {
+        this.echelleEcran = nouvelleTaille;
+      }
+      try {
+        localStorage.setItem("rv_screen_scale", this.echelleEcran);
+      } catch (e) {}
+      this.appliquerTailleEtDisposition();
+    }
+
+    changerDispositionDS(nouvelleDisp = null) {
+      if (!nouvelleDisp) {
+        this.dispositionDS = this.dispositionDS === "vertical" ? "side-by-side" : "vertical";
+      } else {
+        this.dispositionDS = nouvelleDisp;
+      }
+      try {
+        localStorage.setItem("rv_ds_layout", this.dispositionDS);
+      } catch (e) {}
+
+      this.appliquerTailleEtDisposition();
+
+      // Transmettre l'ordre à l'iframe DS si présente
+      const frame = document.getElementById("rv-nds-frame");
+      if (frame && frame.contentWindow) {
+        try {
+          frame.contentWindow.postMessage({
+            type: "SET_DS_LAYOUT",
+            layout: this.dispositionDS
+          }, "*");
+        } catch (err) {}
+      }
+    }
+
     demarrerMesurePerf() {
       this.arreterMesurePerf();
       if (!this.afficherPerfFps) return;
@@ -1688,6 +1793,24 @@
           border-radius: 4px;
           padding: 20px;
           position: relative;
+          transition: max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #retro-vault-modal.rv-scale-large .rv-container {
+          max-width: 1180px;
+        }
+        #retro-vault-modal.rv-scale-maxi .rv-container {
+          max-width: 1440px;
+          width: calc(100vw - 24px);
+        }
+        #retro-vault-modal.rv-nds-side-by-side .rv-container {
+          max-width: 1220px;
+        }
+        #retro-vault-modal.rv-nds-side-by-side.rv-scale-large .rv-container {
+          max-width: 1360px;
+        }
+        #retro-vault-modal.rv-nds-side-by-side.rv-scale-maxi .rv-container {
+          max-width: 1540px;
+          width: calc(100vw - 24px);
         }
         .rv-header {
           display: flex;
@@ -1746,6 +1869,7 @@
           flex-direction: column;
           align-items: center;
           margin: 0 auto 12px;
+          width: 100%;
         }
         #rv-game-container {
           position: relative;
@@ -1760,12 +1884,19 @@
           width: 100%;
           max-width: 760px;
           min-height: 220px;
+          transition: max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1), height 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #retro-vault-modal.rv-scale-large #rv-game-container {
+          max-width: 980px;
+        }
+        #retro-vault-modal.rv-scale-maxi #rv-game-container {
+          max-width: 1260px;
         }
         #rv-game-container canvas {
           display: block !important;
           margin: 0 auto !important;
           width: 100% !important;
-          max-width: 760px !important;
+          max-width: 100% !important;
           height: auto !important;
           aspect-ratio: 4 / 3;
           image-rendering: pixelated;
@@ -2666,25 +2797,68 @@
         }
         .rv-embedded-frame {
           width: 100%;
-          height: 560px;
-          max-height: 75vh;
+          height: 100%;
+          min-height: 380px;
           border: none;
           display: block;
           background: #000;
         }
+
+        /* Nintendo DS : Disposition & Échelle sans bride */
         #rv-game-container.rv-is-nds {
           width: 100%;
-          max-width: 520px;
-          height: 580px;
-          max-height: 75vh;
           aspect-ratio: auto;
+          transition: max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1), height 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
+        /* DS - Côte à côte (Idéal écrans panoramiques PC) */
+        #rv-game-container.rv-is-nds.rv-nds-side-by-side,
+        #retro-vault-modal.rv-nds-side-by-side #rv-game-container.rv-is-nds {
+          max-width: 960px;
+          height: 440px;
+          max-height: 80vh;
+        }
+        #retro-vault-modal.rv-nds-side-by-side.rv-scale-large #rv-game-container.rv-is-nds {
+          max-width: 1160px;
+          height: 520px;
+          max-height: 82vh;
+        }
+        #retro-vault-modal.rv-nds-side-by-side.rv-scale-maxi #rv-game-container.rv-is-nds {
+          max-width: 1380px;
+          height: 600px;
+          max-height: 86vh;
+        }
+        /* DS - Superposé vertical (Authentique agrandi) */
+        #rv-game-container.rv-is-nds.rv-nds-vertical,
+        #retro-vault-modal.rv-nds-vertical #rv-game-container.rv-is-nds {
+          max-width: 540px;
+          height: 620px;
+          max-height: 82vh;
+        }
+        #retro-vault-modal.rv-nds-vertical.rv-scale-large #rv-game-container.rv-is-nds {
+          max-width: 680px;
+          height: 760px;
+          max-height: 86vh;
+        }
+        #retro-vault-modal.rv-nds-vertical.rv-scale-maxi #rv-game-container.rv-is-nds {
+          max-width: 800px;
+          height: 880px;
+          max-height: 90vh;
+        }
+
+        /* PSP - Échelle dynamique */
         #rv-game-container.rv-is-psp {
           width: 100%;
           max-width: 920px;
           aspect-ratio: 16 / 9;
           height: auto;
           max-height: 80vh;
+          transition: max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #retro-vault-modal.rv-scale-large #rv-game-container.rv-is-psp {
+          max-width: 1120px;
+        }
+        #retro-vault-modal.rv-scale-maxi #rv-game-container.rv-is-psp {
+          max-width: 1340px;
         }
         .rv-psp-wrapper {
           width: 100%;
@@ -3630,6 +3804,8 @@
                   <button class="rv-land-btn" id="rv-land-btn-save" title="Sauvegarder l'état">💾</button>
                   <button class="rv-land-btn" id="rv-land-btn-load" title="Charger l'état">📂</button>
                   <button class="rv-land-btn" id="rv-land-btn-speed" title="Changer la vitesse (Actuelle: 1x)">⚡ 1x</button>
+                  <button class="rv-land-btn" id="rv-land-btn-screen" title="Ajuster la taille de l'écran (1x, 1.5x, Maxi)">🔍 1x</button>
+                  <button class="rv-land-btn" id="rv-land-btn-nds-layout" style="display: none;" title="Changer la disposition des écrans DS (Côte à côte / Superposé)">↔️ DS</button>
                   <button class="rv-land-btn" id="rv-land-btn-options" title="Options d'émulation & Sortilèges">⚙️</button>
                   <button class="rv-land-btn" id="rv-land-btn-fps" title="Afficher ou masquer les FPS">📊</button>
                   <button class="rv-land-btn" id="rv-land-btn-pause" title="Pause / Reprendre">⏸️</button>
@@ -3677,6 +3853,8 @@
                     </div>
                     <button class="rv-btn" id="rv-btn-pad-toggle">📱 Manette Virtuelle</button>
                     <button class="rv-btn" id="rv-btn-crt">📺 CRT</button>
+                    <button class="rv-btn" id="rv-btn-screen-size" title="Ajuster la taille de l'écran (Normal 1x, Grand 1.5x, Maxi)">🔍 Écran : 1x</button>
+                    <button class="rv-btn" id="rv-btn-nds-layout" style="display: none;" title="Changer la disposition des deux écrans DS (Côte à côte / Superposé)">↔️ DS : Côte à côte</button>
                     <button class="rv-btn" id="rv-btn-fullscreen">⛶ Plein Écran</button>
                     <input type="file" id="rv-file-input" style="display: none;" accept=".nes,.sfc,.smc,.gba,.gb,.gbc,.md,.bin,.gen,.zip,.iso,.cue,.chd,.pbp,.img,.pce,.nds,.cso">
                     <button class="rv-btn" id="rv-btn-upload">📁 Insérer ROM</button>
@@ -3733,11 +3911,11 @@
               </div>
               <div class="rv-ctrl-box" id="rv-ctrl-actions">
                 <span class="rv-ctrl-lbl">🎮 Actions :</span>
-                <span id="rv-badge-y"><span class="rv-kbd">4</span> Y</span>
-                <span id="rv-badge-b"><span class="rv-kbd rv-kbd-pri">5</span> B</span>
-                <span id="rv-badge-a"><span class="rv-kbd rv-kbd-pri">6</span> A</span>
-                <span id="rv-badge-x"><span class="rv-kbd">8</span> X</span>
-                <span id="rv-badge-triggers"><span class="rv-kbd">7</span> L / <span class="rv-kbd">9</span> R</span>
+                <span id="rv-badge-y"><span class="rv-kbd">4 / I</span> Y</span>
+                <span id="rv-badge-b"><span class="rv-kbd rv-kbd-pri">5 / K</span> B</span>
+                <span id="rv-badge-a"><span class="rv-kbd rv-kbd-pri">6 / L</span> A</span>
+                <span id="rv-badge-x"><span class="rv-kbd">8 / O</span> X</span>
+                <span id="rv-badge-triggers"><span class="rv-kbd">7 / U</span> L / <span class="rv-kbd">9 / P</span> R</span>
                 <span id="rv-badge-ps-extras" style="display: none;"><span class="rv-kbd">1</span> L2 / <span class="rv-kbd">3</span> R2 / 🎥 Caméra : <span class="rv-kbd">Flèches</span></span>
               </div>
               <div class="rv-ctrl-box">
@@ -3747,7 +3925,7 @@
               </div>
             </div>
             <div class="rv-tip">
-              💡 <em>Sur ordinateur, jouez à deux mains : main gauche sur ZSQD, main droite sur 8 5 4 6.</em>
+              💡 <em>Sur ordinateur, jouez à deux mains : main gauche sur ZSQD (ou Flèches), main droite sur Pavé Numérique (8 5 4 6) ou Lettres (O K I L / U P).</em>
             </div>
           </div>
 
@@ -4513,6 +4691,21 @@
       const landBtnFps = document.getElementById("rv-land-btn-fps");
       if (landBtnFps) landBtnFps.addEventListener("click", () => this.togglePerfFps());
 
+      // Bouton Échelle d'écran (1x, 1.5x, Maxi)
+      const btnScreen = document.getElementById("rv-btn-screen-size");
+      if (btnScreen) btnScreen.addEventListener("click", () => this.changerTailleEcran());
+      const landBtnScreen = document.getElementById("rv-land-btn-screen");
+      if (landBtnScreen) landBtnScreen.addEventListener("click", () => this.changerTailleEcran());
+
+      // Bouton Disposition Nintendo DS (Côte à côte / Superposé)
+      const btnNdsLayout = document.getElementById("rv-btn-nds-layout");
+      if (btnNdsLayout) btnNdsLayout.addEventListener("click", () => this.changerDispositionDS());
+      const landBtnNdsLayout = document.getElementById("rv-land-btn-nds-layout");
+      if (landBtnNdsLayout) landBtnNdsLayout.addEventListener("click", () => this.changerDispositionDS());
+
+      // Appliquer les réglages d'échelle et de disposition sauvegardés
+      this.appliquerTailleEtDisposition();
+
       // Bascule automatique plein écran en mode paysage sur mobile / tactile
       const handleMobileOrientation = () => {
         if (!this.autoFullscreenPaysage) return;
@@ -4558,6 +4751,12 @@
                 volume: this.volumeActuel
               }, "*");
             } catch(e) {}
+            try {
+              frame.contentWindow.postMessage({
+                type: "SET_DS_LAYOUT",
+                layout: this.dispositionDS
+              }, "*");
+            } catch(e) {}
             if (this.pendingNdsRom) {
               try {
                 frame.contentWindow.postMessage({
@@ -4601,6 +4800,7 @@
           tab.classList.add("active");
           this.filtreActuel = tab.getAttribute("data-filter");
           this.rendreGrille();
+          this.appliquerTailleEtDisposition();
           this.adapterAideTouches(this.filtreActuel === "all" ? this.jeuEnCoursType : this.filtreActuel);
         });
       });
@@ -4638,77 +4838,77 @@
           if (badgeY) badgeY.style.display = "none";
           if (badgeX) badgeX.style.display = "none";
           if (badgeTriggers) badgeTriggers.style.display = "none";
-          badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
-          badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : A';
+          badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5 / K</span> : B';
+          badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6 / L</span> : A';
         } else if (consoleType === "pce") {
           if (badgeY) badgeY.style.display = "none";
           if (badgeX) badgeX.style.display = "none";
           if (badgeTriggers) badgeTriggers.style.display = "none";
-          badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : II';
-          badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : I';
+          badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5 / K</span> : II';
+          badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6 / L</span> : I';
         } else if (consoleType === "gba") {
           if (badgeY) badgeY.style.display = "none";
           if (badgeX) badgeX.style.display = "none";
           if (badgeTriggers) {
             badgeTriggers.style.display = "inline";
-            badgeTriggers.innerHTML = '<span class="rv-kbd">7</span> L / <span class="rv-kbd">9</span> R';
+            badgeTriggers.innerHTML = '<span class="rv-kbd">7 / U</span> L / <span class="rv-kbd">9 / P</span> R';
           }
-          badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
-          badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : A';
+          badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5 / K</span> : B';
+          badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6 / L</span> : A';
         } else if (consoleType === "megadrive") {
           if (badgeY) {
             badgeY.style.display = "inline";
-            badgeY.innerHTML = '<span class="rv-kbd">4</span> : A';
+            badgeY.innerHTML = '<span class="rv-kbd">4 / I</span> : A';
           }
           if (badgeX) badgeX.style.display = "none";
           if (badgeTriggers) badgeTriggers.style.display = "none";
-          badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
-          badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : C';
+          badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5 / K</span> : B';
+          badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6 / L</span> : C';
         } else if (consoleType === "ps1" || consoleType === "psp") {
           if (badgeY) {
             badgeY.style.display = "inline";
-            badgeY.innerHTML = '<span class="rv-kbd">4</span> : □ Carré';
+            badgeY.innerHTML = '<span class="rv-kbd">4 / I</span> : □ Carré';
           }
-          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : ✕ Croix';
-          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : ○ Rond';
+          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5 / K</span> : ✕ Croix';
+          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6 / L</span> : ○ Rond';
           if (badgeX) {
             badgeX.style.display = "inline";
-            badgeX.innerHTML = '<span class="rv-kbd">8</span> : △ Triangle';
+            badgeX.innerHTML = '<span class="rv-kbd">8 / O</span> : △ Triangle';
           }
           if (badgeTriggers) {
             badgeTriggers.style.display = "inline";
-            badgeTriggers.innerHTML = '<span class="rv-kbd">7</span> L / <span class="rv-kbd">9</span> R';
+            badgeTriggers.innerHTML = '<span class="rv-kbd">7 / U</span> L / <span class="rv-kbd">9 / P</span> R';
           }
         } else if (consoleType === "nds") {
           if (badgeY) {
             badgeY.style.display = "inline";
-            badgeY.innerHTML = '<span class="rv-kbd">4</span> : Y';
+            badgeY.innerHTML = '<span class="rv-kbd">4 / I</span> : Y';
           }
-          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
-          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : A';
+          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5 / K</span> : B';
+          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6 / L</span> : A';
           if (badgeX) {
             badgeX.style.display = "inline";
-            badgeX.innerHTML = '<span class="rv-kbd">8</span> : X';
+            badgeX.innerHTML = '<span class="rv-kbd">8 / O</span> : X';
           }
           if (badgeTriggers) {
             badgeTriggers.style.display = "inline";
-            badgeTriggers.innerHTML = '<span class="rv-kbd">7</span> L / <span class="rv-kbd">9</span> R / 🖊️ Stylet';
+            badgeTriggers.innerHTML = '<span class="rv-kbd">7 / U</span> L / <span class="rv-kbd">9 / P</span> R / 🖊️ Stylet';
           }
         } else {
           // SNES & Arcade
           if (badgeY) {
             badgeY.style.display = "inline";
-            badgeY.innerHTML = '<span class="rv-kbd">4</span> : Y';
+            badgeY.innerHTML = '<span class="rv-kbd">4 / I</span> : Y';
           }
-          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5</span> : B';
-          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6</span> : A';
+          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5 / K</span> : B';
+          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6 / L</span> : A';
           if (badgeX) {
             badgeX.style.display = "inline";
-            badgeX.innerHTML = '<span class="rv-kbd">8</span> : X';
+            badgeX.innerHTML = '<span class="rv-kbd">8 / O</span> : X';
           }
           if (badgeTriggers) {
             badgeTriggers.style.display = "inline";
-            badgeTriggers.innerHTML = '<span class="rv-kbd">7</span> L / <span class="rv-kbd">9</span> R';
+            badgeTriggers.innerHTML = '<span class="rv-kbd">7 / U</span> L / <span class="rv-kbd">9 / P</span> R';
           }
         }
       }
@@ -5005,6 +5205,7 @@
       const cType = this.identifierConsole(nomFichier);
       const conf = CONSOLES_CONF[cType] || CONSOLES_CONF.nes;
       this.jeuEnCoursType = cType;
+      this.appliquerTailleEtDisposition();
       this.adapterAideTouches(cType);
 
       status.textContent = `⏳ Invocation de "${nomFichier}" (${conf.label})...`;
@@ -5080,6 +5281,10 @@
                   frame.contentWindow.postMessage({
                     type: "SET_VOLUME",
                     volume: this.volumeActuel
+                  }, "*");
+                  frame.contentWindow.postMessage({
+                    type: "SET_DS_LAYOUT",
+                    layout: this.dispositionDS
                   }, "*");
                   if (this.pendingNdsSave) {
                     frame.contentWindow.postMessage({
@@ -5810,6 +6015,9 @@
       const container = document.getElementById("rv-game-container");
       if (!container) return;
       container.classList.remove("rv-is-nds");
+      container.classList.remove("rv-is-psp");
+      this.jeuEnCoursType = null;
+      this.appliquerTailleEtDisposition();
 
       const isConnected = this.isCloudConnected();
       const user = localStorage.getItem("rv_vps_user") || "Hibouxe";
@@ -5879,6 +6087,7 @@
       window.addEventListener("keyup", this.boundKeyHandler);
 
       this.appliquerVolume(this.volumeActuel, false);
+      this.appliquerTailleEtDisposition();
       this.demarrerGamepadLoop();
 
       // Charger la bibliothèque dynamique selon le compte actif (Invité vs Archiviste)

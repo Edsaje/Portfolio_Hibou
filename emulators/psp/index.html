@@ -641,6 +641,7 @@
       <button class="psp-btn-icon" id="psp-btn-pad" title="Afficher ou masquer la manette virtuelle tactile">📱 Manette</button>
       <button class="psp-btn-icon" id="psp-btn-fps" title="Afficher ou masquer le compteur FPS">🟢 FPS</button>
       <button class="psp-btn-icon" id="psp-btn-speed" title="Changer la vitesse d'émulation">⚡ 1.0x</button>
+      <button class="psp-btn-icon" id="psp-btn-scale" title="Ajuster la taille de l'écran PSP (1.0x, 1.5x, Fit)">🔍 1.0x</button>
       <button class="psp-btn-icon" id="psp-btn-save" title="Sauvegarder l'état dans le Cloud VPS">💾 Sauvegarder</button>
       <button class="psp-btn-icon" id="psp-btn-restart" title="Recharger la relique PSP">🔄 Redémarrer</button>
       <button class="psp-btn-icon" id="psp-btn-fs" title="Plein Écran">⛶ Plein Écran</button>
@@ -732,67 +733,63 @@
           <thead>
             <tr>
               <th>Bouton PSP</th>
-              <th>Clavier AZERTY</th>
-              <th>Clavier QWERTY</th>
-              <th>Action (ex: LocoRoco)</th>
+              <th>Standard Sanctuaire</th>
+              <th>Pavé Numérique</th>
+              <th>Action / Description</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><strong style="color:#60a5fa;">✕ Croix</strong></td>
-              <td><kbd>W</kbd> ou <kbd>Espace</kbd></td>
-              <td><kbd>Z</kbd> ou <kbd>Espace</kbd></td>
+              <td><kbd>K</kbd> (ou <kbd>Espace</kbd>)</td>
+              <td><kbd>5</kbd></td>
               <td>Sauter / Valider</td>
             </tr>
             <tr>
               <td><strong style="color:#ef4444;">◯ Rond</strong></td>
-              <td><kbd>X</kbd> ou <kbd>C</kbd></td>
-              <td><kbd>X</kbd> ou <kbd>C</kbd></td>
-              <td>Séparer / Rassembler</td>
+              <td><kbd>L</kbd></td>
+              <td><kbd>6</kbd></td>
+              <td>Séparer / Action secondaire</td>
             </tr>
             <tr>
               <td><strong style="color:#f472b6;">▢ Carré</strong></td>
-              <td><kbd>Q</kbd></td>
-              <td><kbd>A</kbd></td>
-              <td>Action secondaire</td>
+              <td><kbd>I</kbd></td>
+              <td><kbd>4</kbd></td>
+              <td>Attaquer / Tirer</td>
             </tr>
             <tr>
               <td><strong style="color:#34d399;">△ Triangle</strong></td>
-              <td><kbd>S</kbd></td>
-              <td><kbd>S</kbd></td>
-              <td>Menu / Observer</td>
+              <td><kbd>O</kbd></td>
+              <td><kbd>8</kbd></td>
+              <td>Menu / Action tertiaire</td>
             </tr>
             <tr>
               <td><strong style="color:#d4af37;">Gâchette L</strong></td>
-              <td><kbd>A</kbd></td>
-              <td><kbd>Q</kbd></td>
-              <td>Pencher le monde à gauche</td>
+              <td><kbd>U</kbd></td>
+              <td><kbd>7</kbd></td>
+              <td>Gâchette gauche (L1)</td>
             </tr>
             <tr>
               <td><strong style="color:#d4af37;">Gâchette R</strong></td>
-              <td><kbd>Z</kbd></td>
-              <td><kbd>W</kbd></td>
-              <td>Pencher le monde à droite</td>
+              <td><kbd>P</kbd></td>
+              <td><kbd>9</kbd></td>
+              <td>Gâchette droite (R1)</td>
             </tr>
             <tr>
               <td><strong>L + R ensemble</strong></td>
-              <td><kbd>A</kbd> + <kbd>Z</kbd></td>
-              <td><kbd>Q</kbd> + <kbd>W</kbd></td>
+              <td><kbd>U</kbd> + <kbd>P</kbd></td>
+              <td><kbd>7</kbd> + <kbd>9</kbd></td>
               <td>Grand Saut LocoRoco</td>
             </tr>
             <tr>
-              <td><strong>Croix Dir. (D-Pad)</strong></td>
-              <td colspan="2"><kbd>Flèches ↑ ↓ ← →</kbd></td>
-              <td>Se déplacer</td>
-            </tr>
-            <tr>
-              <td><strong>Stick Analogique</strong></td>
-              <td colspan="2"><kbd>I</kbd> (Haut), <kbd>K</kbd> (Bas), <kbd>J</kbd> (G), <kbd>L</kbd> (D)</td>
-              <td>Vue / Direction 360°</td>
+              <td><strong>Déplacement (D-Pad & Stick)</strong></td>
+              <td><kbd>Z</kbd> <kbd>Q</kbd> <kbd>S</kbd> <kbd>D</kbd></td>
+              <td><kbd>Flèches ↑ ↓ ← →</kbd></td>
+              <td>Se déplacer (Croix & Stick 360°)</td>
             </tr>
             <tr>
               <td><strong>START</strong></td>
-              <td colspan="2"><kbd>Espace</kbd> ou <kbd>Entrée</kbd></td>
+              <td colspan="2"><kbd>B</kbd> ou <kbd>Entrée</kbd></td>
               <td>Pause / Démarrer</td>
             </tr>
             <tr>
@@ -809,7 +806,8 @@
         </table>
       </div>
       <div style="font-size: 0.8rem; color: #a8b8ad; line-height: 1.5; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px solid rgba(212,175,55,0.2);">
-        💡 <strong>Manettes USB / Bluetooth :</strong> Détection automatique (PlayStation DualSense, Xbox, Switch Pro). Les touches sont mappées nativement.<br>
+        💡 <strong>Harmonisation unifiée :</strong> Jouez à deux mains comme sur les autres émulateurs du Sanctuaire (main gauche sur <kbd>ZSQD</kbd>, main droite sur <kbd>O K I L</kbd> ou pavé numérique <kbd>8 5 4 6</kbd>, gâchettes sur <kbd>U</kbd> / <kbd>P</kbd>).<br>
+        🎮 <strong>Manettes USB / Bluetooth :</strong> Détection automatique (PlayStation DualSense, Xbox, Switch Pro). Les touches sont mappées nativement.<br>
         📱 <strong>Tactile & Mobile :</strong> La manette virtuelle est activable à tout moment avec le bouton <strong>📱 Manette</strong> dans la barre supérieure.
       </div>
       <div class="psp-modal-footer">
@@ -840,6 +838,7 @@
       const hudText = document.getElementById("psp-hud-text");
       const btnFs = document.getElementById("psp-btn-fs");
       const btnSpeed = document.getElementById("psp-btn-speed");
+      const btnScale = document.getElementById("psp-btn-scale");
       const btnSave = document.getElementById("psp-btn-save");
       const btnRestart = document.getElementById("psp-btn-restart");
       const btnControls = document.getElementById("psp-btn-controls");
@@ -1031,24 +1030,24 @@
         }
       }
 
-      // Table des touches virtuelles
+      // Table des touches virtuelles alignée sur le standard unifié du Sanctuaire
       const VIRTUAL_KEY_MAP = {
         "Up":       { code: "ArrowUp",    key: "ArrowUp",   keyCode: 38 },
         "Down":     { code: "ArrowDown",  key: "ArrowDown", keyCode: 40 },
         "Left":     { code: "ArrowLeft",  key: "ArrowLeft", keyCode: 37 },
         "Right":    { code: "ArrowRight", key: "ArrowRight",keyCode: 39 },
-        "Cross":    { code: "KeyZ",       key: "z",         keyCode: 90 },
-        "Circle":   { code: "KeyX",       key: "x",         keyCode: 88 },
-        "Square":   { code: "KeyA",       key: "a",         keyCode: 65 },
-        "Triangle": { code: "KeyS",       key: "s",         keyCode: 83 },
-        "L":        { code: "KeyQ",       key: "q",         keyCode: 81 },
-        "R":        { code: "KeyW",       key: "w",         keyCode: 87 },
-        "Start":    { code: "Space",      key: " ",         keyCode: 32 },
-        "Select":   { code: "Enter",      key: "Enter",     keyCode: 13 },
-        "AnUp":     { code: "KeyI",       key: "i",         keyCode: 73 },
-        "AnDown":   { code: "KeyK",       key: "k",         keyCode: 75 },
-        "AnLeft":   { code: "KeyJ",       key: "j",         keyCode: 74 },
-        "AnRight":  { code: "KeyL",       key: "l",         keyCode: 76 }
+        "Cross":    { code: "KeyK",       key: "k",         keyCode: 75 },
+        "Circle":   { code: "KeyL",       key: "l",         keyCode: 76 },
+        "Square":   { code: "KeyI",       key: "i",         keyCode: 73 },
+        "Triangle": { code: "KeyO",       key: "o",         keyCode: 79 },
+        "L":        { code: "KeyU",       key: "u",         keyCode: 85 },
+        "R":        { code: "KeyP",       key: "p",         keyCode: 80 },
+        "Start":    { code: "KeyB",       key: "b",         keyCode: 66 },
+        "Select":   { code: "KeyV",       key: "v",         keyCode: 86 },
+        "AnUp":     { code: "ArrowUp",    key: "ArrowUp",   keyCode: 38 },
+        "AnDown":   { code: "ArrowDown",  key: "ArrowDown", keyCode: 40 },
+        "AnLeft":   { code: "ArrowLeft",  key: "ArrowLeft", keyCode: 37 },
+        "AnRight":  { code: "ArrowRight", key: "ArrowRight",keyCode: 39 }
       };
 
       // 5. Initialisation du Module Emscripten
@@ -1123,25 +1122,25 @@ ShowTouchControls = False
 `;
                 FS.writeFile(iniDir + "/ppsspp.ini", new TextEncoder().encode(iniContent));
 
-                // controls.ini complet (AZERTY + QWERTY + Gamepad)
+                // controls.ini complet : Standard unifié du Sanctuaire (ZSQD + O/K/I/L + U/P + Pavé Num + Gamepad)
                 const controlsContent = `
 [ControlMapping]
-Up = 1-19
-Down = 1-20
-Left = 1-21
-Right = 1-22
-Circle = 1-52,1-31,10-189
-Cross = 1-54,1-51,1-62,10-190
-Square = 1-29,1-45,10-193
-Triangle = 1-47,10-191
-Start = 1-62,1-66,10-106
-Select = 1-50,1-66,1-59,10-4
-L = 1-45,1-29,10-196
-R = 1-51,1-54,10-197
-An.Up = 1-37
-An.Down = 1-39
-An.Left = 1-38
-An.Right = 1-40
+Up = 1-19,1-54,1-51
+Down = 1-20,1-47
+Left = 1-21,1-29,1-45
+Right = 1-22,1-32
+Circle = 1-40,1-150,1-52,10-189,10-97
+Cross = 1-39,1-149,1-54,1-62,10-190,10-96
+Square = 1-37,1-148,1-29,1-45,10-193,10-99
+Triangle = 1-43,1-152,1-47,10-191,10-100
+Start = 1-30,1-66,1-62,10-106,10-108
+Select = 1-50,1-59,10-4,10-109
+L = 1-49,1-151,1-45,10-196,10-102
+R = 1-44,1-153,1-51,10-197,10-103
+An.Up = 1-19,1-54,1-51,1-48
+An.Down = 1-20,1-47,1-35
+An.Left = 1-21,1-29,1-45,1-34
+An.Right = 1-22,1-32,1-36
 Pause = 1-111
 FastForward = 1-61
 `;
@@ -1421,6 +1420,37 @@ FastForward = 1-61
           currentSpeed = (currentSpeed === 1.0) ? 1.5 : (currentSpeed === 1.5) ? 2.0 : 1.0;
           btnSpeed.textContent = "⚡ " + currentSpeed.toFixed(1) + "x";
           setStatus("⚡ Vitesse d'émulation : " + currentSpeed.toFixed(1) + "x", "#34d399");
+        });
+      }
+
+      let currentScale = 1.0;
+      function applyPspScale(scale) {
+        currentScale = scale;
+        if (canvas) {
+          if (scale === 1.0) {
+            canvas.style.maxWidth = "960px";
+            canvas.style.maxHeight = "544px";
+            if (btnScale) btnScale.textContent = "🔍 1.0x";
+            setStatus("🔍 Échelle d'écran : 1.0x (Standard)", "#34d399");
+          } else if (scale === 1.5) {
+            canvas.style.maxWidth = "1200px";
+            canvas.style.maxHeight = "680px";
+            if (btnScale) btnScale.textContent = "🔍 1.5x";
+            setStatus("🔍 Échelle d'écran : 1.5x (Agrandie)", "#34d399");
+          } else {
+            canvas.style.maxWidth = "100%";
+            canvas.style.maxHeight = "100%";
+            if (btnScale) btnScale.textContent = "🔍 Fit";
+            setStatus("🔍 Échelle d'écran : Plein format (Fit)", "#34d399");
+          }
+        }
+      }
+
+      if (btnScale) {
+        btnScale.addEventListener("click", () => {
+          if (currentScale === 1.0) applyPspScale(1.5);
+          else if (currentScale === 1.5) applyPspScale("fit");
+          else applyPspScale(1.0);
         });
       }
 
