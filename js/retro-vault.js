@@ -319,6 +319,21 @@
           try {
             const parsed = JSON.parse(cached);
             if (Array.isArray(parsed) && parsed.length > 0) {
+              const hasDc = parsed.some(j => j.console === "dreamcast");
+              if (!hasDc) {
+                parsed.push({
+                  nom: "Crazy Taxi (Europe) (En,Ja).chd",
+                  titre: "Crazy Taxi (Dreamcast)",
+                  console: "dreamcast",
+                  desc: "L'arcade culte sur Sega Dreamcast propulsé par Flycast WASM JIT à 60 FPS (1999)."
+                });
+                parsed.push({
+                  nom: "console-dc-launcher",
+                  titre: "Sega Dreamcast — Moteur 128-bit 60 FPS",
+                  console: "dreamcast",
+                  desc: "Moteur Flycast WebAssembly avec JIT SH4 & WebGL2. Glissez ou insérez un fichier .chd, .cdi ou .gdi."
+                });
+              }
               this.tousLesJeux = parsed;
               return;
             }
@@ -5119,7 +5134,7 @@
       grid.innerHTML = "";
 
       // Mise à jour dynamique des compteurs dans les onglets de consoles
-      const counts = { all: this.tousLesJeux.length, psp: 0, ps1: 0, nds: 0, snes: 0, gba: 0, gb: 0, nes: 0, megadrive: 0, pce: 0 };
+      const counts = { all: this.tousLesJeux.length, dreamcast: 0, psp: 0, ps1: 0, nds: 0, snes: 0, gba: 0, gb: 0, nes: 0, megadrive: 0, pce: 0 };
       for (const j of this.tousLesJeux) {
         if (counts[j.console] !== undefined) counts[j.console]++;
       }
@@ -5131,6 +5146,7 @@
         }
       };
       updateTab("all", "🔮 TOUTES");
+      updateTab("dreamcast", "🌀 DREAMCAST");
       updateTab("psp", "🔴 PSP");
       updateTab("ps1", "⚔️ PLAYSTATION 1");
       updateTab("nds", "🕹️ NINTENDO DS");
@@ -5288,7 +5304,7 @@
         const isLauncher = nomFichier.includes("console-nds-launcher") || nomFichier.includes("console-psp-launcher") || nomFichier.includes("console-dc-launcher");
         let romBlob = customBlob;
 
-        if (!romBlob && !isLauncher && cType !== "psp" && cType !== "dreamcast") {
+        if (!romBlob && !isLauncher && cType !== "psp") {
           if (!this.isCloudConnected()) {
             throw new Error("Relique inaccessible en mode invité.");
           }

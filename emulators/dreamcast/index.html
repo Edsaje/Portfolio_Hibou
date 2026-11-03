@@ -988,17 +988,35 @@
       if (autoGame) {
         loader.style.display = "flex";
         loaderText.textContent = `Récupération de la relique "${autoGame}"...`;
-        const romUrl = `../../api/saves.php?action=get_rom&rom=${encodeURIComponent(autoGame)}`;
-        fetch(romUrl)
-          .then(res => {
-            if (!res.ok) throw new Error("Impossible de récupérer la relique depuis le sanctuaire distant.");
-            return res.blob();
-          })
-          .then(blob => launchRom(blob, autoGame))
-          .catch(err => {
-            console.warn("Échec récupération automatique distant:", err);
-            loader.style.display = "none";
-          });
+        const romToken = urlParams.get("token") || "";
+        const tokenQuery = romToken ? `?token=${encodeURIComponent(romToken)}` : "";
+        const urls = [
+          `../../assets/vault/${encodeURI(autoGame)}${tokenQuery}`,
+          `https://quentinbeaud.com/assets/vault/${encodeURI(autoGame)}${tokenQuery}`,
+          `https://roms.quentinbeaud.com/vault/${encodeURI(autoGame)}`
+        ];
+        const headers = romToken ? { "Authorization": `Bearer ${romToken}` } : {};
+
+        (async () => {
+          let blob = null;
+          for (const u of urls) {
+            try {
+              const res = await fetch(u, { headers });
+              if (res.ok) {
+                blob = await res.blob();
+                break;
+              }
+            } catch(e) {}
+          }
+          if (blob) {
+            launchRom(blob, autoGame);
+          } else {
+            throw new Error("Impossible de récupérer la relique depuis le sanctuaire.");
+          }
+        })().catch(err => {
+          console.warn("Échec récupération automatique distant:", err);
+          loader.style.display = "none";
+        });
       }
 
       // Déverrouillage audio lors d'un clic

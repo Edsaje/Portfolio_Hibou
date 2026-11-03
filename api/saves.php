@@ -404,6 +404,30 @@ if ($action === 'library' && $_SERVER['REQUEST_METHOD'] === 'GET') {
             }
         }
     }
+    if ($roms !== null) {
+        $hasDcLauncher = false;
+        $hasCrazyTaxi = false;
+        foreach ($roms as $r) {
+            if (($r['nom'] ?? '') === 'console-dc-launcher') $hasDcLauncher = true;
+            if (($r['nom'] ?? '') === 'Crazy Taxi (Europe) (En,Ja).chd') $hasCrazyTaxi = true;
+        }
+        if (!$hasCrazyTaxi) {
+            $roms[] = [
+                'nom' => 'Crazy Taxi (Europe) (En,Ja).chd',
+                'titre' => 'Crazy Taxi (Dreamcast)',
+                'console' => 'dreamcast',
+                'desc' => "L'arcade culte sur Sega Dreamcast propulsé par Flycast WASM JIT à 60 FPS (1999)."
+            ];
+        }
+        if (!$hasDcLauncher) {
+            $roms[] = [
+                'nom' => 'console-dc-launcher',
+                'titre' => 'Sega Dreamcast — Moteur 128-bit 60 FPS',
+                'console' => 'dreamcast',
+                'desc' => "Moteur Flycast WebAssembly avec JIT SH4 & WebGL2. Glissez ou insérez un fichier .chd, .cdi ou .gdi."
+            ];
+        }
+    }
     if ($roms === null) {
         $roms = [
             [

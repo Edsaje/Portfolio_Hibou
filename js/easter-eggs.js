@@ -199,7 +199,7 @@
         if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
         const file = e.dataTransfer.files[0];
         const ext = file.name.split(".").pop().toLowerCase();
-        const validExtensions = ["nes", "sfc", "smc", "gba", "gb", "gbc", "md", "bin", "gen", "zip", "iso", "cue", "chd", "pbp", "img", "pce", "nds", "cso"];
+        const validExtensions = ["nes", "sfc", "smc", "gba", "gb", "gbc", "md", "bin", "gen", "zip", "iso", "cue", "chd", "pbp", "img", "pce", "nds", "cso", "cdi", "gdi"];
 
         if (validExtensions.includes(ext)) {
           this.openRetroVault(file);
