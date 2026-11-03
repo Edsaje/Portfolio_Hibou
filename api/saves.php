@@ -427,6 +427,29 @@ if ($action === 'library' && $_SERVER['REQUEST_METHOD'] === 'GET') {
                 'desc' => "Moteur Flycast WebAssembly avec JIT SH4 & WebGL2. Glissez ou insérez un fichier .chd, .cdi ou .gdi."
             ];
         }
+
+        $hasPs2Launcher = false;
+        $hasMvc2 = false;
+        foreach ($roms as $r) {
+            if (($r['nom'] ?? '') === 'console-ps2-launcher') $hasPs2Launcher = true;
+            if (($r['nom'] ?? '') === 'Marvel vs. Capcom 2 - New Age of Heroes (USA).chd') $hasMvc2 = true;
+        }
+        if (!$hasMvc2) {
+            $roms[] = [
+                'nom' => 'Marvel vs. Capcom 2 - New Age of Heroes (USA).chd',
+                'titre' => 'Marvel vs. Capcom 2 : New Age of Heroes',
+                'console' => 'ps2',
+                'desc' => "L'apogée légendaire du versus fighting 3v3 de Capcom sur PlayStation 2 (2002), propulsé par Play! WebAssembly à 60 FPS."
+            ];
+        }
+        if (!$hasPs2Launcher) {
+            $roms[] = [
+                'nom' => 'console-ps2-launcher',
+                'titre' => 'PlayStation 2 — Sanctuaire Émotion Play!',
+                'console' => 'ps2',
+                'desc' => "Moteur Play! WebAssembly 60 FPS avec lecture ISO / CHD en streaming. Glissez ou insérez un fichier .iso, .chd, .cso ou .bin."
+            ];
+        }
     }
     if ($roms === null) {
         $roms = [
@@ -579,6 +602,18 @@ if ($action === 'library' && $_SERVER['REQUEST_METHOD'] === 'GET') {
                 'titre' => 'Sega Dreamcast — Moteur 128-bit 60 FPS',
                 'console' => 'dreamcast',
                 'desc' => "Moteur Flycast WebAssembly avec JIT SH4 & WebGL2. Glissez ou insérez un fichier .chd, .cdi ou .gdi."
+            ],
+            [
+                'nom' => 'Marvel vs. Capcom 2 - New Age of Heroes (USA).chd',
+                'titre' => 'Marvel vs. Capcom 2 : New Age of Heroes',
+                'console' => 'ps2',
+                'desc' => "L'apogée légendaire du versus fighting 3v3 de Capcom sur PlayStation 2 (2002), propulsé par Play! WebAssembly à 60 FPS."
+            ],
+            [
+                'nom' => 'console-ps2-launcher',
+                'titre' => 'PlayStation 2 — Sanctuaire Émotion Play!',
+                'console' => 'ps2',
+                'desc' => "Moteur Play! WebAssembly 60 FPS avec lecture ISO / CHD en streaming. Glissez ou insérez un fichier .iso, .chd, .cso ou .bin."
             ]
         ];
     }

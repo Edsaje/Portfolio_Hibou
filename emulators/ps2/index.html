@@ -1,0 +1,1197 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Sanctuaire PlayStation 2 — Moteur Emotion Play! — Quentin Beaud</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="coi-serviceworker.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 20%, #061129 0%, #020617 80%, #01030a 100%);
+      color: #e2e8f0;
+      font-family: 'Outfit', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+    }
+
+    /* En-tête Grimoire Dédié */
+    .ps2-header {
+      width: 100%;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background: rgba(3, 7, 18, 0.92);
+      border-bottom: 1px solid rgba(59, 130, 246, 0.28);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .ps2-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ps2-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .ps2-back-btn:hover {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: #3b82f6;
+      color: #93c5fd;
+    }
+
+    .ps2-title-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .ps2-title {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #60a5fa;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-shadow: 0 0 16px rgba(96, 165, 250, 0.4);
+    }
+
+    .ps2-chip {
+      font-size: 0.72rem;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      color: #93c5fd;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .ps2-status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 4px 10px;
+      border-radius: 20px;
+      color: #94a3b8;
+    }
+    .ps2-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f59e0b;
+      box-shadow: 0 0 8px #f59e0b;
+      transition: all 0.3s;
+    }
+    .ps2-status-dot.active {
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+    }
+    .ps2-status-dot.streaming {
+      background: #3b82f6;
+      box-shadow: 0 0 10px #3b82f6;
+      animation: pulseStreaming 1.4s infinite;
+    }
+
+    @keyframes pulseStreaming {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    .ps2-header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ps2-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      color: #cbd5e1;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .ps2-btn:hover {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: #60a5fa;
+      color: #fff;
+    }
+
+    .ps2-btn-gold {
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, rgba(180, 83, 9, 0.25) 100%);
+      border: 1px solid #d4af37;
+      color: #fef08a;
+    }
+    .ps2-btn-gold:hover {
+      background: linear-gradient(135deg, #d4af37 0%, #b45309 100%);
+      color: #050a14;
+      box-shadow: 0 0 16px rgba(212, 175, 55, 0.5);
+    }
+
+    /* Scène Centrale */
+    .ps2-stage {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      height: calc(100% - 54px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      overflow: hidden;
+    }
+
+    #outputCanvas {
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      background: #000;
+      display: none;
+      outline: none;
+    }
+
+    /* Zone de Drag & Drop / Initialisation */
+    .ps2-dropzone {
+      position: absolute;
+      inset: 20px;
+      border: 2px dashed rgba(59, 130, 246, 0.4);
+      border-radius: 16px;
+      background: radial-gradient(circle at center, rgba(14, 27, 61, 0.8) 0%, rgba(3, 7, 18, 0.95) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px 20px;
+      transition: all 0.3s;
+      z-index: 10;
+    }
+    .ps2-dropzone.dragover {
+      border-color: #60a5fa;
+      background: radial-gradient(circle at center, rgba(30, 58, 138, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+      box-shadow: inset 0 0 40px rgba(59, 130, 246, 0.4);
+    }
+
+    .ps2-monolith-icon {
+      font-size: 3.6rem;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 24px rgba(59, 130, 246, 0.7));
+      animation: floatAura 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes floatAura {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-8px); }
+    }
+
+    .ps2-drop-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      color: #93c5fd;
+      margin: 0 0 8px;
+      letter-spacing: 1px;
+    }
+
+    .ps2-drop-desc {
+      font-size: 0.92rem;
+      color: #94a3b8;
+      max-width: 540px;
+      line-height: 1.6;
+      margin: 0 0 24px;
+    }
+
+    .ps2-file-input {
+      display: none;
+    }
+
+    /* Loader Mystique / Streaming HUD */
+    .ps2-loader {
+      position: absolute;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.92);
+      backdrop-filter: blur(8px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .ps2-spinner {
+      width: 64px;
+      height: 64px;
+      border: 3px solid rgba(59, 130, 246, 0.2);
+      border-top-color: #60a5fa;
+      border-right-color: #d4af37;
+      border-radius: 50%;
+      animation: spinArcane 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spinArcane {
+      to { transform: rotate(360deg); }
+    }
+
+    .ps2-loader-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.25rem;
+      color: #60a5fa;
+      margin: 0 0 10px;
+    }
+
+    .ps2-loader-msg {
+      font-size: 0.88rem;
+      color: #cbd5e1;
+      max-width: 480px;
+      line-height: 1.5;
+      margin: 0 0 16px;
+    }
+
+    .ps2-progress-wrap {
+      width: 280px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .ps2-progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #60a5fa, #d4af37);
+      transition: width 0.2s ease-out;
+    }
+
+    /* Modale Contrôles */
+    .ps2-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+    .ps2-modal-backdrop.open {
+      display: flex;
+    }
+    .ps2-modal {
+      width: 90%;
+      max-width: 580px;
+      max-height: 85vh;
+      overflow-y: auto;
+      background: #091226;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      border-radius: 12px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+      padding: 24px;
+      position: relative;
+    }
+    .ps2-modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .ps2-modal-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      color: #60a5fa;
+      margin: 0;
+    }
+    .ps2-modal-close {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.4rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .ps2-modal-close:hover { color: #fff; }
+
+    .ps2-control-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .ps2-control-table th, .ps2-control-table td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .ps2-control-table th {
+      color: #60a5fa;
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+    }
+    .ps2-kbd {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: #fef08a;
+    }
+
+    /* Manette Virtuelle Mobile (optionnelle) */
+    .ps2-vpad {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: none;
+      z-index: 40;
+    }
+    .ps2-vpad.active {
+      display: block;
+    }
+    .ps2-vpad-dpad {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      width: 130px;
+      height: 130px;
+      pointer-events: auto;
+    }
+    .ps2-vpad-buttons {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      width: 130px;
+      height: 130px;
+      pointer-events: auto;
+    }
+    .vpad-btn {
+      position: absolute;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(14, 27, 61, 0.75);
+      border: 1.5px solid rgba(96, 165, 250, 0.45);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+      user-select: none;
+      touch-action: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .vpad-btn:active {
+      background: rgba(59, 130, 246, 0.9);
+      border-color: #93c5fd;
+      transform: scale(0.92);
+    }
+
+    @media (max-width: 768px) {
+      .ps2-chip { display: none; }
+      .ps2-title { font-size: 0.92rem; }
+      .ps2-header { padding: 0 10px; }
+      .ps2-btn span { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- En-tête -->
+  <header class="ps2-header">
+    <div class="ps2-header-left">
+      <button class="ps2-back-btn" id="btn-back" title="Retour au Sanctuaire RetroVault">
+        ← <span>Retour</span>
+      </button>
+      <div class="ps2-title-wrap">
+        <div class="ps2-title">
+          <span>🔮</span> Sanctuaire PlayStation 2
+        </div>
+        <span class="ps2-chip">Emotion Engine 60 FPS</span>
+      </div>
+      <div class="ps2-status-chip">
+        <span class="ps2-status-dot" id="status-dot"></span>
+        <span id="status-text">En attente d'invocation</span>
+      </div>
+    </div>
+
+    <div class="ps2-header-right">
+      <button class="ps2-btn" id="btn-controls" title="Voir les contrôles Clavier & Manette">
+        🎮 <span>Contrôles</span>
+      </button>
+      <button class="ps2-btn" id="btn-vpad" title="Bascule manette tactile mobile">
+        📱 <span>Tactile</span>
+      </button>
+      <button class="ps2-btn" id="btn-save" title="Sauvegarder l'état (Slot Rapide)">
+        💾 <span>Sauvegarder</span>
+      </button>
+      <button class="ps2-btn" id="btn-load" title="Charger l'état (Slot Rapide)">
+        📂 <span>Charger</span>
+      </button>
+      <button class="ps2-btn ps2-btn-gold" id="btn-fullscreen" title="Basculer en Plein Écran">
+        ⛶ <span>Plein Écran</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Scène Principale -->
+  <main class="ps2-stage" id="stage">
+    <canvas id="outputCanvas" width="640" height="480" tabindex="-1"></canvas>
+
+    <!-- Zone de Dépôt / Relique Locale -->
+    <div class="ps2-dropzone" id="dropzone">
+      <div class="ps2-monolith-icon">🔮</div>
+      <h2 class="ps2-drop-title">Invoquer une Relique PlayStation 2</h2>
+      <p class="ps2-drop-desc">
+        Glissez-déposez une image disque <strong>.iso</strong>, <strong>.chd</strong>, <strong>.cso</strong>, <strong>.bin</strong> ou un exécutable <strong>.elf</strong>.<br>
+        Le moteur <em>Play! WebAssembly</em> exécutera l'émulation 128-bit à 60 FPS avec streaming direct.
+      </p>
+      <input type="file" id="file-input" class="ps2-file-input" accept=".iso,.chd,.cso,.bin,.elf">
+      <button class="ps2-btn ps2-btn-gold" id="btn-browse" style="padding: 10px 24px; font-size: 0.95rem;">
+        📂 Parcourir vos Reliques Locales
+      </button>
+    </div>
+
+    <!-- Écran de Chargement / Streaming -->
+    <div class="ps2-loader" id="loader">
+      <div class="ps2-spinner"></div>
+      <h3 class="ps2-loader-title" id="loader-title">Invocation de la Relique...</h3>
+      <p class="ps2-loader-msg" id="loader-msg">Initialisation du moteur Emotion Engine WebAssembly...</p>
+      <div class="ps2-progress-wrap">
+        <div class="ps2-progress-bar" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Manette Virtuelle Mobile (Touch) -->
+    <div class="ps2-vpad" id="vpad">
+      <!-- Croix directionnelle -->
+      <div class="ps2-vpad-dpad">
+        <div class="vpad-btn" style="top: 0; left: 44px;" data-button="12">▲</div>
+        <div class="vpad-btn" style="bottom: 0; left: 44px;" data-button="13">▼</div>
+        <div class="vpad-btn" style="top: 44px; left: 0;" data-button="14">◀</div>
+        <div class="vpad-btn" style="top: 44px; right: 0;" data-button="15">▶</div>
+      </div>
+      <!-- Boutons PlayStation -->
+      <div class="ps2-vpad-buttons">
+        <div class="vpad-btn" style="top: 0; left: 44px; color: #38bdf8;" data-button="3">△</div>
+        <div class="vpad-btn" style="bottom: 0; left: 44px; color: #4ade80;" data-button="0">✕</div>
+        <div class="vpad-btn" style="top: 44px; left: 0; color: #f472b6;" data-button="2">▢</div>
+        <div class="vpad-btn" style="top: 44px; right: 0; color: #f87171;" data-button="1">◯</div>
+      </div>
+      <!-- Gâchettes L1 / R1 & Start / Select -->
+      <div class="vpad-btn" style="top: 16px; left: 24px; width: 60px; border-radius: 8px;" data-button="4">L1</div>
+      <div class="vpad-btn" style="top: 16px; right: 24px; width: 60px; border-radius: 8px;" data-button="5">R1</div>
+      <div class="vpad-btn" style="bottom: 24px; left: calc(50% - 50px); width: 44px; height: 26px; border-radius: 4px; font-size: 0.65rem;" data-button="8">SELECT</div>
+      <div class="vpad-btn" style="bottom: 24px; left: calc(50% + 6px); width: 44px; height: 26px; border-radius: 4px; font-size: 0.65rem;" data-button="9">START</div>
+    </div>
+  </main>
+
+  <!-- Modale des Contrôles -->
+  <div class="ps2-modal-backdrop" id="modal-controls">
+    <div class="ps2-modal">
+      <div class="ps2-modal-head">
+        <h3 class="ps2-modal-title">⚔️ Grimoire des Contrôles PlayStation 2</h3>
+        <button class="ps2-modal-close" id="modal-close">&times;</button>
+      </div>
+      <table class="ps2-control-table">
+        <thead>
+          <tr>
+            <th>Action DualShock 2</th>
+            <th>Manette USB / BT</th>
+            <th>Clavier Sanctuaire</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Croix Directionnelle</td>
+            <td>D-Pad Haut/Bas/G/D</td>
+            <td><span class="ps2-kbd">Flèches</span> ou <span class="ps2-kbd">Z</span> <span class="ps2-kbd">S</span> <span class="ps2-kbd">Q</span> <span class="ps2-kbd">D</span></td>
+          </tr>
+          <tr>
+            <td>Croix ✕ (Action / Saut)</td>
+            <td>Bouton A / Cross</td>
+            <td><span class="ps2-kbd">K</span> ou <span class="ps2-kbd">X</span></td>
+          </tr>
+          <tr>
+            <td>Rond ◯ (Attaque / Retour)</td>
+            <td>Bouton B / Circle</td>
+            <td><span class="ps2-kbd">L</span> ou <span class="ps2-kbd">C</span></td>
+          </tr>
+          <tr>
+            <td>Carré ▢ (Coup Léger)</td>
+            <td>Bouton X / Square</td>
+            <td><span class="ps2-kbd">J</span> ou <span class="ps2-kbd">V</span></td>
+          </tr>
+          <tr>
+            <td>Triangle △ (Coup Fort)</td>
+            <td>Bouton Y / Triangle</td>
+            <td><span class="ps2-kbd">I</span> ou <span class="ps2-kbd">F</span></td>
+          </tr>
+          <tr>
+            <td>Gâchettes L1 / R1</td>
+            <td>LB / RB (L1/R1)</td>
+            <td><span class="ps2-kbd">U</span> / <span class="ps2-kbd">O</span> ou <span class="ps2-kbd">A</span> / <span class="ps2-kbd">E</span></td>
+          </tr>
+          <tr>
+            <td>Gâchettes L2 / R2</td>
+            <td>LT / RT (L2/R2)</td>
+            <td><span class="ps2-kbd">R</span> / <span class="ps2-kbd">T</span> ou <span class="ps2-kbd">Shift</span></td>
+          </tr>
+          <tr>
+            <td>Start / Pause</td>
+            <td>Bouton Start / Options</td>
+            <td><span class="ps2-kbd">Entrée</span></td>
+          </tr>
+          <tr>
+            <td>Select</td>
+            <td>Bouton Select / Share</td>
+            <td><span class="ps2-kbd">Espace</span></td>
+          </tr>
+          <tr>
+            <td>Sticks Analogiques</td>
+            <td>Sticks G & D</td>
+            <td>Sticks manette supportés</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 16px; font-size: 0.8rem; color: #94a3b8; line-height: 1.5;">
+        💡 <em>Les manettes PlayStation DualSense, DualShock 4, Xbox One/Series et Nintendo Switch Pro sont automatiquement détectées via la Gamepad API standard.</em>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts d'Émulation et Streaming WebAssembly -->
+  <script type="module">
+    import Play from './Play.js';
+
+    // --- 1. Lecteur de Relique Distante (HTTP Range Streaming 256 Ko) ---
+    const CHUNK_SIZE = 262144; // 256 Ko par bloc de streaming
+
+    class RemoteDiscReader {
+      constructor(url, size, token = null) {
+        this.url = url;
+        this.size = size;
+        this.token = token;
+        this.chunks = new Map();
+        this.pending = new Map();
+      }
+
+      static async open(url, token = null) {
+        const headers = { Range: "bytes=0-0" };
+        if (token) headers["Authorization"] = "Bearer " + token;
+        const res = await fetch(url, { headers });
+
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("Accès refusé au Sanctuaire de reliques (jeton HMAC invalide ou expiré).");
+        }
+        if (res.status !== 206) {
+          throw new Error(`Le serveur ne gère pas les requêtes de plage sur cette relique (HTTP ${res.status}).`);
+        }
+
+        const cr = res.headers.get("Content-Range") || "";
+        const total = Number(cr.split("/")[1]);
+        if (!Number.isFinite(total) || total <= 0) {
+          throw new Error(`Taille de relique indéterminée (Content-Range: "${cr}").`);
+        }
+
+        await res.arrayBuffer().catch(() => {});
+        return new RemoteDiscReader(url, total, token);
+      }
+
+      async fetchChunk(chunkIndex) {
+        const start = chunkIndex * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, this.size) - 1;
+        const headers = { Range: `bytes=${start}-${end}` };
+        if (this.token) headers["Authorization"] = "Bearer " + this.token;
+
+        const res = await fetch(this.url, { headers });
+        if (res.status !== 206) {
+          throw new Error(`Échec de lecture de plage HTTP (${res.status}) sur ${this.url}`);
+        }
+        return new Uint8Array(await res.arrayBuffer());
+      }
+
+      async chunk(chunkIndex) {
+        const cached = this.chunks.get(chunkIndex);
+        if (cached) {
+          this.chunks.delete(chunkIndex);
+          this.chunks.set(chunkIndex, cached); // LRU
+          return cached;
+        }
+
+        const pending = this.pending.get(chunkIndex);
+        if (pending) return pending;
+
+        const promise = this.fetchChunk(chunkIndex).then(data => {
+          this.chunks.set(chunkIndex, data);
+          while (this.chunks.size > 80) { // Cache LRU max 20 Mo
+            const first = this.chunks.keys().next();
+            if (first.done) break;
+            this.chunks.delete(first.value);
+          }
+          return data;
+        }).finally(() => {
+          this.pending.delete(chunkIndex);
+        });
+
+        this.pending.set(chunkIndex, promise);
+        return promise;
+      }
+
+      async read(offset, length) {
+        const out = new Uint8Array(length);
+        let readBytes = 0;
+        while (readBytes < length) {
+          const cur = offset + readBytes;
+          const chunkIdx = Math.floor(cur / CHUNK_SIZE);
+          const chunkOffset = cur - (chunkIdx * CHUNK_SIZE);
+          const chunkData = await this.chunk(chunkIdx);
+          const toCopy = Math.min(length - readBytes, chunkData.length - chunkOffset);
+          if (toCopy <= 0) break;
+          out.set(chunkData.subarray(chunkOffset, chunkOffset + toCopy), readBytes);
+          readBytes += toCopy;
+        }
+        return readBytes === length ? out : out.subarray(0, readBytes);
+      }
+    }
+
+    // --- 2. Dispositif Virtuel d'Image Disque (Play! Virtual Device) ---
+    class DiscImageDevice {
+      constructor(module) {
+        this.module = module;
+        this.doneFlag = false;
+        this.file = null;
+        this.remote = null;
+      }
+
+      read(dstPtr, fileOffset, length, signalPtr) {
+        this.doneFlag = false;
+        let p;
+        if (this.remote) {
+          p = this.remote.read(fileOffset, length);
+        } else {
+          if (!this.file) throw new Error("Aucune relique disque configurée.");
+          p = this.file.slice(fileOffset, fileOffset + length).arrayBuffer().then(b => new Uint8Array(b));
+        }
+
+        p.then(bytes => {
+          this.module.HEAPU8.set(bytes, dstPtr);
+          this.doneFlag = true;
+          this.signal(signalPtr);
+        }).catch(err => {
+          console.error("[DiscImageDevice] Erreur de lecture :", err);
+          this.doneFlag = true;
+          this.signal(signalPtr);
+        });
+      }
+
+      signal(signalPtr) {
+        if (!signalPtr) return;
+        const heap32 = this.module.HEAP32;
+        const idx = signalPtr >> 2;
+        if (typeof Atomics !== "undefined" && heap32.buffer instanceof SharedArrayBuffer) {
+          Atomics.store(heap32, idx, 1);
+          Atomics.notify(heap32, idx);
+        } else {
+          heap32[idx] = 1;
+        }
+      }
+
+      getFileSize() {
+        if (this.remote) return this.remote.size;
+        if (!this.file) throw new Error("Aucune relique disque configurée.");
+        return this.file.size;
+      }
+
+      isDone() {
+        return this.doneFlag;
+      }
+
+      setFile(file) {
+        this.file = file;
+        this.remote = null;
+      }
+
+      setRemote(remote) {
+        this.remote = remote;
+        this.file = null;
+      }
+    }
+
+    // --- 3. État Global de l'Émulateur ---
+    let playModule = null;
+    let emulatorRunning = false;
+    let currentGameName = "";
+    const canvas = document.getElementById("outputCanvas");
+    const dropzone = document.getElementById("dropzone");
+    const loader = document.getElementById("loader");
+    const loaderTitle = document.getElementById("loader-title");
+    const loaderMsg = document.getElementById("loader-msg");
+    const progressBar = document.getElementById("progress-bar");
+    const statusDot = document.getElementById("status-dot");
+    const statusText = document.getElementById("status-text");
+
+    function setStatus(text, color = "#94a3b8", type = "normal") {
+      statusText.textContent = text;
+      statusText.style.color = color;
+      statusDot.className = "ps2-status-dot" + (type === "active" ? " active" : type === "streaming" ? " streaming" : "");
+    }
+
+    function showLoader(title, msg, progress = null) {
+      loaderTitle.textContent = title;
+      loaderMsg.textContent = msg;
+      if (progress !== null) {
+        progressBar.style.width = Math.min(100, Math.max(0, progress)) + "%";
+      }
+      loader.style.display = "flex";
+    }
+
+    function hideLoader() {
+      loader.style.display = "none";
+    }
+
+    // --- 4. Initialisation du Moteur Play! WebAssembly ---
+    async function initPlayModule() {
+      if (playModule) return playModule;
+      showLoader("Sanctuaire PlayStation 2", "Invocation du binaire WebAssembly Emotion Engine...", 25);
+
+      const moduleOptions = {
+        canvas: canvas,
+        locateFile: (path) => path,
+        mainScriptUrlOrBlob: "Play.js",
+        noInitialRun: true,
+        print: (text) => console.log("[Play! stdout]", text),
+        printErr: (text) => console.warn("[Play! stderr]", text)
+      };
+
+      try {
+        const mod = await Play(moduleOptions);
+        try { mod.FS.mkdir("/work"); } catch(e) {}
+        mod.discImageDevice = new DiscImageDevice(mod);
+        mod.ccall("initVm", "", [], []);
+        window.PlayModule = mod;
+        playModule = mod;
+        console.log("⚡ Moteur Play! WebAssembly initialisé avec succès !");
+        return mod;
+      } catch (err) {
+        console.error("❌ Échec d'initialisation Play! :", err);
+        showLoader("❌ Échec d'initialisation", "Erreur : " + (err.message || err));
+        throw err;
+      }
+    }
+
+    // --- 5. Lancement de Relique Distante (Streaming HTTP Range) ---
+    async function bootRemoteGame(gameUrl, gameName, token = null) {
+      try {
+        currentGameName = gameName || gameUrl.split("/").pop().split("?")[0] || "disc.iso";
+        setStatus(`Streaming : "${currentGameName}"`, "#3b82f6", "streaming");
+        showLoader("Liaison Souveraine", `Connexion au Sanctuaire pour "${currentGameName}"...`, 30);
+
+        const mod = await initPlayModule();
+        showLoader("Séquençage HTTP Range", "Négociation des plages 256 Ko en streaming...", 60);
+
+        const remote = await RemoteDiscReader.open(gameUrl, token);
+        mod.discImageDevice.setRemote(remote);
+
+        showLoader("Démarrage Emotion Engine", "Lancement de la relique à 60 FPS...", 90);
+        await new Promise(r => setTimeout(r, 200));
+
+        mod.bootDiscImage(currentGameName);
+        hideLoader();
+        dropzone.style.display = "none";
+        canvas.style.display = "block";
+        canvas.focus();
+        emulatorRunning = true;
+        setStatus(`En jeu : ${currentGameName} (60 FPS)`, "#10b981", "active");
+
+        handleResize();
+      } catch (err) {
+        console.error("❌ Erreur bootRemoteGame :", err);
+        showLoader("❌ Échec d'invocation", err.message || "Erreur de streaming de la relique.");
+        setStatus("❌ Erreur d'invocation", "#ef4444");
+      }
+    }
+
+    // --- 6. Lancement de Fichier Local (Drag & Drop) ---
+    async function bootLocalFile(file) {
+      try {
+        currentGameName = file.name;
+        setStatus(`Chargement : "${file.name}"`, "#3b82f6", "streaming");
+        showLoader("Analyse de la Relique", `Préparation de "${file.name}" (${(file.size / (1024*1024)).toFixed(1)} Mo)...`, 40);
+
+        const mod = await initPlayModule();
+        const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+
+        if (ext === ".elf") {
+          showLoader("Exécutable ELF", "Injection en mémoire...", 75);
+          const buf = await file.arrayBuffer();
+          const bytes = new Uint8Array(buf);
+          const fd = mod.FS.open(file.name, "w+");
+          mod.FS.write(fd, bytes, 0, bytes.length, 0);
+          mod.FS.close(fd);
+          mod.bootElf(file.name);
+        } else {
+          showLoader("Disque Virtuel", "Attachement du lecteur local...", 80);
+          mod.discImageDevice.setFile(file);
+          mod.bootDiscImage(file.name);
+        }
+
+        hideLoader();
+        dropzone.style.display = "none";
+        canvas.style.display = "block";
+        canvas.focus();
+        emulatorRunning = true;
+        setStatus(`En jeu : ${file.name} (60 FPS)`, "#10b981", "active");
+
+        handleResize();
+      } catch (err) {
+        console.error("❌ Erreur bootLocalFile :", err);
+        showLoader("❌ Échec d'invocation", err.message || "Impossible de lire la relique locale.");
+        setStatus("❌ Erreur", "#ef4444");
+      }
+    }
+
+    // --- 7. Gestion de l'Échelle d'Écran Dynamique ---
+    function handleResize() {
+      if (!playModule || !canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width >= 2 && rect.height >= 2) {
+        canvas.width = Math.round(rect.width);
+        canvas.height = Math.round(rect.height);
+        if (playModule.setPresentationSize) {
+          playModule.setPresentationSize(canvas.width, canvas.height);
+        }
+      }
+    }
+    window.addEventListener("resize", handleResize);
+
+    // --- 8. Gestion des Entrées : Manette (Gamepad API Standard) ---
+    const lastButtons = [];
+    const lastAxes = [];
+    const AXIS_DEADZONE = 0.15;
+
+    function pollGamepad() {
+      if (emulatorRunning && playModule) {
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        let pad = null;
+        for (const gp of gamepads) {
+          if (gp && gp.connected) { pad = gp; break; }
+        }
+
+        if (pad && playModule.gamepadButton) {
+          for (let i = 0; i < pad.buttons.length; i++) {
+            const pressed = pad.buttons[i].pressed ? 1 : 0;
+            if (lastButtons[i] !== pressed) {
+              lastButtons[i] = pressed;
+              try { playModule.gamepadButton(i, pressed); } catch(e) {}
+            }
+          }
+          if (playModule.gamepadAxis) {
+            for (let i = 0; i < pad.axes.length; i++) {
+              let val = pad.axes[i];
+              if (Math.abs(val) < AXIS_DEADZONE) val = 0;
+              const rounded = Math.round(val * 100) / 100;
+              if (lastAxes[i] !== rounded) {
+                lastAxes[i] = rounded;
+                try { playModule.gamepadAxis(i, rounded); } catch(e) {}
+              }
+            }
+          }
+        }
+      }
+      requestAnimationFrame(pollGamepad);
+    }
+    requestAnimationFrame(pollGamepad);
+
+    // --- 9. Gestion des Entrées : Clavier Sanctuaire ---
+    const KEY_MAPPINGS = {
+      // D-Pad
+      "ArrowUp": 12, "KeyW": 12, "KeyZ": 12,
+      "ArrowDown": 13, "KeyS": 13,
+      "ArrowLeft": 14, "KeyA": 14, "KeyQ": 14,
+      "ArrowRight": 15, "KeyD": 15,
+      // Face buttons
+      "KeyK": 0, "KeyX": 0, // Cross ✕
+      "KeyL": 1, "KeyC": 1, // Circle ◯
+      "KeyJ": 2, "KeyV": 2, // Square ▢
+      "KeyI": 3, "KeyF": 3, // Triangle △
+      // Triggers
+      "KeyU": 4,            // L1
+      "KeyO": 5, "KeyE": 5, // R1
+      "KeyR": 6, "ShiftLeft": 6, // L2
+      "KeyT": 7, "ShiftRight": 7, // R2
+      // Special
+      "Space": 8, "Backspace": 8, // Select
+      "Enter": 9                   // Start
+    };
+
+    window.addEventListener("keydown", (e) => {
+      if (!emulatorRunning || !playModule || !playModule.gamepadButton) return;
+      const btn = KEY_MAPPINGS[e.code];
+      if (btn !== undefined) {
+        e.preventDefault();
+        try { playModule.gamepadButton(btn, 1); } catch(err) {}
+      }
+    });
+
+    window.addEventListener("keyup", (e) => {
+      if (!emulatorRunning || !playModule || !playModule.gamepadButton) return;
+      const btn = KEY_MAPPINGS[e.code];
+      if (btn !== undefined) {
+        e.preventDefault();
+        try { playModule.gamepadButton(btn, 0); } catch(err) {}
+      }
+    });
+
+    // --- 10. Boutons UI & Modales ---
+    // Retour
+    document.getElementById("btn-back").addEventListener("click", () => {
+      if (window.opener) {
+        window.close();
+      } else {
+        window.location.href = "../../index.html";
+      }
+    });
+
+    // Plein Écran
+    document.getElementById("btn-fullscreen").addEventListener("click", () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    // Modale Contrôles
+    const modalControls = document.getElementById("modal-controls");
+    document.getElementById("btn-controls").addEventListener("click", () => {
+      modalControls.classList.add("open");
+    });
+    document.getElementById("modal-close").addEventListener("click", () => {
+      modalControls.classList.remove("open");
+    });
+    modalControls.addEventListener("click", (e) => {
+      if (e.target === modalControls) modalControls.classList.remove("open");
+    });
+
+    // Manette Virtuelle Tactile
+    const vpad = document.getElementById("vpad");
+    document.getElementById("btn-vpad").addEventListener("click", () => {
+      vpad.classList.toggle("active");
+    });
+
+    vpad.querySelectorAll(".vpad-btn").forEach(btn => {
+      const btnIdx = parseInt(btn.getAttribute("data-button"), 10);
+      const press = (e) => {
+        e.preventDefault();
+        if (playModule && playModule.gamepadButton) {
+          try { playModule.gamepadButton(btnIdx, 1); } catch(err) {}
+        }
+      };
+      const release = (e) => {
+        e.preventDefault();
+        if (playModule && playModule.gamepadButton) {
+          try { playModule.gamepadButton(btnIdx, 0); } catch(err) {}
+        }
+      };
+      btn.addEventListener("touchstart", press, { passive: false });
+      btn.addEventListener("touchend", release, { passive: false });
+      btn.addEventListener("mousedown", press);
+      btn.addEventListener("mouseup", release);
+      btn.addEventListener("mouseleave", release);
+    });
+
+    // Parcourir Fichiers
+    const fileInput = document.getElementById("file-input");
+    document.getElementById("btn-browse").addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        bootLocalFile(e.target.files[0]);
+      }
+    });
+
+    // Drag & Drop
+    dropzone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropzone.classList.add("dragover");
+    });
+    dropzone.addEventListener("dragleave", () => {
+      dropzone.classList.remove("dragover");
+    });
+    dropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("dragover");
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        bootLocalFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    // --- 11. Sauvegardes d'État Instantanées (IndexedDB) ---
+    const STATE_FILE = "/work/state.tmp";
+
+    async function pollStateOp(timeout = 25000) {
+      if (!playModule || !playModule.pollStateOp) return false;
+      const start = Date.now();
+      return new Promise((resolve) => {
+        const check = () => {
+          let st;
+          try { st = playModule.pollStateOp(); } catch(e) { return resolve(false); }
+          if (st === 1) { // En cours
+            if (Date.now() - start > timeout) return resolve(false);
+            return setTimeout(check, 50);
+          }
+          if (playModule.clearStateOp) playModule.clearStateOp();
+          resolve(st === 2); // 2 = Succès
+        };
+        setTimeout(check, 50);
+      });
+    }
+
+    document.getElementById("btn-save").addEventListener("click", async () => {
+      if (!emulatorRunning || !playModule || !playModule.beginSaveState) {
+        alert("L'émulateur doit être en cours d'exécution pour sauvegarder.");
+        return;
+      }
+      try {
+        setStatus("💾 Sauvegarde de l'état en cours...", "#f59e0b");
+        playModule.beginSaveState(STATE_FILE);
+        const ok = await pollStateOp();
+        if (!ok) throw new Error("Échec de capture de l'état PlayStation 2.");
+
+        const stateBytes = playModule.FS.readFile(STATE_FILE);
+        playModule.FS.unlink(STATE_FILE);
+
+        // Sauvegarder dans localStorage ou IndexedDB
+        const key = "ps2_savestate_" + (currentGameName || "default");
+        localStorage.setItem(key, btoa(String.fromCharCode.apply(null, stateBytes.subarray(0, 1000)))); // metadata
+        // Persister dans IndexedDB
+        await saveStateToIDB(key, stateBytes);
+        setStatus("💾 État sauvegardé avec succès !", "#10b981", "active");
+        setTimeout(() => setStatus(`En jeu : ${currentGameName}`, "#10b981", "active"), 3000);
+      } catch (err) {
+        console.error("Erreur sauvegarde :", err);
+        setStatus("❌ Échec de la sauvegarde", "#ef4444");
+      }
+    });
+
+    document.getElementById("btn-load").addEventListener("click", async () => {
+      if (!emulatorRunning || !playModule || !playModule.beginLoadState) {
+        alert("L'émulateur doit être en cours d'exécution pour charger un état.");
+        return;
+      }
+      try {
+        const key = "ps2_savestate_" + (currentGameName || "default");
+        const stateBytes = await loadStateFromIDB(key);
+        if (!stateBytes) {
+          alert("Aucune sauvegarde d'état trouvée pour cette relique.");
+          return;
+        }
+
+        setStatus("📂 Restauration de l'état...", "#f59e0b");
+        playModule.FS.writeFile(STATE_FILE, stateBytes);
+        playModule.beginLoadState(STATE_FILE);
+        const ok = await pollStateOp();
+        try { playModule.FS.unlink(STATE_FILE); } catch(e) {}
+
+        if (!ok) throw new Error("Échec du chargement de l'état.");
+        setStatus("📂 État restauré avec succès !", "#10b981", "active");
+        setTimeout(() => setStatus(`En jeu : ${currentGameName}`, "#10b981", "active"), 3000);
+      } catch (err) {
+        console.error("Erreur chargement :", err);
+        setStatus("❌ Échec du chargement", "#ef4444");
+      }
+    });
+
+    // Stockage IndexedDB pour les états PS2
+    function openIDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open("PS2SanctuaryDB", 1);
+        req.onupgradeneeded = (e) => {
+          e.target.result.createObjectStore("states");
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function saveStateToIDB(key, bytes) {
+      const db = await openIDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction("states", "readwrite");
+        tx.objectStore("states").put(bytes, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function loadStateFromIDB(key) {
+      const db = await openIDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction("states", "readonly");
+        const req = tx.objectStore("states").get(key);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    // --- 12. Démarrage Automatique depuis les Paramètres d'URL (?game=...&token=...) ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameParam = urlParams.get("game");
+    const tokenParam = urlParams.get("token") || (window.localStorage ? localStorage.getItem("rv_vps_token") : null);
+
+    if (gameParam) {
+      const tokenQuery = tokenParam ? `?token=${encodeURIComponent(tokenParam)}` : "";
+      const streamUrl = `/assets/vault/${encodeURIComponent(gameParam)}${tokenQuery}`;
+      console.log(`[PS2 Sanctuary] Démarrage automatique de la relique : ${gameParam}`);
+      bootRemoteGame(streamUrl, gameParam, tokenParam);
+    }
+  </script>
+</body>
+</html>

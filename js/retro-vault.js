@@ -22,6 +22,7 @@
     nes: { label: "NES 8-bit", core: "fceumm", tag: "tag-nes", hasExtra: false },
     megadrive: { label: "Mega Drive", core: "genesis_plus_gx", tag: "tag-md", hasExtra: true },
     ps1: { label: "PlayStation 1", core: "pcsx_rearmed", tag: "tag-ps1", hasExtra: true },
+    ps2: { label: "PlayStation 2", core: "play", tag: "tag-ps2", hasExtra: true },
     nds: { label: "Nintendo DS", core: "desmume", tag: "tag-nds", hasExtra: true },
     psp: { label: "PlayStation Portable", core: "ppsspp", tag: "tag-psp", hasExtra: true },
     dreamcast: { label: "Sega Dreamcast", core: "flycast", tag: "tag-dc", hasExtra: true },
@@ -343,6 +344,21 @@
                   titre: "Sega Dreamcast — Moteur 128-bit 60 FPS",
                   console: "dreamcast",
                   desc: "Moteur Flycast WebAssembly avec JIT SH4 & WebGL2. Glissez ou insérez un fichier .chd, .cdi ou .gdi."
+                });
+              }
+              const hasPs2 = parsed.some(j => j.console === "ps2");
+              if (!hasPs2) {
+                parsed.push({
+                  nom: "Marvel vs. Capcom 2 - New Age of Heroes (USA).chd",
+                  titre: "Marvel vs. Capcom 2 : New Age of Heroes",
+                  console: "ps2",
+                  desc: "L'apogée légendaire du versus fighting 3v3 de Capcom sur PlayStation 2 (2002), propulsé par Play! WebAssembly à 60 FPS."
+                });
+                parsed.push({
+                  nom: "console-ps2-launcher",
+                  titre: "PlayStation 2 — Sanctuaire Émotion Play!",
+                  console: "ps2",
+                  desc: "Moteur Play! WebAssembly 60 FPS avec lecture ISO / CHD en streaming. Glissez ou insérez un fichier .iso, .chd, .cso ou .bin."
                 });
               }
               this.tousLesJeux = parsed;
@@ -1792,6 +1808,7 @@
       if (["nds"].includes(ext) || nom.includes("console-nds-launcher")) return "nds";
       if (["cso"].includes(ext) || nom.includes("console-psp-launcher") || /locoroco/i.test(nom)) return "psp";
       if (["cdi", "gdi"].includes(ext) || nom.includes("console-dc-launcher") || /dreamcast|crazy taxi|sonic adventure|shenmue|jet grind/i.test(nom)) return "dreamcast";
+      if (nom.includes("console-ps2-launcher") || /capcom 2|marvel vs|playstation 2|ps2/i.test(nom)) return "ps2";
       if (["sfc", "smc"].includes(ext)) return "snes";
       if (["gba"].includes(ext)) return "gba";
       if (["gb", "gbc"].includes(ext)) return "gb";
@@ -1799,6 +1816,7 @@
       if (["pce"].includes(ext)) return "pce";
       if (["zip"].includes(ext)) return "arcade";
       if (["chd"].includes(ext)) {
+        if (/capcom 2|marvel vs|ps2/i.test(nom)) return "ps2";
         if (/crazy taxi|sonic|shenmue|dreamcast|jet grind|virtua/i.test(nom)) return "dreamcast";
         return "ps1";
       }
@@ -2842,6 +2860,7 @@
         .tag-nes { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
         .tag-md { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
         .tag-ps1 { background: rgba(59, 130, 246, 0.25); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.5); }
+        .tag-ps2 { background: rgba(37, 99, 235, 0.3); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.6); }
         .tag-psp { background: rgba(14, 165, 233, 0.25); color: #7dd3fc; border: 1px solid rgba(14, 165, 233, 0.5); }
         .tag-dc { background: rgba(249, 115, 22, 0.25); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.5); }
         .tag-nds { background: rgba(244, 63, 94, 0.25); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.5); }
@@ -4001,6 +4020,7 @@
             </div>
             <div class="rv-tabs" id="rv-tabs">
               <button class="rv-tab active" data-filter="all">🔮 TOUTES</button>
+              <button class="rv-tab" data-filter="ps2">🔮 PLAYSTATION 2</button>
               <button class="rv-tab" data-filter="dreamcast">🌀 DREAMCAST</button>
               <button class="rv-tab" data-filter="psp">🔴 PSP</button>
               <button class="rv-tab" data-filter="ps1">⚔️ PLAYSTATION 1</button>
@@ -4954,6 +4974,21 @@
             badgeTriggers.style.display = "inline";
             badgeTriggers.innerHTML = '<span class="rv-kbd">7 / U</span> L / <span class="rv-kbd">9 / P</span> R';
           }
+        } else if (consoleType === "ps2") {
+          if (badgeY) {
+            badgeY.style.display = "inline";
+            badgeY.innerHTML = '<span class="rv-kbd">J / V</span> : ▢ Carré';
+          }
+          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">K / X</span> : ✕ Croix';
+          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">L / C</span> : ◯ Rond';
+          if (badgeX) {
+            badgeX.style.display = "inline";
+            badgeX.innerHTML = '<span class="rv-kbd">I / F</span> : △ Triangle';
+          }
+          if (badgeTriggers) {
+            badgeTriggers.style.display = "inline";
+            badgeTriggers.innerHTML = '<span class="rv-kbd">U</span> L1 / <span class="rv-kbd">O</span> R1 / <span class="rv-kbd">R</span> L2 / <span class="rv-kbd">T</span> R2';
+          }
         } else if (consoleType === "dreamcast") {
           if (badgeY) {
             badgeY.style.display = "inline";
@@ -5145,7 +5180,7 @@
       grid.innerHTML = "";
 
       // Mise à jour dynamique des compteurs dans les onglets de consoles
-      const counts = { all: this.tousLesJeux.length, dreamcast: 0, psp: 0, ps1: 0, nds: 0, snes: 0, gba: 0, gb: 0, nes: 0, megadrive: 0, pce: 0 };
+      const counts = { all: this.tousLesJeux.length, ps2: 0, dreamcast: 0, psp: 0, ps1: 0, nds: 0, snes: 0, gba: 0, gb: 0, nes: 0, megadrive: 0, pce: 0 };
       for (const j of this.tousLesJeux) {
         if (counts[j.console] !== undefined) counts[j.console]++;
       }
@@ -5157,6 +5192,7 @@
         }
       };
       updateTab("all", "🔮 TOUTES");
+      updateTab("ps2", "🔮 PLAYSTATION 2");
       updateTab("dreamcast", "🌀 DREAMCAST");
       updateTab("psp", "🔴 PSP");
       updateTab("ps1", "⚔️ PLAYSTATION 1");
@@ -5312,10 +5348,10 @@
           this.partieEnCours = null;
         }
 
-        const isLauncher = nomFichier.includes("console-nds-launcher") || nomFichier.includes("console-psp-launcher") || nomFichier.includes("console-dc-launcher");
+        const isLauncher = nomFichier.includes("console-nds-launcher") || nomFichier.includes("console-psp-launcher") || nomFichier.includes("console-dc-launcher") || nomFichier.includes("console-ps2-launcher");
         let romBlob = customBlob;
 
-        if (!romBlob && !isLauncher && cType !== "psp" && cType !== "dreamcast") {
+        if (!romBlob && !isLauncher && cType !== "psp" && cType !== "dreamcast" && cType !== "ps2") {
           if (!this.isCloudConnected()) {
             throw new Error("Relique inaccessible en mode invité.");
           }
@@ -5521,6 +5557,62 @@
           return;
         }
 
+        if (cType === "ps2") {
+          container.classList.add("rv-is-ps2");
+          container.classList.remove("rv-is-nds");
+          container.classList.remove("rv-is-psp");
+          container.classList.remove("rv-is-dreamcast");
+
+          const isLauncher = nomFichier.includes("console-ps2-launcher");
+          const token = this.getCloudToken() || "";
+          const gameParam = !isLauncher ? `&game=${encodeURIComponent(nomFichier)}` : "";
+          const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
+          const ps2DedicatedUrl = `emulators/ps2/index.html?v=1.0${gameParam}${tokenParam}`;
+
+          container.innerHTML = `
+            <div class="rv-perf-hud" id="rv-perf-hud">
+              <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
+              <span class="rv-perf-text" id="rv-perf-text">60 FPS | 16.6 ms</span>
+            </div>
+            <div class="rv-ps2-wrapper" style="position: relative; width: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #0a1329 0%, #030712 100%); border: 1px solid rgba(59, 130, 246, 0.45); border-radius: 8px; overflow: hidden; padding: 28px 16px; text-align: center;">
+              <div style="font-size: 3.2rem; margin-bottom: 8px; filter: drop-shadow(0 0 16px rgba(59, 130, 246, 0.7));">🔮</div>
+              <h3 style="font-family: 'Cinzel', serif; font-size: 1.4rem; color: #60a5fa; margin: 0 0 6px; letter-spacing: 1px;">
+                Sanctuaire PlayStation 2
+              </h3>
+              <p style="font-family: 'Cinzel', serif; font-size: 1rem; color: #f0f4f1; margin: 0 0 12px; font-weight: 600;">
+                ${isLauncher ? "Moteur Emotion Play! WebAssembly (60 FPS)" : `Relique : "${nomFichier}"`}
+              </p>
+              <p style="font-size: 0.88rem; color: #cbd5e1; max-width: 520px; line-height: 1.5; margin: 0 auto 20px;">
+                L'émulation 128-bit Emotion Engine PlayStation 2 s'exécute via le moteur haute performance <strong style="color:#60a5fa;">Play! WebAssembly 60 FPS</strong> avec lecture de reliques en streaming direct par blocs de 256 Ko (HTTP Range). Pour libérer 100% de la puissance graphique GPU/CPU de votre machine en plein écran sans latence, la relique s'exécute dans son Sanctuaire Dédié.
+              </p>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px;">
+                <a href="${ps2DedicatedUrl}" target="_blank" class="rv-btn" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; font-weight: 700; font-size: 1rem; padding: 12px 30px; border-radius: 6px; text-decoration: none; box-shadow: 0 4px 20px rgba(37, 99, 235, 0.45); display: inline-flex; align-items: center; gap: 8px;">
+                  ⚡ Invoquer dans le Sanctuaire Dédié (Plein Écran)
+                </a>
+              </div>
+              <div style="width: 100%; max-width: 620px; margin-top: 8px;">
+                <details style="background: rgba(0,0,0,0.45); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 6px; padding: 10px 14px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer; text-align: left;">
+                  <summary style="outline: none; font-weight: 600; color: #60a5fa; cursor: pointer;">ℹ️ Contrôles, Manettes & Reliques Personnalisées</summary>
+                  <p style="margin: 8px 0 4px; line-height: 1.5;">
+                    • <strong>Manettes compatibles :</strong> PlayStation DualSense, DualShock 4/3, Xbox One/Series, Nintendo Switch Pro et manettes Bluetooth standards.<br>
+                    • <strong>Streaming HTTP Range :</strong> Lecture instantanée à la volée des images disque sans temps de téléchargement préliminaire.<br>
+                    • <strong>Glisser-Déposer :</strong> Vous pouvez glisser-déposer n'importe quel fichier <code>.iso</code>, <code>.chd</code>, <code>.cso</code>, <code>.bin</code> ou <code>.elf</code> dans le sanctuaire dédié.
+                  </p>
+                </details>
+              </div>
+            </div>
+          `;
+
+          status.textContent = isLauncher
+            ? "🎮 Sanctuaire PlayStation 2 prêt | Cliquez sur Invoquer dans le Sanctuaire Dédié."
+            : `🎮 Relique PS2 "${nomFichier}" prête | Cliquez sur Invoquer dans le Sanctuaire Dédié 60 FPS.`;
+          status.style.color = "#60a5fa";
+          this.jeuEnCoursNom = nomFichier;
+          this.rendreGrille();
+          return;
+        }
+
+        container.classList.remove("rv-is-ps2");
         container.classList.remove("rv-is-dreamcast");
 
         container.classList.remove("rv-is-nds");
@@ -6167,6 +6259,8 @@
       if (!container) return;
       container.classList.remove("rv-is-nds");
       container.classList.remove("rv-is-psp");
+      container.classList.remove("rv-is-dreamcast");
+      container.classList.remove("rv-is-ps2");
       this.jeuEnCoursType = null;
       this.appliquerTailleEtDisposition();
 
