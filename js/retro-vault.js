@@ -4992,17 +4992,17 @@
         } else if (consoleType === "dreamcast") {
           if (badgeY) {
             badgeY.style.display = "inline";
-            badgeY.innerHTML = '<span class="rv-kbd">J / 4</span> : X';
+            badgeY.innerHTML = '<span class="rv-kbd">J / V</span> : X';
           }
-          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">K / 5</span> : A';
-          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">L / 6</span> : B';
+          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">K / X</span> : A';
+          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">L / C</span> : B';
           if (badgeX) {
             badgeX.style.display = "inline";
-            badgeX.innerHTML = '<span class="rv-kbd">I / 8</span> : Y';
+            badgeX.innerHTML = '<span class="rv-kbd">I / F</span> : Y';
           }
           if (badgeTriggers) {
             badgeTriggers.style.display = "inline";
-            badgeTriggers.innerHTML = '<span class="rv-kbd">Q</span> L / <span class="rv-kbd">E</span> R';
+            badgeTriggers.innerHTML = '<span class="rv-kbd">U / Shift</span> L / <span class="rv-kbd">O</span> R';
           }
         } else if (consoleType === "nds") {
           if (badgeY) {

@@ -590,37 +590,37 @@
         <tbody>
           <tr>
             <td>Direction (Croix / Stick)</td>
-            <td>Flèches / ZSQD</td>
+            <td><strong>Flèches</strong> ou <strong>Z S Q D</strong></td>
             <td>D-Pad / Stick Gauche</td>
           </tr>
           <tr>
-            <td>Bouton A (Vert)</td>
-            <td><strong>K</strong> ou <strong>L</strong></td>
+            <td>Bouton A (Vert - Accélérer)</td>
+            <td><strong>K</strong> ou <strong>X</strong></td>
             <td>Bouton A / Croix (✕)</td>
           </tr>
           <tr>
-            <td>Bouton B (Rouge)</td>
-            <td><strong>L</strong> ou <strong>O</strong></td>
+            <td>Bouton B (Rouge - Frein / Marche AR)</td>
+            <td><strong>L</strong> ou <strong>C</strong></td>
             <td>Bouton B / Rond (◯)</td>
           </tr>
           <tr>
             <td>Bouton X (Bleu)</td>
-            <td><strong>J</strong> ou <strong>I</strong></td>
+            <td><strong>J</strong> ou <strong>V</strong></td>
             <td>Bouton X / Carré (▢)</td>
           </tr>
           <tr>
             <td>Bouton Y (Jaune)</td>
-            <td><strong>I</strong> ou <strong>P</strong></td>
+            <td><strong>I</strong> ou <strong>F</strong></td>
             <td>Bouton Y / Triangle (△)</td>
           </tr>
           <tr>
             <td>Gâchette L</td>
-            <td><strong>Q</strong> ou <strong>A</strong></td>
+            <td><strong>U</strong> ou <strong>Shift G</strong></td>
             <td>Gâchette L1 / L2</td>
           </tr>
           <tr>
             <td>Gâchette R</td>
-            <td><strong>E</strong> ou <strong>D</strong></td>
+            <td><strong>O</strong> ou <strong>Shift D</strong></td>
             <td>Gâchette R1 / R2</td>
           </tr>
           <tr>
@@ -628,6 +628,7 @@
             <td><strong>Entrée</strong></td>
             <td>Touche Start / Options</td>
           </tr>
+        </tbody>
         </tbody>
       </table>
       <div style="display: flex; justify-content: flex-end;">
@@ -871,6 +872,9 @@
           Module.callMain(["-v", gamePath]);
           if (Module.resumeMainLoop) Module.resumeMainLoop();
 
+          isRunning = true;
+          try { canvas.focus(); } catch(e){}
+
           loader.style.display = "none";
           if (window.matchMedia("(pointer: coarse)").matches) {
             vpad.classList.add("active");
@@ -878,6 +882,7 @@
 
           startPerformanceLoop();
           startGamepadLoop();
+          setupKeyboardControls();
 
           // Notification au parent si imbriqué
           window.parent.postMessage({ type: "DC_READY", name: romName }, "*");
@@ -1027,6 +1032,140 @@
           requestAnimationFrame(poll);
         }
         requestAnimationFrame(poll);
+      }
+
+      // Gestion des entrées Clavier Sanctuaire Dédié (D-Pad, Stick Analogique 360°, Boutons ABXY & Triggers)
+      let keyboardInitialized = false;
+      function setupKeyboardControls() {
+        if (keyboardInitialized) return;
+        keyboardInitialized = true;
+
+        const keyMap = {
+          // Boutons Dreamcast
+          "KeyK": 0, "KeyX": 0,           // A (Vert - Accélérer / Valider)
+          "KeyL": 8, "KeyC": 8,           // B (Rouge - Freiner / Annuler)
+          "KeyJ": 1, "KeyV": 1,           // X (Bleu)
+          "KeyI": 9, "KeyF": 9,           // Y (Jaune)
+          // Gâchettes
+          "KeyU": 10, "ShiftLeft": 10,    // Gâchette L
+          "KeyO": 11, "ShiftRight": 11,   // Gâchette R
+          // Start & Select
+          "Enter": 3, "NumpadEnter": 3,   // Start
+          "Space": 2, "Backspace": 2      // Select
+        };
+
+        const activeDirections = {
+          up: false,
+          down: false,
+          left: false,
+          right: false
+        };
+
+        function updateDirections() {
+          if (!activeModule || typeof activeModule._simulate_input !== "function") return;
+          // D-Pad
+          simulateInput(4, activeDirections.up ? 1 : 0);
+          simulateInput(5, activeDirections.down ? 1 : 0);
+          simulateInput(6, activeDirections.left ? 1 : 0);
+          simulateInput(7, activeDirections.right ? 1 : 0);
+
+          // Stick Analogique 360° (Indispensable pour Crazy Taxi, Sonic Adventure, etc.)
+          const axisX = activeDirections.left ? -32767 : (activeDirections.right ? 32767 : 0);
+          const axisY = activeDirections.up ? -32767 : (activeDirections.down ? 32767 : 0);
+          try {
+            activeModule._simulate_input(0, 16, axisX);
+            activeModule._simulate_input(0, 17, axisY);
+          } catch(e) {}
+        }
+
+        window.addEventListener("keydown", (e) => {
+          if (!activeModule) return;
+          if (["INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
+
+          let handled = false;
+
+          // Directions (Flèches & ZSQD / WASD)
+          if (e.code === "ArrowUp" || e.code === "KeyW" || e.code === "KeyZ") {
+            if (!activeDirections.up) {
+              activeDirections.up = true;
+              updateDirections();
+            }
+            handled = true;
+          } else if (e.code === "ArrowDown" || e.code === "KeyS") {
+            if (!activeDirections.down) {
+              activeDirections.down = true;
+              updateDirections();
+            }
+            handled = true;
+          } else if (e.code === "ArrowLeft" || e.code === "KeyA" || e.code === "KeyQ") {
+            if (!activeDirections.left) {
+              activeDirections.left = true;
+              updateDirections();
+            }
+            handled = true;
+          } else if (e.code === "ArrowRight" || e.code === "KeyD") {
+            if (!activeDirections.right) {
+              activeDirections.right = true;
+              updateDirections();
+            }
+            handled = true;
+          }
+
+          // Boutons
+          const btnId = keyMap[e.code];
+          if (btnId !== undefined) {
+            simulateInput(btnId, 1);
+            handled = true;
+          }
+
+          if (handled && e.code !== "F11" && e.code !== "F12") {
+            e.preventDefault();
+          }
+        });
+
+        window.addEventListener("keyup", (e) => {
+          if (!activeModule) return;
+          if (["INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
+
+          let handled = false;
+
+          if (e.code === "ArrowUp" || e.code === "KeyW" || e.code === "KeyZ") {
+            activeDirections.up = false;
+            updateDirections();
+            handled = true;
+          } else if (e.code === "ArrowDown" || e.code === "KeyS") {
+            activeDirections.down = false;
+            updateDirections();
+            handled = true;
+          } else if (e.code === "ArrowLeft" || e.code === "KeyA" || e.code === "KeyQ") {
+            activeDirections.left = false;
+            updateDirections();
+            handled = true;
+          } else if (e.code === "ArrowRight" || e.code === "KeyD") {
+            activeDirections.right = false;
+            updateDirections();
+            handled = true;
+          }
+
+          const btnId = keyMap[e.code];
+          if (btnId !== undefined) {
+            simulateInput(btnId, 0);
+            handled = true;
+          }
+
+          if (handled && e.code !== "F11" && e.code !== "F12") {
+            e.preventDefault();
+          }
+        });
+
+        window.addEventListener("blur", () => {
+          activeDirections.up = false;
+          activeDirections.down = false;
+          activeDirections.left = false;
+          activeDirections.right = false;
+          updateDirections();
+          Object.values(keyMap).forEach(btnId => simulateInput(btnId, 0));
+        });
       }
 
       // Protocole postMessage pour l'intégration dans RetroVault
