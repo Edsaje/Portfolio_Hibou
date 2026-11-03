@@ -952,11 +952,12 @@
         }, 1000);
       }
 
-      // Manette Virtuelle Tactile
+      // Manette Virtuelle Tactile & Clavier
       const simulateInput = (btnId, value) => {
-        if (!activeModule || typeof activeModule._simulate_input !== "function") return;
+        const mod = activeModule || window.activeModule;
+        if (!mod || typeof mod._simulate_input !== "function") return;
         try {
-          activeModule._simulate_input(0, btnId, value);
+          mod._simulate_input(0, btnId, value);
         } catch(e){}
       };
 
@@ -1062,7 +1063,8 @@
         };
 
         function updateDirections() {
-          if (!activeModule || typeof activeModule._simulate_input !== "function") return;
+          const mod = activeModule || window.activeModule;
+          if (!mod || typeof mod._simulate_input !== "function") return;
           // D-Pad
           simulateInput(4, activeDirections.up ? 1 : 0);
           simulateInput(5, activeDirections.down ? 1 : 0);
@@ -1073,13 +1075,14 @@
           const axisX = activeDirections.left ? -32767 : (activeDirections.right ? 32767 : 0);
           const axisY = activeDirections.up ? -32767 : (activeDirections.down ? 32767 : 0);
           try {
-            activeModule._simulate_input(0, 16, axisX);
-            activeModule._simulate_input(0, 17, axisY);
+            mod._simulate_input(0, 16, axisX);
+            mod._simulate_input(0, 17, axisY);
           } catch(e) {}
         }
 
         window.addEventListener("keydown", (e) => {
-          if (!activeModule) return;
+          const mod = activeModule || window.activeModule;
+          if (!mod) return;
           if (["INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
 
           let handled = false;
@@ -1124,7 +1127,8 @@
         });
 
         window.addEventListener("keyup", (e) => {
-          if (!activeModule) return;
+          const mod = activeModule || window.activeModule;
+          if (!mod) return;
           if (["INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
 
           let handled = false;
@@ -1223,6 +1227,9 @@
       window.addEventListener("click", unlockAudio, { once: true });
       window.addEventListener("keydown", unlockAudio, { once: true });
       window.addEventListener("touchstart", unlockAudio, { once: true });
+
+      // Initialiser immédiatement l'écouteur clavier
+      setupKeyboardControls();
 
       // Signaler que le runner est prêt
       window.parent.postMessage({ type: "DC_RUNNER_READY" }, "*");
