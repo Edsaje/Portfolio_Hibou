@@ -63,4 +63,6 @@ Options -Indexes
   Header set Referrer-Policy "strict-origin-when-cross-origin"
   Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
   Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+  # Ignorer les plages Range sur l'API (évite les erreurs 416 lors des sous-requêtes forward_auth)
+  RequestHeader unset Range "expr=%{REQUEST_URI} =~ m#^/api/#"
 </IfModule>
