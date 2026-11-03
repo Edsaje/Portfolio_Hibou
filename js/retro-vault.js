@@ -4977,17 +4977,17 @@
         } else if (consoleType === "ps2") {
           if (badgeY) {
             badgeY.style.display = "inline";
-            badgeY.innerHTML = '<span class="rv-kbd">J / V</span> : ▢ Carré';
+            badgeY.innerHTML = '<span class="rv-kbd">4 / I / J</span> : ▢ Carré';
           }
-          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">K / X</span> : ✕ Croix';
-          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">L / C</span> : ◯ Rond';
+          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">5 / K / X</span> : ✕ Croix';
+          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">6 / L / C</span> : ◯ Rond';
           if (badgeX) {
             badgeX.style.display = "inline";
-            badgeX.innerHTML = '<span class="rv-kbd">I / F</span> : △ Triangle';
+            badgeX.innerHTML = '<span class="rv-kbd">8 / O / F</span> : △ Triangle';
           }
           if (badgeTriggers) {
             badgeTriggers.style.display = "inline";
-            badgeTriggers.innerHTML = '<span class="rv-kbd">U</span> L1 / <span class="rv-kbd">O</span> R1 / <span class="rv-kbd">R</span> L2 / <span class="rv-kbd">T</span> R2';
+            badgeTriggers.innerHTML = '<span class="rv-kbd">7 / U</span> L1 / <span class="rv-kbd">9 / P</span> R1 / <span class="rv-kbd">1</span> L2 / <span class="rv-kbd">3</span> R2';
           }
         } else if (consoleType === "dreamcast") {
           if (badgeY) {
