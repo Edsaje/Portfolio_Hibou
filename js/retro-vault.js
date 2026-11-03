@@ -5315,7 +5315,7 @@
         const isLauncher = nomFichier.includes("console-nds-launcher") || nomFichier.includes("console-psp-launcher") || nomFichier.includes("console-dc-launcher");
         let romBlob = customBlob;
 
-        if (!romBlob && !isLauncher && cType !== "psp") {
+        if (!romBlob && !isLauncher && cType !== "psp" && cType !== "dreamcast") {
           if (!this.isCloudConnected()) {
             throw new Error("Relique inaccessible en mode invité.");
           }
@@ -5487,7 +5487,7 @@
               <div class="rv-dc-ext-btn-wrap" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
                 <a href="${dcDedicatedUrl}" target="_blank" class="rv-btn rv-dc-ext-btn" style="font-size: 0.72rem; padding: 4px 10px; text-decoration: none; background: rgba(249, 115, 22, 0.3); border: 1px solid rgba(249, 115, 22, 0.6); color: #fb923c;">⛶ Plein Écran Dédié</a>
               </div>
-              <iframe id="rv-dc-frame" class="rv-embedded-frame" src="emulators/dreamcast/index.html?v=1.0&embedded=1" allow="autoplay; fullscreen; gamepad" style="width: 100%; height: 100%; min-height: 480px; border: none;"></iframe>
+              <iframe id="rv-dc-frame" class="rv-embedded-frame" src="emulators/dreamcast/index.html?v=1.0&embedded=1${gameParam}${tokenParam}" allow="autoplay; fullscreen; gamepad" style="width: 100%; height: 100%; min-height: 480px; border: none;"></iframe>
             </div>
           `;
 
