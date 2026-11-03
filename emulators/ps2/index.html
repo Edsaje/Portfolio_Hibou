@@ -816,13 +816,35 @@
       static async open(url, token = null) {
         const headers = { Range: "bytes=0-0" };
         if (token) headers["Authorization"] = "Bearer " + token;
-        const res = await fetch(url, { headers });
 
-        if (res.status === 401 || res.status === 403) {
-          throw new Error("Accès refusé au Sanctuaire de reliques (jeton HMAC invalide ou expiré).");
+        // Liste de replis d'URL pour le streaming résilient
+        const candidates = [url];
+        if (url.startsWith("/assets/vault/")) {
+          candidates.push("../../assets/vault/" + url.substring("/assets/vault/".length));
         }
-        if (res.status !== 206) {
-          throw new Error(`Le serveur ne gère pas les requêtes de plage sur cette relique (HTTP ${res.status}).`);
+
+        let res = null;
+        let lastErr = null;
+        let successfulUrl = url;
+
+        for (const candidate of candidates) {
+          try {
+            res = await fetch(candidate, { headers });
+            if (res.status === 206) {
+              successfulUrl = candidate;
+              break;
+            } else if (res.status === 401 || res.status === 403) {
+              throw new Error("Accès refusé au Sanctuaire de reliques (jeton HMAC invalide ou expiré).");
+            }
+          } catch(err) {
+            lastErr = err;
+            if (err.message && err.message.includes("Accès refusé")) throw err;
+          }
+        }
+
+        if (!res || res.status !== 206) {
+          if (lastErr) throw lastErr;
+          throw new Error(`Le serveur ne gère pas les requêtes de plage sur cette relique (HTTP ${res ? res.status : 'inconnu'}).`);
         }
 
         const cr = res.headers.get("Content-Range") || "";
@@ -832,7 +854,7 @@
         }
 
         await res.arrayBuffer().catch(() => {});
-        return new RemoteDiscReader(url, total, token);
+        return new RemoteDiscReader(successfulUrl, total, token);
       }
 
       async fetchChunk(chunkIndex) {
@@ -1007,17 +1029,36 @@
         mod.discImageDevice = new DiscImageDevice(mod);
         mod.ccall("initVm", "", [], []);
 
-        // Neutraliser les liaisons C++ par défaut de Play! pour éviter les conflits d'entrées
-        // (ex: Play! mappait nativement KeyZ sur Croix au lieu de Haut pour claviers AZERTY)
-        if (mod.setButtonBinding) {
-          for (let i = 4; i <= 19; i++) {
-            try { mod.setButtonBinding(i, "Unassigned" + i); } catch(e) {}
-          }
+        // Activer CInputProviderGamepad (source 1) comme source d'entrée universelle
+        // (gère la manette Gamepad API, les touches clavier unifiées PSP/PS1 et la manette tactile 360°)
+        if (mod.setInputSource) {
+          try { mod.setInputSource(1); } catch(e) {}
         }
+
+        // Configuration de secours pour CInputProviderEmscripten (source 0)
         if (mod.setAxisBinding) {
-          for (let i = 0; i < 4; i++) {
-            try { mod.setAxisBinding(i, "UnassignedNeg" + i, "UnassignedPos" + i); } catch(e) {}
-          }
+          try { mod.setAxisBinding(0, "KeyQ", "KeyD"); } catch(e) {} // Stick G X (AZERTY / QWERTY)
+          try { mod.setAxisBinding(1, "KeyZ", "KeyS"); } catch(e) {} // Stick G Y
+          try { mod.setAxisBinding(2, "KeyJ", "KeyL"); } catch(e) {} // Stick D X
+          try { mod.setAxisBinding(3, "KeyI", "KeyK"); } catch(e) {} // Stick D Y
+        }
+        if (mod.setButtonBinding) {
+          try { mod.setButtonBinding(4, "ArrowUp"); } catch(e) {}
+          try { mod.setButtonBinding(5, "ArrowDown"); } catch(e) {}
+          try { mod.setButtonBinding(6, "ArrowLeft"); } catch(e) {}
+          try { mod.setButtonBinding(7, "ArrowRight"); } catch(e) {}
+          try { mod.setButtonBinding(8, "KeyV"); } catch(e) {}      // Select
+          try { mod.setButtonBinding(9, "KeyB"); } catch(e) {}      // Start
+          try { mod.setButtonBinding(10, "KeyI"); } catch(e) {}     // Carré
+          try { mod.setButtonBinding(11, "KeyO"); } catch(e) {}     // Triangle
+          try { mod.setButtonBinding(12, "KeyL"); } catch(e) {}     // Rond
+          try { mod.setButtonBinding(13, "KeyK"); } catch(e) {}     // Croix
+          try { mod.setButtonBinding(14, "KeyU"); } catch(e) {}     // L1
+          try { mod.setButtonBinding(15, "Digit1"); } catch(e) {}   // L2
+          try { mod.setButtonBinding(16, "Digit2"); } catch(e) {}   // L3
+          try { mod.setButtonBinding(17, "KeyP"); } catch(e) {}     // R1
+          try { mod.setButtonBinding(18, "Digit3"); } catch(e) {}   // R2
+          try { mod.setButtonBinding(19, "Digit0"); } catch(e) {}   // R3
         }
 
         window.PlayModule = mod;
@@ -1156,31 +1197,31 @@
 
     // --- 9. Gestion des Entrées : Clavier Sanctuaire Unifié (Standard PSP / PS1) ---
     const KEY_BUTTON_MAP = {
-      // D-Pad / Direction
+      // D-Pad / Direction (Flèches, Z/S/Q/D, W/A)
       "ArrowUp": 12, "KeyW": 12, "KeyZ": 12,
       "ArrowDown": 13, "KeyS": 13,
       "ArrowLeft": 14, "KeyA": 14, "KeyQ": 14,
       "ArrowRight": 15, "KeyD": 15,
 
       // Boutons PlayStation (Standard unifié PSP / PS1)
-      "KeyK": 0, "KeyX": 0, "Numpad5": 0,       // ✕ Croix
-      "KeyL": 1, "KeyC": 1, "Numpad6": 1,       // ◯ Rond
-      "KeyI": 2, "KeyJ": 2, "Numpad4": 2,       // ▢ Carré
-      "KeyO": 3, "KeyF": 3, "Numpad8": 3,       // △ Triangle
+      "KeyK": 0, "KeyX": 0, "Digit5": 0, "Numpad5": 0,       // ✕ Croix
+      "KeyL": 1, "KeyC": 1, "Digit6": 1, "Numpad6": 1,       // ◯ Rond
+      "KeyI": 2, "KeyJ": 2, "Digit4": 2, "Numpad4": 2,       // ▢ Carré
+      "KeyO": 3, "KeyF": 3, "Digit8": 3, "Numpad8": 3,       // △ Triangle
 
       // Gâchettes
-      "KeyU": 4, "Numpad7": 4,                   // L1
-      "KeyP": 5, "KeyE": 5, "Numpad9": 5,        // R1
-      "Digit1": 6, "Numpad1": 6, "KeyR": 6, "ShiftLeft": 6,  // L2
-      "Digit3": 7, "Numpad3": 7, "KeyT": 7, "ShiftRight": 7, // R2
+      "KeyU": 4, "Digit7": 4, "Numpad7": 4,                   // L1
+      "KeyP": 5, "Digit9": 5, "Numpad9": 5,                   // R1
+      "Digit1": 6, "Numpad1": 6, "KeyR": 6, "ShiftLeft": 6,   // L2
+      "Digit3": 7, "Numpad3": 7, "KeyE": 7, "KeyT": 7, "ShiftRight": 7, // R2
 
       // Menus
-      "KeyB": 9, "Enter": 9, "NumpadEnter": 9,   // START
-      "KeyV": 8, "Space": 8, "Backspace": 8,     // SELECT
+      "KeyB": 9, "Enter": 9, "NumpadEnter": 9,                // START
+      "KeyV": 8, "Space": 8, "Backspace": 8,                  // SELECT
 
       // Stick Clicks
-      "Digit2": 10, "Numpad2": 10,              // L3
-      "Digit0": 11, "Numpad0": 11               // R3
+      "Digit2": 10, "Numpad2": 10,                           // L3
+      "Digit0": 11, "Numpad0": 11                            // R3
     };
 
     // État actif des directions pour le stick analogique simulé
@@ -1201,7 +1242,7 @@
     }
 
     window.addEventListener("keydown", (e) => {
-      if (!emulatorRunning || !playModule || !playModule.gamepadButton) return;
+      if (!playModule || !playModule.gamepadButton) return;
       const btn = KEY_BUTTON_MAP[e.code];
       if (btn !== undefined) {
         e.preventDefault();
@@ -1216,7 +1257,7 @@
     });
 
     window.addEventListener("keyup", (e) => {
-      if (!emulatorRunning || !playModule || !playModule.gamepadButton) return;
+      if (!playModule || !playModule.gamepadButton) return;
       const btn = KEY_BUTTON_MAP[e.code];
       if (btn !== undefined) {
         e.preventDefault();
@@ -1229,6 +1270,9 @@
         if (btn >= 12 && btn <= 15) updateSimulatedLeftStick();
       }
     });
+
+    canvas.addEventListener("click", () => canvas.focus());
+    canvas.addEventListener("pointerdown", () => canvas.focus());
 
     // --- 10. Boutons UI, Modales & Manette Tactile 360° ---
     // Retour
