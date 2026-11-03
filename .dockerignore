@@ -4,8 +4,8 @@
 local_report*.json
 live_report.json
 script.py
-GEMINI.md
-README.md
+docs/
+*.md
 api/test.php
 .secret
 .admin_pass
