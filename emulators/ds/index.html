@@ -411,9 +411,12 @@
       <div class="ds-drop-title">Déposer la relique Nintendo DS (.nds)</div>
       <div class="ds-drop-sub">Le moteur DeSmuME WebAssembly lancera immédiatement la cartouche à 60 FPS.</div>
     </div>
+    <div id="msg-layer" hidden style="position: absolute; bottom: 12px; right: 12px; background: rgba(9, 19, 13, 0.9); color: #d4af37; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 4px; padding: 4px 8px; font-size: 0.74rem; pointer-events: none; z-index: 10;">
+      <span id="msg-text"></span>
+    </div>
   </div>
 
-  <script src="desmond.min.js?v=8.6"></script>
+  <script src="desmond.min.js?v=9.2"></script>
   <script>
     (function() {
       // Détection automatique du mode imbriqué (dans RetroVault)
@@ -982,15 +985,28 @@
         }
       }
 
+      let isRomLoading = false;
       let lastLoadedBlob = null;
       let lastLoadedName = null;
+      let lastLoadTimestamp = 0;
 
-      function loadRomBlob(blob, name) {
+      function loadRomBlob(blob, name, force = false) {
         if (!blob) return;
-        lastLoadedBlob = blob;
-        lastLoadedName = name || blob.name || "relique.nds";
-        applyFirmwareLanguage(currentLanguage);
+        const targetName = name || blob.name || "relique.nds";
+        const now = Date.now();
 
+        // Protection anti-course (race condition) : ignorer les doublons concurrents
+        if (!force && lastLoadedName === targetName && (now - lastLoadTimestamp < 3000)) {
+          console.warn("[DS] Requête de chargement ignorée (doublon bloqué) :", targetName);
+          return;
+        }
+
+        isRomLoading = true;
+        lastLoadedBlob = blob;
+        lastLoadedName = targetName;
+        lastLoadTimestamp = now;
+
+        applyFirmwareLanguage(currentLanguage);
         unlockAudio();
 
         const isSM64 = lastLoadedName.toLowerCase().includes("mario 64") || lastLoadedName.toLowerCase().includes("mario64");
@@ -1004,6 +1020,7 @@
           const url = URL.createObjectURL(blob);
           if (player && typeof player.loadURL === "function") {
             player.loadURL(url, function() {
+              isRomLoading = false;
               unlockAudio();
               if (isSM64) {
                 setStatus("🎮 " + lastLoadedName + " | 🕹️ Stick 360° ACTIF (Mode Tactile conseillé dans Options SM64DS)", "#34d399");
@@ -1013,6 +1030,7 @@
             });
           }
         } catch (err) {
+          isRomLoading = false;
           console.error("Erreur chargement ROM:", err);
           setStatus("❌ Erreur : " + err.message, "#ef4444");
         }
@@ -1053,7 +1071,7 @@
       btnReset.addEventListener("click", () => {
         applyFirmwareLanguage(currentLanguage);
         if (lastLoadedBlob) {
-          loadRomBlob(lastLoadedBlob, lastLoadedName);
+          loadRomBlob(lastLoadedBlob, lastLoadedName, true);
           setStatus("🔄 Console redémarrée (Langue : " + (dsLangNames[currentLanguage] || "FR") + ")", "#34d399");
           return;
         }
@@ -1212,7 +1230,7 @@
         } else if (e.data.type === "RESET") {
           applyFirmwareLanguage(currentLanguage);
           if (lastLoadedBlob) {
-            loadRomBlob(lastLoadedBlob, lastLoadedName);
+            loadRomBlob(lastLoadedBlob, lastLoadedName, true);
             setStatus("🔄 Console réinitialisée (Langue : " + (dsLangNames[currentLanguage] || "FR") + ")", "#34d399");
             return;
           }

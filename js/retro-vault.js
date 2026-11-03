@@ -213,10 +213,12 @@
           if (this.pendingNdsSave) {
             const frame = document.getElementById("rv-nds-frame");
             if (frame && frame.contentWindow) {
+              const saveToSend = this.pendingNdsSave;
+              this.pendingNdsSave = null;
               try {
                 frame.contentWindow.postMessage({
                   type: "LOAD_DS_SAVE",
-                  data: Array.from(this.pendingNdsSave)
+                  data: Array.from(saveToSend)
                 }, "*");
               } catch(err) {}
             }
@@ -4765,12 +4767,24 @@
                 layout: this.dispositionDS
               }, "*");
             } catch(e) {}
+            if (this.pendingNdsSave) {
+              const saveToSend = this.pendingNdsSave;
+              this.pendingNdsSave = null;
+              try {
+                frame.contentWindow.postMessage({
+                  type: "LOAD_DS_SAVE",
+                  data: Array.from(saveToSend)
+                }, "*");
+              } catch(e) {}
+            }
             if (this.pendingNdsRom) {
+              const romToSend = this.pendingNdsRom;
+              this.pendingNdsRom = null; // CONSOMMER IMMÉDIATEMENT POUR ÉVITER LES DOUBLONS
               try {
                 frame.contentWindow.postMessage({
                   type: "LOAD_ROM",
-                  blob: this.pendingNdsRom.blob,
-                  name: this.pendingNdsRom.name
+                  blob: romToSend.blob,
+                  name: romToSend.name
                 }, "*");
               } catch (err) {}
             }
@@ -5260,9 +5274,9 @@
             </div>
             <div class="rv-nds-wrapper">
               <div class="rv-nds-ext-btn-wrap" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
-                <a href="emulators/ds/index.html?v=9.1" target="_blank" class="rv-btn rv-nds-ext-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
+                <a href="emulators/ds/index.html?v=9.2" target="_blank" class="rv-btn rv-nds-ext-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
               </div>
-              <iframe id="rv-nds-frame" class="rv-embedded-frame" src="emulators/ds/index.html?v=9.1&embedded=1" allow="autoplay; fullscreen; gamepad"></iframe>
+              <iframe id="rv-nds-frame" class="rv-embedded-frame" src="emulators/ds/index.html?v=9.2&embedded=1" allow="autoplay; fullscreen; gamepad"></iframe>
             </div>
           `;
 
@@ -5295,16 +5309,20 @@
                     layout: this.dispositionDS
                   }, "*");
                   if (this.pendingNdsSave) {
+                    const saveToSend = this.pendingNdsSave;
+                    this.pendingNdsSave = null;
                     frame.contentWindow.postMessage({
                       type: "LOAD_DS_SAVE",
-                      data: Array.from(this.pendingNdsSave)
+                      data: Array.from(saveToSend)
                     }, "*");
                   }
                   if (this.pendingNdsRom) {
+                    const romToSend = this.pendingNdsRom;
+                    this.pendingNdsRom = null; // CONSOMMER IMMÉDIATEMENT POUR ÉVITER LES DOUBLONS
                     frame.contentWindow.postMessage({
                       type: "LOAD_ROM",
-                      blob: this.pendingNdsRom.blob,
-                      name: this.pendingNdsRom.name
+                      blob: romToSend.blob,
+                      name: romToSend.name
                     }, "*");
                   }
                 }
