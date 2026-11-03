@@ -1539,6 +1539,14 @@
           ? "Disposition DS : Côte à côte (Basculer vers Superposé)"
           : "Disposition DS : Superposé (Basculer vers Côte à côte)";
       }
+
+      const ndsFrame = document.getElementById("rv-nds-frame");
+      if (ndsFrame && ndsFrame.contentWindow) {
+        try {
+          ndsFrame.contentWindow.postMessage({ type: "SET_SCALE", scale: this.echelleEcran }, "*");
+          ndsFrame.contentWindow.postMessage({ type: "SET_DS_LAYOUT", layout: this.dispositionDS }, "*");
+        } catch(e) {}
+      }
     }
 
     changerTailleEcran(nouvelleTaille = null) {
@@ -5252,9 +5260,9 @@
             </div>
             <div class="rv-nds-wrapper">
               <div class="rv-nds-ext-btn-wrap" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
-                <a href="emulators/ds/index.html?v=8.9" target="_blank" class="rv-btn rv-nds-ext-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
+                <a href="emulators/ds/index.html?v=9.1" target="_blank" class="rv-btn rv-nds-ext-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
               </div>
-              <iframe id="rv-nds-frame" class="rv-embedded-frame" src="emulators/ds/index.html?v=8.9&embedded=1" allow="autoplay; fullscreen; gamepad"></iframe>
+              <iframe id="rv-nds-frame" class="rv-embedded-frame" src="emulators/ds/index.html?v=9.1&embedded=1" allow="autoplay; fullscreen; gamepad"></iframe>
             </div>
           `;
 

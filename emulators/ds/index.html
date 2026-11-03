@@ -290,6 +290,8 @@
       position: relative;
       padding: 6px;
       touch-action: none;
+      min-height: 0;
+      overflow: hidden;
     }
 
     @media (orientation: landscape) and (max-height: 600px) {
@@ -317,9 +319,16 @@
     }
 
     desmond-player {
-      display: block;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
       max-width: 100%;
       max-height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
     }
 
     /* Overlay glisser-déposer */
@@ -787,6 +796,7 @@
         const shadowStyle = document.createElement("style");
         shadowStyle.textContent = `
           #player {
+            container-type: size;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -794,7 +804,8 @@
             height: 100% !important;
             box-sizing: border-box !important;
             margin: 0 auto !important;
-            padding: 2px !important;
+            padding: 4px !important;
+            overflow: hidden !important;
           }
           canvas {
             image-rendering: pixelated !important;
@@ -806,7 +817,8 @@
             box-shadow: 0 4px 18px rgba(0, 0, 0, 0.85) !important;
             background: #000 !important;
             display: block !important;
-            box-sizing: border-box !important;
+            box-sizing: content-box !important;
+            flex-shrink: 0 !important;
           }
           #bottom {
             cursor: crosshair !important;
@@ -822,59 +834,103 @@
             justify-content: center !important;
           }
           #player.ds-side-by-side canvas {
-            max-height: calc(100vh - 10px) !important;
-            max-width: calc(50vw - 12px) !important;
-            width: auto !important;
+            width: var(--dyn-w, min(calc(50cqw - 14px), calc((100cqh - 14px) * 4 / 3))) !important;
             height: auto !important;
+            max-width: calc(50cqw - 8px) !important;
+            max-height: calc(100cqh - 8px) !important;
           }
           /* Forçage Superposé vertical explicite */
           #player.ds-vertical {
             flex-direction: column !important;
-            gap: 6px !important;
+            gap: 8px !important;
             width: 100% !important;
             max-width: 100% !important;
+            height: 100% !important;
+            max-height: 100% !important;
             align-items: center !important;
             justify-content: center !important;
           }
           #player.ds-vertical canvas {
-            max-width: calc(100vw - 10px) !important;
-            max-height: calc(50vh - 8px) !important;
-            width: auto !important;
+            width: var(--dyn-w, min(calc(100cqw - 14px), calc((50cqh - 14px) * 4 / 3))) !important;
             height: auto !important;
+            max-width: calc(100cqw - 8px) !important;
+            max-height: calc(50cqh - 8px) !important;
           }
           /* Mode Paysage automatique (Côte à côte : Écran haut à gauche, écran tactile à droite) */
           @media (orientation: landscape), (min-aspect-ratio: 1/1) {
             #player:not(.ds-vertical) {
               flex-direction: row !important;
-              gap: 8px !important;
+              gap: 12px !important;
               height: 100% !important;
               max-height: 100% !important;
             }
             #player:not(.ds-vertical) canvas {
-              max-height: calc(100vh - 6px) !important;
-              max-width: calc(50vw - 8px) !important;
-              width: auto !important;
+              width: var(--dyn-w, min(calc(50cqw - 14px), calc((100cqh - 14px) * 4 / 3))) !important;
               height: auto !important;
+              max-width: calc(50cqw - 8px) !important;
+              max-height: calc(100cqh - 8px) !important;
             }
           }
           /* Mode Portrait automatique (Superposé vertical : Écran haut au dessus, tactile en bas) */
           @media (orientation: portrait) and (max-aspect-ratio: 1/1) {
             #player:not(.ds-side-by-side) {
               flex-direction: column !important;
-              gap: 4px !important;
+              gap: 8px !important;
               width: 100% !important;
               max-width: 100% !important;
+              height: 100% !important;
+              max-height: 100% !important;
             }
             #player:not(.ds-side-by-side) canvas {
-              max-width: calc(100vw - 6px) !important;
-              max-height: calc(50vh - 6px) !important;
-              width: auto !important;
+              width: var(--dyn-w, min(calc(100cqw - 14px), calc((50cqh - 14px) * 4 / 3))) !important;
               height: auto !important;
+              max-width: calc(100cqw - 8px) !important;
+              max-height: calc(50cqh - 8px) !important;
             }
           }
         `;
         player.shadowRoot.appendChild(shadowStyle);
       }
+
+      // Observateur de redimensionnement dynamique (garantit l'échelle réactive proportionnelle)
+      function setupCanvasScaling() {
+        if (!player || !player.shadowRoot) return;
+        const innerPlayer = player.shadowRoot.querySelector("#player");
+        if (!innerPlayer) return;
+        const canvases = innerPlayer.querySelectorAll("canvas");
+        if (!canvases || canvases.length === 0) return;
+
+        const updateCanvasDimensions = () => {
+          const rect = innerPlayer.getBoundingClientRect();
+          if (!rect.width || !rect.height) return;
+          const isVert = innerPlayer.classList.contains("ds-vertical");
+          let w;
+          if (isVert) {
+            const maxW = rect.width - 16;
+            const maxH = (rect.height - 16) / 2;
+            w = Math.min(maxW, maxH * (4 / 3));
+          } else {
+            const maxW = (rect.width - 20) / 2;
+            const maxH = rect.height - 16;
+            w = Math.min(maxW, maxH * (4 / 3));
+          }
+          if (w > 0) {
+            const roundedW = Math.floor(w) + "px";
+            canvases.forEach(cv => cv.style.setProperty("--dyn-w", roundedW));
+          }
+        };
+
+        window.updateDsCanvasDimensions = updateCanvasDimensions;
+        updateCanvasDimensions();
+
+        if (window.ResizeObserver) {
+          const ro = new ResizeObserver(updateCanvasDimensions);
+          ro.observe(innerPlayer);
+          ro.observe(document.body);
+        }
+        window.addEventListener("resize", updateCanvasDimensions);
+      }
+      setupCanvasScaling();
 
       // ====================================================================
       // GESTION DE LA DISPOSITION DES DEUX ÉCRANS NINTENDO DS
@@ -899,6 +955,9 @@
           innerPlayer.classList.add("ds-side-by-side");
         } else {
           innerPlayer.classList.add("ds-vertical");
+        }
+        if (typeof window.updateDsCanvasDimensions === "function") {
+          window.updateDsCanvasDimensions();
         }
         if (btnToggleLayout) {
           btnToggleLayout.textContent = (currentDsLayout === "side-by-side") ? "↔️ Côte à côte" : "↕️ Superposé";
@@ -1096,6 +1155,11 @@
           loadRomBlob(e.data.blob, e.data.name);
         } else if (e.data.type === "SET_DS_LAYOUT") {
           applyDsLayout(e.data.layout);
+        } else if (e.data.type === "SET_SCALE" || e.data.type === "RESIZE") {
+          if (typeof window.updateDsCanvasDimensions === "function") {
+            setTimeout(window.updateDsCanvasDimensions, 50);
+            setTimeout(window.updateDsCanvasDimensions, 260); // après la transition CSS de retro-vault (250ms)
+          }
         } else if (e.data.type === "SET_SPEED") {
           const spd = parseFloat(e.data.speed) || 1;
           window.dsSpeedMultiplier = spd;
