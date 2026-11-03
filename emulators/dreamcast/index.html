@@ -176,8 +176,8 @@
     }
 
     canvas#canvas {
-      width: auto;
-      height: auto;
+      width: 100%;
+      height: 100%;
       max-width: 100%;
       max-height: 100%;
       aspect-ratio: 4 / 3;
@@ -761,22 +761,84 @@
             })
           ]);
 
+          // Options de performance Flycast WASM JIT calibrées
+          const coreOpts = [
+            'reicast_hle_bios = "disabled"',
+            'reicast_threaded_rendering = "disabled"',
+            'reicast_synchronous_rendering = "disabled"',
+            'reicast_internal_resolution = "640x480"',
+            'reicast_mipmapping = "disabled"',
+            'reicast_anisotropic_filtering = "1"',
+            'reicast_texupscale = "off"',
+            'reicast_enable_rttb = "disabled"',
+            'reicast_enable_purupuru = "disabled"',
+            'reicast_alpha_sorting = "per-strip (fast, least accurate)"',
+            'reicast_delay_frame_swapping = "disabled"',
+            'reicast_frame_skipping = "disabled"',
+            'reicast_auto_skip_frame = "disabled"',
+            'reicast_gdrom_fast_loading = "enabled"',
+            'reicast_enable_dsp = "disabled"',
+            'reicast_fog = "disabled"',
+            'reicast_volume_modifier_enable = "disabled"',
+            'reicast_emulate_framebuffer = "disabled"'
+          ].join('\n') + '\n';
+
+          // Configuration RetroArch WebGL (désynchronisée de vsync bloquant pour laisser RAF piloter)
+          const retroCfg = [
+            'autosave_interval = 60',
+            'screenshot_directory = "/"',
+            'block_sram_overwrite = false',
+            'video_gpu_screenshot = false',
+            'audio_latency = 64',
+            'audio_sync = true',
+            'video_vsync = false',
+            'video_frame_delay = 0',
+            'video_hard_sync = false',
+            'video_smooth = false',
+            'video_driver = "gl"',
+            'video_srgb_fbo_enable = false',
+            'savefile_directory = "/data/saves"',
+            'system_directory = "/system"'
+          ].join('\n') + '\n';
+
           loaderText.textContent = "Initialisation de l'environnement WebAssembly SH4 JIT...";
-          const Module = await window.EJS_Runtime({
+          let runtimeModule = null;
+          const runtimeConfig = {
             noInitialRun: true,
             canvas: canvas,
             parent: stage,
             callbacks: {
               setupCoreSettingFile: (path) => {
-                console.log("[Flycast] Core settings path:", path);
+                console.log("[Flycast] Core settings path requested:", path);
+                try {
+                  const fs = (runtimeModule && runtimeModule.FS) || (activeModule && activeModule.FS) || runtimeConfig.FS;
+                  if (fs) {
+                    const dir = path.substring(0, path.lastIndexOf('/'));
+                    if (dir) {
+                      const parts = dir.split('/').filter(Boolean);
+                      let curr = '';
+                      for (const p of parts) {
+                        curr += '/' + p;
+                        try { fs.mkdir(curr); } catch(e){}
+                      }
+                    }
+                    fs.writeFile(path, coreOpts);
+                    console.log("[Flycast] Successfully injected tuned core options into:", path);
+                  }
+                } catch(e) {
+                  console.warn("[Flycast] Failed to write core options in callback:", e);
+                }
               }
             },
             getSavExt: () => ".srm",
             locateFile: (p) => p.endsWith('.wasm') ? 'flycast_libretro.wasm' : p,
             print: (txt) => console.log("[Flycast stdout]", txt),
             printErr: (txt) => console.log("[Flycast stderr]", txt),
-          });
+          };
+          runtimeModule = runtimeConfig;
+          const Module = await window.EJS_Runtime(runtimeConfig);
           activeModule = Module;
+          window.activeModule = Module;
 
           const FS = Module.FS;
           function mkdirp(p) {
@@ -799,39 +861,8 @@
           FS.writeFile("/system/dc_boot.bin", new Uint8Array(bootBuf));
           FS.writeFile("/system/dc_flash.bin", new Uint8Array(flashBuf));
 
-          // Configuration RetroArch
-          const retroCfg = [
-            'autosave_interval = 60',
-            'screenshot_directory = "/"',
-            'block_sram_overwrite = false',
-            'video_gpu_screenshot = false',
-            'audio_latency = 64',
-            'video_vsync = true',
-            'video_smooth = false',
-            'video_driver = "gl"',
-            'video_srgb_fbo_enable = false',
-            'savefile_directory = "/data/saves"',
-            'system_directory = "/system"'
-          ].join('\n') + '\n';
+          // Configuration RetroArch & Core Options
           FS.writeFile("/home/web_user/.config/retroarch/retroarch.cfg", retroCfg);
-
-          // Options de performance Flycast WASM JIT
-          const coreOpts = [
-            'reicast_boot_to_bios = "disabled"',
-            'reicast_hle_bios = "disabled"',
-            'reicast_threaded_rendering = "disabled"',
-            'reicast_synchronous_rendering = "disabled"',
-            'reicast_internal_resolution = "640x480"',
-            'reicast_mipmapping = "disabled"',
-            'reicast_anisotropic_filtering = "1"',
-            'reicast_texupscale = "disabled"',
-            'reicast_enable_rttb = "disabled"',
-            'reicast_enable_purupuru = "disabled"',
-            'reicast_alpha_sorting = "per-strip (fast, least accurate)"',
-            'reicast_delay_frame_swapping = "disabled"',
-            'reicast_frame_skipping = "enabled"',
-            'reicast_framerate = "normal"'
-          ].join('\n') + '\n';
           FS.writeFile("/home/web_user/.config/retroarch/retroarch-core-options.cfg", coreOpts);
           FS.writeFile("/home/web_user/retroarch/userdata/config/Flycast/Flycast.opt", coreOpts);
 
@@ -864,29 +895,61 @@
         }
       }
 
-      // Mesure de Performances FPS
+      // Mesure de Performances FPS Réelles (C-Level Module._get_current_frame_count)
       function startPerformanceLoop() {
         if (fpsInterval) clearInterval(fpsInterval);
-        let frames = 0;
+        let lastFrameCount = 0;
         let lastTime = performance.now();
+        let fallbackFrames = 0;
 
-        function step() {
-          frames++;
-          requestAnimationFrame(step);
+        function rafStep() {
+          fallbackFrames++;
+          requestAnimationFrame(rafStep);
         }
-        requestAnimationFrame(step);
+        requestAnimationFrame(rafStep);
 
         fpsInterval = setInterval(() => {
           const now = performance.now();
           const delta = (now - lastTime) / 1000;
-          const fps = Math.round(frames / delta);
-          frames = 0;
           lastTime = now;
+
+          let fps = 0;
+          let hasGenuineFrames = false;
+
+          if (activeModule && typeof activeModule._get_current_frame_count === "function") {
+            try {
+              const currentFrames = activeModule._get_current_frame_count();
+              if (currentFrames > 0) {
+                if (lastFrameCount > 0 && currentFrames >= lastFrameCount) {
+                  fps = Math.round((currentFrames - lastFrameCount) / (delta || 1));
+                  hasGenuineFrames = true;
+                }
+                lastFrameCount = currentFrames;
+              }
+            } catch(e) {}
+          }
+
+          if (!hasGenuineFrames) {
+            fps = Math.round(fallbackFrames / (delta || 1));
+          }
+          fallbackFrames = 0;
+
           if (hudText) {
             hudText.textContent = `${fps} FPS | ${(1000 / (fps || 60)).toFixed(1)} ms`;
           }
           if (hudDot) {
             hudDot.textContent = fps >= 55 ? "🟢" : (fps >= 30 ? "🟡" : "🔴");
+          }
+
+          // Transmettre les performances au parent si imbriqué
+          if (isEmbedded) {
+            try {
+              window.parent.postMessage({
+                type: "DC_PERF",
+                fps: fps,
+                ms: (1000 / (fps || 60)).toFixed(1)
+              }, "*");
+            } catch(e) {}
           }
         }, 1000);
       }

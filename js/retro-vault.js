@@ -243,6 +243,17 @@
               }
             } catch(err) {}
           }
+        } else if (e.data.type === "DC_PERF") {
+          const hud = document.getElementById("rv-perf-hud");
+          const perfText = document.getElementById("rv-perf-text");
+          const perfDot = document.getElementById("rv-perf-dot");
+          if (hud && this.afficherPerfFps) hud.classList.add("active");
+          if (perfText && typeof e.data.fps === "number") {
+            perfText.textContent = `${e.data.fps} FPS | ${e.data.ms} ms`;
+          }
+          if (perfDot && typeof e.data.fps === "number") {
+            perfDot.textContent = e.data.fps >= 55 ? "🟢" : (e.data.fps >= 30 ? "🟡" : "🔴");
+          }
         }
       });
     }
@@ -5512,7 +5523,8 @@
           status.style.color = "#fb923c";
           this.jeuEnCoursNom = nomFichier;
           if (this.afficherPerfFps) {
-            this.demarrerMesurePerf();
+            const hud = document.getElementById("rv-perf-hud");
+            if (hud) hud.classList.add("active");
           }
           this.rendreGrille();
           return;
