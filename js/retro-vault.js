@@ -24,6 +24,7 @@
     ps1: { label: "PlayStation 1", core: "pcsx_rearmed", tag: "tag-ps1", hasExtra: true },
     nds: { label: "Nintendo DS", core: "desmume", tag: "tag-nds", hasExtra: true },
     psp: { label: "PlayStation Portable", core: "ppsspp", tag: "tag-psp", hasExtra: true },
+    dreamcast: { label: "Sega Dreamcast", core: "flycast", tag: "tag-dc", hasExtra: true },
     pce: { label: "PC Engine", core: "mednafen_pce_fast", tag: "tag-pce", hasExtra: false },
     arcade: { label: "Arcade", core: "fbneo", tag: "tag-arcade", hasExtra: true }
   };
@@ -222,6 +223,25 @@
                 }, "*");
               } catch(err) {}
             }
+          }
+        } else if (e.data.type === "DC_READY" || e.data.type === "DC_RUNNER_READY") {
+          const frame = document.getElementById("rv-dc-frame");
+          if (frame && frame.contentWindow) {
+            try {
+              frame.contentWindow.postMessage({
+                type: "SET_VOLUME",
+                volume: this.volumeActuel
+              }, "*");
+              if (this.pendingDcRom) {
+                const romToSend = this.pendingDcRom;
+                this.pendingDcRom = null;
+                frame.contentWindow.postMessage({
+                  type: "LOAD_ROM",
+                  blob: romToSend.blob,
+                  name: romToSend.name
+                }, "*");
+              }
+            } catch(err) {}
           }
         }
       });
@@ -1745,13 +1765,18 @@
       const ext = nom.split(".").pop().toLowerCase();
       if (["nds"].includes(ext) || nom.includes("console-nds-launcher")) return "nds";
       if (["cso"].includes(ext) || nom.includes("console-psp-launcher") || /locoroco/i.test(nom)) return "psp";
+      if (["cdi", "gdi"].includes(ext) || nom.includes("console-dc-launcher") || /dreamcast|crazy taxi|sonic adventure|shenmue|jet grind/i.test(nom)) return "dreamcast";
       if (["sfc", "smc"].includes(ext)) return "snes";
       if (["gba"].includes(ext)) return "gba";
       if (["gb", "gbc"].includes(ext)) return "gb";
       if (["md", "bin", "gen", "smd", "sms", "gg"].includes(ext)) return "megadrive";
       if (["pce"].includes(ext)) return "pce";
       if (["zip"].includes(ext)) return "arcade";
-      if (["iso", "cue", "chd", "pbp", "img"].includes(ext)) return "ps1";
+      if (["chd"].includes(ext)) {
+        if (/crazy taxi|sonic|shenmue|dreamcast|jet grind|virtua/i.test(nom)) return "dreamcast";
+        return "ps1";
+      }
+      if (["iso", "cue", "pbp", "img"].includes(ext)) return "ps1";
       return "nes";
     }
 
@@ -2792,6 +2817,7 @@
         .tag-md { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
         .tag-ps1 { background: rgba(59, 130, 246, 0.25); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.5); }
         .tag-psp { background: rgba(14, 165, 233, 0.25); color: #7dd3fc; border: 1px solid rgba(14, 165, 233, 0.5); }
+        .tag-dc { background: rgba(249, 115, 22, 0.25); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.5); }
         .tag-nds { background: rgba(244, 63, 94, 0.25); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.5); }
         .tag-pce { background: rgba(249, 115, 22, 0.25); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.5); }
         .tag-arcade { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.4); }
@@ -3949,6 +3975,7 @@
             </div>
             <div class="rv-tabs" id="rv-tabs">
               <button class="rv-tab active" data-filter="all">🔮 TOUTES</button>
+              <button class="rv-tab" data-filter="dreamcast">🌀 DREAMCAST</button>
               <button class="rv-tab" data-filter="psp">🔴 PSP</button>
               <button class="rv-tab" data-filter="ps1">⚔️ PLAYSTATION 1</button>
               <button class="rv-tab" data-filter="nds">🕹️ NINTENDO DS</button>
@@ -4834,7 +4861,7 @@
         if (!e.dataTransfer || !e.dataTransfer.files || e.dataTransfer.files.length === 0) return;
         const file = e.dataTransfer.files[0];
         const ext = file.name.split(".").pop().toLowerCase();
-        if (["nes", "sfc", "smc", "gba", "gb", "gbc", "md", "bin", "gen", "zip", "iso", "cue", "chd", "pbp", "img", "pce", "nds", "cso"].includes(ext)) {
+        if (["nes", "sfc", "smc", "gba", "gb", "gbc", "md", "bin", "gen", "zip", "iso", "cue", "chd", "pbp", "img", "pce", "nds", "cso", "cdi", "gdi"].includes(ext)) {
           this.tousLesJeux.unshift({
             nom: file.name,
             titre: file.name.replace(/\.[^/.]+$/, ""),
@@ -4900,6 +4927,21 @@
           if (badgeTriggers) {
             badgeTriggers.style.display = "inline";
             badgeTriggers.innerHTML = '<span class="rv-kbd">7 / U</span> L / <span class="rv-kbd">9 / P</span> R';
+          }
+        } else if (consoleType === "dreamcast") {
+          if (badgeY) {
+            badgeY.style.display = "inline";
+            badgeY.innerHTML = '<span class="rv-kbd">J / 4</span> : X';
+          }
+          if (badgeB) badgeB.innerHTML = '<span class="rv-kbd rv-kbd-pri">K / 5</span> : A';
+          if (badgeA) badgeA.innerHTML = '<span class="rv-kbd rv-kbd-pri">L / 6</span> : B';
+          if (badgeX) {
+            badgeX.style.display = "inline";
+            badgeX.innerHTML = '<span class="rv-kbd">I / 8</span> : Y';
+          }
+          if (badgeTriggers) {
+            badgeTriggers.style.display = "inline";
+            badgeTriggers.innerHTML = '<span class="rv-kbd">Q</span> L / <span class="rv-kbd">E</span> R';
           }
         } else if (consoleType === "nds") {
           if (badgeY) {
@@ -5243,10 +5285,10 @@
           this.partieEnCours = null;
         }
 
-        const isLauncher = nomFichier.includes("console-nds-launcher") || nomFichier.includes("console-psp-launcher");
+        const isLauncher = nomFichier.includes("console-nds-launcher") || nomFichier.includes("console-psp-launcher") || nomFichier.includes("console-dc-launcher");
         let romBlob = customBlob;
 
-        if (!romBlob && !isLauncher && cType !== "psp") {
+        if (!romBlob && !isLauncher && cType !== "psp" && cType !== "dreamcast") {
           if (!this.isCloudConnected()) {
             throw new Error("Relique inaccessible en mode invité.");
           }
@@ -5397,6 +5439,70 @@
           this.rendreGrille();
           return;
         }
+
+        if (cType === "dreamcast") {
+          container.classList.add("rv-is-dreamcast");
+          container.classList.remove("rv-is-nds");
+          container.classList.remove("rv-is-psp");
+
+          const isLauncher = nomFichier.includes("console-dc-launcher");
+          const token = this.getCloudToken() || "";
+          const gameParam = !isLauncher ? `&game=${encodeURIComponent(nomFichier)}` : "";
+          const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
+          const dcDedicatedUrl = `emulators/dreamcast/index.html?v=1.0${gameParam}${tokenParam}`;
+
+          container.innerHTML = `
+            <div class="rv-perf-hud" id="rv-perf-hud">
+              <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
+              <span class="rv-perf-text" id="rv-perf-text">60 FPS | 16.6 ms</span>
+            </div>
+            <div class="rv-dc-wrapper" style="position: relative; width: 100%; height: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; border: 1px solid rgba(249, 115, 22, 0.4); border-radius: 8px; overflow: hidden;">
+              <div class="rv-dc-ext-btn-wrap" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
+                <a href="${dcDedicatedUrl}" target="_blank" class="rv-btn rv-dc-ext-btn" style="font-size: 0.72rem; padding: 4px 10px; text-decoration: none; background: rgba(249, 115, 22, 0.3); border: 1px solid rgba(249, 115, 22, 0.6); color: #fb923c;">⛶ Plein Écran Dédié</a>
+              </div>
+              <iframe id="rv-dc-frame" class="rv-embedded-frame" src="emulators/dreamcast/index.html?v=1.0&embedded=1" allow="autoplay; fullscreen; gamepad" style="width: 100%; height: 100%; min-height: 480px; border: none;"></iframe>
+            </div>
+          `;
+
+          const frame = document.getElementById("rv-dc-frame");
+          this.pendingDcRom = romBlob ? { blob: romBlob, name: nomFichier } : null;
+
+          if (frame) {
+            const sendRomAndVolume = () => {
+              try {
+                if (frame.contentWindow) {
+                  frame.contentWindow.postMessage({
+                    type: "SET_VOLUME",
+                    volume: this.volumeActuel
+                  }, "*");
+                  if (this.pendingDcRom) {
+                    const romToSend = this.pendingDcRom;
+                    this.pendingDcRom = null;
+                    frame.contentWindow.postMessage({
+                      type: "LOAD_ROM",
+                      blob: romToSend.blob,
+                      name: romToSend.name
+                    }, "*");
+                  }
+                }
+              } catch(e) {}
+            };
+            frame.onload = () => setTimeout(sendRomAndVolume, 400);
+          }
+
+          status.textContent = isLauncher
+            ? "🎮 Console Sega Dreamcast (Flycast SH4 JIT) prête | Insérez un .chd, .cdi ou .gdi !"
+            : `🎮 Relique Dreamcast : "${nomFichier}". Émulateur Flycast JIT actif à 60 FPS.`;
+          status.style.color = "#fb923c";
+          this.jeuEnCoursNom = nomFichier;
+          if (this.afficherPerfFps) {
+            this.demarrerMesurePerf();
+          }
+          this.rendreGrille();
+          return;
+        }
+
+        container.classList.remove("rv-is-dreamcast");
 
         container.classList.remove("rv-is-nds");
         container.classList.remove("rv-is-psp");
@@ -6175,6 +6281,7 @@
         this.modal.classList.remove("rv-mobile-landscape-fullscreen");
       }
       this.pendingNdsRom = null;
+      this.pendingDcRom = null;
 
       if (this.jeuEnCoursType === "nds") {
         const frame = document.getElementById("rv-nds-frame");
@@ -6187,6 +6294,13 @@
       if (activeFrame) {
         setTimeout(() => {
           try { activeFrame.src = "about:blank"; } catch(e) {}
+        }, 250);
+      }
+
+      const activeDcFrame = document.getElementById("rv-dc-frame");
+      if (activeDcFrame) {
+        setTimeout(() => {
+          try { activeDcFrame.src = "about:blank"; } catch(e) {}
         }, 250);
       }
 

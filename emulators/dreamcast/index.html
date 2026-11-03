@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Sanctuaire Sega Dreamcast — Quentin Beaud</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dark.css">
+  <script src="coi-serviceworker.js"></script>
+  <script>
+    // WebGL 2 shims pour RetroArch / Flycast
+    (function() {
+      const gl2 = window.WebGL2RenderingContext ? WebGL2RenderingContext.prototype : null;
+      const gl1 = window.WebGLRenderingContext ? WebGLRenderingContext.prototype : null;
+      [gl1, gl2].filter(Boolean).forEach(proto => {
+        const origEnable = proto.enable;
+        const origDisable = proto.disable;
+        const origGetParam = proto.getParameter;
+        proto.enable = function(cap) {
+          if (cap === 36201 || cap === 0x8D69) return; // GL_FRAMEBUFFER_SRGB non supporté en direct sur WebGL
+          return origEnable.call(this, cap);
+        };
+        proto.disable = function(cap) {
+          if (cap === 36201 || cap === 0x8D69) return;
+          return origDisable.call(this, cap);
+        };
+        proto.getParameter = function(pname) {
+          if (pname === 7939 || pname === 0x1F03) return ""; // GL_EXTENSIONS
+          try {
+            return origGetParam.call(this, pname);
+          } catch (e) {
+            return "";
+          }
+        };
+      });
+    })();
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050a07;
+      color: #f0f4f1;
+      font-family: 'Outfit', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+    }
+
+    /* Mode Imbriqué (dans l'iframe du Sanctuaire RetroVault) */
+    body.dc-embedded .dc-header {
+      display: none !important;
+    }
+    body.dc-embedded,
+    body.dc-embedded .dc-stage {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100% !important;
+      max-height: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: #000 !important;
+    }
+
+    /* En-tête du Sanctuaire Dédié */
+    .dc-header {
+      width: 100%;
+      height: 48px;
+      min-height: 48px;
+      background: rgba(9, 19, 13, 0.95);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+    }
+    .dc-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .dc-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #d4af37;
+      margin: 0;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dc-swirl {
+      color: #f97316;
+      font-size: 1.25rem;
+      animation: dc-spin 12s linear infinite;
+    }
+    @keyframes dc-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .dc-badge {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(249, 115, 22, 0.2);
+      color: #fb923c;
+      border: 1px solid rgba(249, 115, 22, 0.4);
+      font-weight: 600;
+    }
+    .dc-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dc-btn-icon {
+      background: rgba(20, 40, 28, 0.8);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      color: #f0f4f1;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .dc-btn-icon:hover {
+      background: rgba(212, 175, 55, 0.2);
+      border-color: #d4af37;
+      color: #d4af37;
+      transform: translateY(-1px);
+    }
+
+    /* Scène Principale */
+    .dc-stage {
+      flex: 1;
+      width: 100%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, #0a140e 0%, #030504 100%);
+      overflow: hidden;
+    }
+
+    .dc-canvas-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas#canvas {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: contain;
+      image-rendering: auto;
+      background: #000;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
+      outline: none;
+    }
+
+    /* Effet Scanlines CRT optionnel */
+    .dc-crt-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      z-index: 5;
+      display: none;
+    }
+    .dc-crt-overlay.active {
+      display: block;
+    }
+
+    /* HUD FPS Flottant */
+    .dc-floating-hud {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      background: rgba(5, 10, 7, 0.75);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-family: monospace;
+      color: #34d399;
+      z-index: 20;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Bouton plein écran dédié externe si iframe */
+    .dc-ext-button {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      z-index: 30;
+      background: rgba(9, 19, 13, 0.85);
+      border: 1px solid rgba(212, 175, 55, 0.5);
+      color: #d4af37;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(6px);
+      transition: all 0.2s ease;
+    }
+    .dc-ext-button:hover {
+      background: rgba(212, 175, 55, 0.25);
+      border-color: #d4af37;
+      color: #fff;
+    }
+
+    /* Zone de Drag & Drop si aucun jeu */
+    .dc-dropzone {
+      position: absolute;
+      width: 90%;
+      max-width: 520px;
+      padding: 32px 24px;
+      background: rgba(9, 19, 13, 0.95);
+      border: 2px dashed rgba(212, 175, 55, 0.45);
+      border-radius: 10px;
+      text-align: center;
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    }
+    .dc-dropzone.dragover {
+      border-color: #f97316;
+      background: rgba(249, 115, 22, 0.15);
+    }
+    .dc-dropzone-icon {
+      font-size: 3.5rem;
+      filter: drop-shadow(0 0 16px rgba(249, 115, 22, 0.7));
+    }
+    .dc-dropzone h2 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      color: #d4af37;
+      margin: 0;
+    }
+    .dc-dropzone p {
+      font-size: 0.9rem;
+      color: #a8b8ad;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* Écran de chargement */
+    .dc-loader-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(5, 10, 7, 0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 60;
+      backdrop-filter: blur(8px);
+    }
+    .dc-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(212, 175, 55, 0.2);
+      border-top-color: #f97316;
+      border-radius: 50%;
+      animation: dc-spin 1s linear infinite;
+    }
+    .dc-loader-text {
+      font-family: 'Cinzel', serif;
+      font-size: 1.05rem;
+      color: #d4af37;
+      letter-spacing: 0.5px;
+      text-align: center;
+      max-width: 460px;
+      padding: 0 16px;
+    }
+
+    /* MANETTE VIRTUELLE TACTILE */
+    .dc-vpad {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 15;
+      display: none;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 16px 20px 24px;
+    }
+    .dc-vpad.active {
+      display: flex;
+    }
+    .dc-vpad-wing {
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Gâchettes L / R */
+    .dc-shoulder-btn {
+      width: 76px;
+      height: 38px;
+      background: linear-gradient(180deg, rgba(30, 45, 36, 0.9) 0%, rgba(15, 25, 20, 0.9) 100%);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      border-radius: 8px;
+      color: #d4af37;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+    .dc-shoulder-btn:active {
+      transform: scale(0.94);
+      background: #f97316;
+      color: #000;
+    }
+
+    /* Croix Directionnelle */
+    .dc-dpad {
+      position: relative;
+      width: 140px;
+      height: 140px;
+    }
+    .dc-dpad-btn {
+      position: absolute;
+      background: rgba(20, 35, 25, 0.85);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: #f0f4f1;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    .dc-dpad-btn:active {
+      background: #f97316;
+      color: #000;
+    }
+    .dc-dpad-u { top: 0; left: 46px; width: 48px; height: 46px; border-radius: 8px 8px 0 0; }
+    .dc-dpad-d { bottom: 0; left: 46px; width: 48px; height: 46px; border-radius: 0 0 8px 8px; }
+    .dc-dpad-l { top: 46px; left: 0; width: 46px; height: 48px; border-radius: 8px 0 0 8px; }
+    .dc-dpad-r { top: 46px; right: 0; width: 46px; height: 48px; border-radius: 0 8px 8px 0; }
+    .dc-dpad-center {
+      position: absolute;
+      top: 46px; left: 46px; width: 48px; height: 48px;
+      background: rgba(15, 25, 20, 0.95);
+      pointer-events: none;
+    }
+
+    /* Boutons Dreamcast ABXY */
+    .dc-actions-pad {
+      position: relative;
+      width: 140px;
+      height: 140px;
+    }
+    .dc-btn-round {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      font-weight: 800;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+    }
+    .dc-btn-round:active {
+      transform: scale(0.92);
+      filter: brightness(1.25);
+    }
+    /* Dreamcast Palette: A=Vert, B=Rouge, X=Bleu, Y=Jaune */
+    .dc-btn-a { bottom: 0; left: 48px; background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); color: #fff; }
+    .dc-btn-b { top: 48px; right: 0; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color: #fff; }
+    .dc-btn-x { top: 48px; left: 0; background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%); color: #fff; }
+    .dc-btn-y { top: 0; left: 48px; background: linear-gradient(135deg, #facc15 0%, #ca8a04 100%); color: #000; }
+
+    /* Bouton Start Centre Bas */
+    .dc-vpad-center {
+      pointer-events: auto;
+      display: flex;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+    .dc-start-btn {
+      padding: 8px 18px;
+      border-radius: 20px;
+      background: rgba(20, 35, 25, 0.85);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: #d4af37;
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+    .dc-start-btn:active {
+      background: #f97316;
+      color: #000;
+    }
+
+    /* Modal Guide des touches */
+    .dc-modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(5, 10, 7, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .dc-modal-backdrop.active {
+      display: flex;
+    }
+    .dc-modal {
+      width: 100%;
+      max-width: 500px;
+      background: #09130d;
+      border: 1px solid rgba(212, 175, 55, 0.5);
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    }
+    .dc-modal h3 {
+      font-family: 'Cinzel', serif;
+      color: #d4af37;
+      margin: 0 0 16px;
+      font-size: 1.2rem;
+    }
+    .dc-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin-bottom: 16px;
+    }
+    .dc-table th, .dc-table td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+    }
+    .dc-table th {
+      color: #d4af37;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- En-tête Sanctuaire Standalone -->
+  <header class="dc-header">
+    <div class="dc-brand">
+      <a href="/" class="dc-btn-icon" title="Retourner au Portfolio">🦉 Portfolio</a>
+      <h1 class="dc-title">
+        <span class="dc-swirl">🌀</span> Sega Dreamcast
+      </h1>
+      <span class="dc-badge">Flycast WASM 60 FPS (SH4 JIT)</span>
+    </div>
+    <div class="dc-actions">
+      <button class="dc-btn-icon" id="dc-btn-controls" title="Guide des touches clavier et manettes">⌨️ Touches</button>
+      <button class="dc-btn-icon" id="dc-btn-pad" title="Afficher ou masquer la manette virtuelle tactile">📱 Manette</button>
+      <button class="dc-btn-icon" id="dc-btn-crt" title="Activer les scanlines CRT rétro">📺 CRT</button>
+      <button class="dc-btn-icon" id="dc-btn-fps" title="Compteur de performances">🟢 FPS</button>
+      <button class="dc-btn-icon" id="dc-btn-restart" title="Redémarrer l'émulateur">🔄 Redémarrer</button>
+      <button class="dc-btn-icon" id="dc-btn-fs" title="Plein Écran">⛶ Plein Écran</button>
+    </div>
+  </header>
+
+  <!-- Scène de jeu -->
+  <main class="dc-stage" id="dc-stage">
+    <!-- HUD FPS -->
+    <div class="dc-floating-hud" id="dc-hud">
+      <span id="dc-hud-dot">🟢</span>
+      <span id="dc-hud-text">60 FPS | 16.6 ms</span>
+    </div>
+
+    <!-- Bouton plein écran externe si mode iframe -->
+    <a id="dc-open-dedicated" href="index.html" target="_blank" class="dc-ext-button" style="display: none;">
+      ⛶ Plein Écran Dédié
+    </a>
+
+    <!-- Conteneur Canvas et Effet CRT -->
+    <div class="dc-canvas-container">
+      <div class="dc-crt-overlay" id="dc-crt"></div>
+      <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="0" width="640" height="480"></canvas>
+    </div>
+
+    <!-- MANETTE VIRTUELLE TACTILE -->
+    <div class="dc-vpad" id="dc-vpad">
+      <!-- Aile Gauche : Gâchette L + Croix Directionnelle -->
+      <div class="dc-vpad-wing left">
+        <button type="button" class="dc-shoulder-btn" id="dc-btn-l" data-btn="10">L</button>
+        <div class="dc-dpad">
+          <button type="button" class="dc-dpad-btn dc-dpad-u" data-btn="4">▲</button>
+          <button type="button" class="dc-dpad-btn dc-dpad-l" data-btn="6">◀</button>
+          <div class="dc-dpad-center"></div>
+          <button type="button" class="dc-dpad-btn dc-dpad-r" data-btn="7">▶</button>
+          <button type="button" class="dc-dpad-btn dc-dpad-d" data-btn="5">▼</button>
+        </div>
+      </div>
+
+      <!-- Centre Bas : Bouton Start -->
+      <div class="dc-vpad-center">
+        <button type="button" class="dc-start-btn" id="dc-btn-start" data-btn="3">START</button>
+      </div>
+
+      <!-- Aile Droite : Gâchette R + Losange Dreamcast (A, B, X, Y) -->
+      <div class="dc-vpad-wing right">
+        <button type="button" class="dc-shoulder-btn" id="dc-btn-r" data-btn="11">R</button>
+        <div class="dc-actions-pad">
+          <button type="button" class="dc-btn-round dc-btn-y" data-btn="9">Y</button>
+          <button type="button" class="dc-btn-round dc-btn-x" data-btn="1">X</button>
+          <button type="button" class="dc-btn-round dc-btn-b" data-btn="8">B</button>
+          <button type="button" class="dc-btn-round dc-btn-a" data-btn="0">A</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dropzone si aucune ROM chargée -->
+    <div class="dc-dropzone" id="dc-dropzone">
+      <div class="dc-dropzone-icon">🌀</div>
+      <h2>Sanctuaire Sega Dreamcast</h2>
+      <p>Glissez-déposez une relique Dreamcast (.chd, .cdi, .gdi) ou choisissez un fichier ci-dessous.</p>
+      <button type="button" id="dc-pick-btn" class="dc-btn-icon" style="padding: 10px 22px; font-size: 0.92rem;">📁 Sélectionner une ROM Dreamcast</button>
+      <input type="file" id="dc-file-input" accept=".chd,.cdi,.gdi,.cue" style="display: none;">
+    </div>
+
+    <!-- Écran de chargement -->
+    <div class="dc-loader-overlay" id="dc-loader" style="display: none;">
+      <div class="dc-spinner"></div>
+      <div class="dc-loader-text" id="dc-loader-text">Initialisation du moteur Flycast WebAssembly...</div>
+    </div>
+  </main>
+
+  <!-- Modal Guide des Touches -->
+  <div class="dc-modal-backdrop" id="dc-modal-controls">
+    <div class="dc-modal">
+      <h3>Contrôles Sega Dreamcast</h3>
+      <table class="dc-table">
+        <thead>
+          <tr>
+            <th>Dreamcast</th>
+            <th>Clavier</th>
+            <th>Manette (Xbox / PS)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Direction (Croix / Stick)</td>
+            <td>Flèches / ZSQD</td>
+            <td>D-Pad / Stick Gauche</td>
+          </tr>
+          <tr>
+            <td>Bouton A (Vert)</td>
+            <td><strong>K</strong> ou <strong>L</strong></td>
+            <td>Bouton A / Croix (✕)</td>
+          </tr>
+          <tr>
+            <td>Bouton B (Rouge)</td>
+            <td><strong>L</strong> ou <strong>O</strong></td>
+            <td>Bouton B / Rond (◯)</td>
+          </tr>
+          <tr>
+            <td>Bouton X (Bleu)</td>
+            <td><strong>J</strong> ou <strong>I</strong></td>
+            <td>Bouton X / Carré (▢)</td>
+          </tr>
+          <tr>
+            <td>Bouton Y (Jaune)</td>
+            <td><strong>I</strong> ou <strong>P</strong></td>
+            <td>Bouton Y / Triangle (△)</td>
+          </tr>
+          <tr>
+            <td>Gâchette L</td>
+            <td><strong>Q</strong> ou <strong>A</strong></td>
+            <td>Gâchette L1 / L2</td>
+          </tr>
+          <tr>
+            <td>Gâchette R</td>
+            <td><strong>E</strong> ou <strong>D</strong></td>
+            <td>Gâchette R1 / R2</td>
+          </tr>
+          <tr>
+            <td>Bouton Start</td>
+            <td><strong>Entrée</strong></td>
+            <td>Touche Start / Options</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="display: flex; justify-content: flex-end;">
+        <button type="button" class="dc-btn-icon" id="dc-modal-close" style="padding: 8px 18px;">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="flycast_libretro.js"></script>
+  <script>
+    (function() {
+      "use strict";
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const isEmbedded = urlParams.get("embedded") === "1" || window.self !== window.top;
+      if (isEmbedded) {
+        document.body.classList.add("dc-embedded");
+        const extBtn = document.getElementById("dc-open-dedicated");
+        if (extBtn) extBtn.style.display = "inline-flex";
+      }
+
+      const canvas = document.getElementById("canvas");
+      const stage = document.getElementById("dc-stage");
+      const dropzone = document.getElementById("dc-dropzone");
+      const loader = document.getElementById("dc-loader");
+      const loaderText = document.getElementById("dc-loader-text");
+      const vpad = document.getElementById("dc-vpad");
+      const hudText = document.getElementById("dc-hud-text");
+      const hudDot = document.getElementById("dc-hud-dot");
+      const crtOverlay = document.getElementById("dc-crt");
+
+      let activeModule = null;
+      let isRunning = false;
+      let currentRomName = "";
+      let lastFrameTime = performance.now();
+      let frameCount = 0;
+      let fpsInterval = null;
+
+      // Boutons Header
+      document.getElementById("dc-btn-controls")?.addEventListener("click", () => {
+        document.getElementById("dc-modal-controls")?.classList.add("active");
+      });
+      document.getElementById("dc-modal-close")?.addEventListener("click", () => {
+        document.getElementById("dc-modal-controls")?.classList.remove("active");
+      });
+      document.getElementById("dc-btn-pad")?.addEventListener("click", () => {
+        vpad.classList.toggle("active");
+      });
+      document.getElementById("dc-btn-crt")?.addEventListener("click", () => {
+        crtOverlay.classList.toggle("active");
+      });
+      document.getElementById("dc-btn-fps")?.addEventListener("click", () => {
+        const hud = document.getElementById("dc-hud");
+        if (hud) hud.style.display = (hud.style.display === "none") ? "flex" : "none";
+      });
+      document.getElementById("dc-btn-restart")?.addEventListener("click", () => {
+        window.location.reload();
+      });
+      document.getElementById("dc-btn-fs")?.addEventListener("click", () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
+      });
+
+      // Gestion Dropzone & File Input
+      const fileInput = document.getElementById("dc-file-input");
+      document.getElementById("dc-pick-btn")?.addEventListener("click", () => fileInput?.click());
+      dropzone?.addEventListener("click", (e) => {
+        if (e.target.id !== "dc-pick-btn") fileInput?.click();
+      });
+      fileInput?.addEventListener("change", (e) => {
+        const file = e.target.files?.[0];
+        if (file) launchRom(file, file.name);
+      });
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        window.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          dropzone?.classList.add('dragover');
+        });
+      });
+      ['dragleave', 'drop'].forEach(eventName => {
+        window.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          dropzone?.classList.remove('dragover');
+        });
+      });
+      window.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const file = e.dataTransfer?.files?.[0];
+        if (file) launchRom(file, file.name);
+      });
+
+      // Lancement de l'émulateur
+      async function launchRom(romData, romName) {
+        if (isRunning) return;
+        isRunning = true;
+        currentRomName = romName;
+        dropzone.style.display = "none";
+        loader.style.display = "flex";
+        loaderText.textContent = `Invocation de "${romName}" via Flycast WASM JIT...`;
+
+        try {
+          let romBytes;
+          if (romData instanceof Blob) {
+            romBytes = new Uint8Array(await romData.arrayBuffer());
+          } else if (romData instanceof ArrayBuffer) {
+            romBytes = new Uint8Array(romData);
+          } else if (romData instanceof Uint8Array) {
+            romBytes = romData;
+          } else {
+            throw new Error("Format de données ROM non reconnu.");
+          }
+
+          loaderText.textContent = "Chargement du BIOS Dreamcast (dc_boot.bin & dc_flash.bin)...";
+          const [bootBuf, flashBuf] = await Promise.all([
+            fetch("dc_boot.bin").then(r => {
+              if (!r.ok) throw new Error("dc_boot.bin introuvable");
+              return r.arrayBuffer();
+            }),
+            fetch("dc_flash.bin").then(r => {
+              if (!r.ok) throw new Error("dc_flash.bin introuvable");
+              return r.arrayBuffer();
+            })
+          ]);
+
+          loaderText.textContent = "Initialisation de l'environnement WebAssembly SH4 JIT...";
+          const Module = await window.EJS_Runtime({
+            noInitialRun: true,
+            canvas: canvas,
+            parent: stage,
+            callbacks: {
+              setupCoreSettingFile: (path) => {
+                console.log("[Flycast] Core settings path:", path);
+              }
+            },
+            getSavExt: () => ".srm",
+            locateFile: (p) => p.endsWith('.wasm') ? 'flycast_libretro.wasm' : p,
+            print: (txt) => console.log("[Flycast stdout]", txt),
+            printErr: (txt) => console.log("[Flycast stderr]", txt),
+          });
+          activeModule = Module;
+
+          const FS = Module.FS;
+          function mkdirp(p) {
+            const parts = p.split('/').filter(Boolean);
+            let curr = '';
+            for (const part of parts) {
+              curr += '/' + part;
+              try { FS.mkdir(curr); } catch(e){}
+            }
+          }
+
+          mkdirp("/system/dc");
+          mkdirp("/data/saves");
+          mkdirp("/home/web_user/.config/retroarch");
+          mkdirp("/home/web_user/retroarch/userdata/config/Flycast");
+
+          // Injection du BIOS dans MEMFS
+          FS.writeFile("/system/dc/dc_boot.bin", new Uint8Array(bootBuf));
+          FS.writeFile("/system/dc/dc_flash.bin", new Uint8Array(flashBuf));
+          FS.writeFile("/system/dc_boot.bin", new Uint8Array(bootBuf));
+          FS.writeFile("/system/dc_flash.bin", new Uint8Array(flashBuf));
+
+          // Configuration RetroArch
+          const retroCfg = [
+            'autosave_interval = 60',
+            'screenshot_directory = "/"',
+            'block_sram_overwrite = false',
+            'video_gpu_screenshot = false',
+            'audio_latency = 64',
+            'video_vsync = true',
+            'video_smooth = false',
+            'video_driver = "gl"',
+            'video_srgb_fbo_enable = false',
+            'savefile_directory = "/data/saves"',
+            'system_directory = "/system"'
+          ].join('\n') + '\n';
+          FS.writeFile("/home/web_user/.config/retroarch/retroarch.cfg", retroCfg);
+
+          // Options de performance Flycast WASM JIT
+          const coreOpts = [
+            'reicast_boot_to_bios = "disabled"',
+            'reicast_hle_bios = "disabled"',
+            'reicast_threaded_rendering = "disabled"',
+            'reicast_synchronous_rendering = "disabled"',
+            'reicast_internal_resolution = "640x480"',
+            'reicast_mipmapping = "disabled"',
+            'reicast_anisotropic_filtering = "1"',
+            'reicast_texupscale = "disabled"',
+            'reicast_enable_rttb = "disabled"',
+            'reicast_enable_purupuru = "disabled"',
+            'reicast_alpha_sorting = "per-strip (fast, least accurate)"',
+            'reicast_delay_frame_swapping = "disabled"',
+            'reicast_frame_skipping = "enabled"',
+            'reicast_framerate = "normal"'
+          ].join('\n') + '\n';
+          FS.writeFile("/home/web_user/.config/retroarch/retroarch-core-options.cfg", coreOpts);
+          FS.writeFile("/home/web_user/retroarch/userdata/config/Flycast/Flycast.opt", coreOpts);
+
+          // Injection de la ROM dans MEMFS
+          const safeExt = romName.split('.').pop().toLowerCase() || "chd";
+          const gamePath = `/game.${safeExt}`;
+          loaderText.textContent = `Injection de la relique (${(romBytes.byteLength / 1048576).toFixed(1)} Mo)...`;
+          FS.writeFile(gamePath, romBytes);
+
+          loaderText.textContent = "Démarrage de la Sega Dreamcast à 60 FPS...";
+          await new Promise(r => setTimeout(r, 100));
+
+          Module.callMain(["-v", gamePath]);
+          if (Module.resumeMainLoop) Module.resumeMainLoop();
+
+          loader.style.display = "none";
+          if (window.matchMedia("(pointer: coarse)").matches) {
+            vpad.classList.add("active");
+          }
+
+          startPerformanceLoop();
+          startGamepadLoop();
+
+          // Notification au parent si imbriqué
+          window.parent.postMessage({ type: "DC_READY", name: romName }, "*");
+        } catch (err) {
+          console.error("[Flycast Error]", err);
+          loaderText.textContent = "❌ " + (err.message || "Erreur d'exécution");
+          loaderText.style.color = "#ef4444";
+        }
+      }
+
+      // Mesure de Performances FPS
+      function startPerformanceLoop() {
+        if (fpsInterval) clearInterval(fpsInterval);
+        let frames = 0;
+        let lastTime = performance.now();
+
+        function step() {
+          frames++;
+          requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+
+        fpsInterval = setInterval(() => {
+          const now = performance.now();
+          const delta = (now - lastTime) / 1000;
+          const fps = Math.round(frames / delta);
+          frames = 0;
+          lastTime = now;
+          if (hudText) {
+            hudText.textContent = `${fps} FPS | ${(1000 / (fps || 60)).toFixed(1)} ms`;
+          }
+          if (hudDot) {
+            hudDot.textContent = fps >= 55 ? "🟢" : (fps >= 30 ? "🟡" : "🔴");
+          }
+        }, 1000);
+      }
+
+      // Manette Virtuelle Tactile
+      const simulateInput = (btnId, value) => {
+        if (!activeModule || typeof activeModule._simulate_input !== "function") return;
+        try {
+          activeModule._simulate_input(0, btnId, value);
+        } catch(e){}
+      };
+
+      vpad.querySelectorAll("[data-btn]").forEach(btn => {
+        const btnId = parseInt(btn.getAttribute("data-btn"), 10);
+        const onDown = (e) => {
+          e.preventDefault();
+          simulateInput(btnId, 1);
+          btn.style.transform = "scale(0.92)";
+        };
+        const onUp = (e) => {
+          e.preventDefault();
+          simulateInput(btnId, 0);
+          btn.style.transform = "";
+        };
+        btn.addEventListener("touchstart", onDown, { passive: false });
+        btn.addEventListener("touchend", onUp, { passive: false });
+        btn.addEventListener("mousedown", onDown);
+        btn.addEventListener("mouseup", onUp);
+        btn.addEventListener("mouseleave", onUp);
+      });
+
+      // Boucle Gamepad Physique (Xbox, DualSense, Switch Pro, Bluetooth)
+      const prevGamepadButtons = new Array(20).fill(false);
+      function startGamepadLoop() {
+        function poll() {
+          const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+          const gp = gamepads[0];
+          if (gp && activeModule && typeof activeModule._simulate_input === "function") {
+            // Mapping Standard Gamepad -> Libretro RetroPad
+            // 0: A -> 0 (Libretro B / Dreamcast A)
+            // 1: B -> 8 (Libretro A / Dreamcast B)
+            // 2: X -> 1 (Libretro Y / Dreamcast X)
+            // 3: Y -> 9 (Libretro X / Dreamcast Y)
+            // 4: L1 -> 10 (L)
+            // 5: R1 -> 11 (R)
+            // 6: L2 -> 10 (L Trigger)
+            // 7: R2 -> 11 (R Trigger)
+            // 9: Start -> 3 (Start)
+            // 12: Up -> 4
+            // 13: Down -> 5
+            // 14: Left -> 6
+            // 15: Right -> 7
+            const buttonMap = {
+              0: 0, 1: 8, 2: 1, 3: 9,
+              4: 10, 5: 11, 6: 10, 7: 11,
+              9: 3, 12: 4, 13: 5, 14: 6, 15: 7
+            };
+
+            for (const [gpIdx, lrIdx] of Object.entries(buttonMap)) {
+              const pressed = gp.buttons[gpIdx]?.pressed || false;
+              if (pressed !== prevGamepadButtons[gpIdx]) {
+                prevGamepadButtons[gpIdx] = pressed;
+                simulateInput(lrIdx, pressed ? 1 : 0);
+              }
+            }
+
+            // Stick Analogique Gauche
+            const axisX = gp.axes[0] || 0;
+            const axisY = gp.axes[1] || 0;
+            const deadzone = 0.18;
+            if (Math.abs(axisX) > deadzone) {
+              activeModule._simulate_input(0, 16, Math.round(axisX * 32767));
+            } else {
+              activeModule._simulate_input(0, 16, 0);
+            }
+            if (Math.abs(axisY) > deadzone) {
+              activeModule._simulate_input(0, 17, Math.round(axisY * 32767));
+            } else {
+              activeModule._simulate_input(0, 17, 0);
+            }
+          }
+          requestAnimationFrame(poll);
+        }
+        requestAnimationFrame(poll);
+      }
+
+      // Protocole postMessage pour l'intégration dans RetroVault
+      window.addEventListener("message", async (e) => {
+        if (!e.data) return;
+        if (e.data.type === "LOAD_ROM" && e.data.blob) {
+          launchRom(e.data.blob, e.data.name || "Crazy Taxi.chd");
+        } else if (e.data.type === "SET_VOLUME" && typeof e.data.volume === "number") {
+          // Volume
+        }
+      });
+
+      // Auto-load si paramètre ?game=...
+      const autoGame = urlParams.get("game");
+      if (autoGame) {
+        loader.style.display = "flex";
+        loaderText.textContent = `Récupération de la relique "${autoGame}"...`;
+        const romUrl = `../../api/saves.php?action=get_rom&rom=${encodeURIComponent(autoGame)}`;
+        fetch(romUrl)
+          .then(res => {
+            if (!res.ok) throw new Error("Impossible de récupérer la relique depuis le sanctuaire distant.");
+            return res.blob();
+          })
+          .then(blob => launchRom(blob, autoGame))
+          .catch(err => {
+            console.warn("Échec récupération automatique distant:", err);
+            loader.style.display = "none";
+          });
+      }
+
+      // Déverrouillage audio lors d'un clic
+      const unlockAudio = () => {
+        if (activeModule && activeModule.AL && activeModule.AL.currentCtx) {
+          try { activeModule.AL.currentCtx.resume(); } catch(e){}
+        }
+      };
+      window.addEventListener("click", unlockAudio, { once: true });
+      window.addEventListener("keydown", unlockAudio, { once: true });
+      window.addEventListener("touchstart", unlockAudio, { once: true });
+
+      // Signaler que le runner est prêt
+      window.parent.postMessage({ type: "DC_RUNNER_READY" }, "*");
+    })();
+  </script>
+</body>
+</html>

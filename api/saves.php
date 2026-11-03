@@ -543,6 +543,18 @@ if ($action === 'library' && $_SERVER['REQUEST_METHOD'] === 'GET') {
                 'titre' => 'Nintendo DS — Double Écran Tactile',
                 'console' => 'nds',
                 'desc' => "Moteur DeSmuME Desmond WebAssembly avec écran tactile stylet. Glissez ou insérez un fichier .nds."
+            ],
+            [
+                'nom' => 'Crazy Taxi (Europe) (En,Ja).chd',
+                'titre' => 'Crazy Taxi (Dreamcast)',
+                'console' => 'dreamcast',
+                'desc' => "L'arcade culte sur Sega Dreamcast propulsé par Flycast WASM JIT à 60 FPS (1999)."
+            ],
+            [
+                'nom' => 'console-dc-launcher',
+                'titre' => 'Sega Dreamcast — Moteur 128-bit 60 FPS',
+                'console' => 'dreamcast',
+                'desc' => "Moteur Flycast WebAssembly avec JIT SH4 & WebGL2. Glissez ou insérez un fichier .chd, .cdi ou .gdi."
             ]
         ];
     }

@@ -1,0 +1,6 @@
+# Types MIME pour WebAssembly et données de build PPSSPP
+<IfModule mod_mime.c>
+  AddType application/wasm .wasm
+  AddType application/octet-stream .data
+  AddType application/javascript .js
+</IfModule>
