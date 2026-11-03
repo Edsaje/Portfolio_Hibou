@@ -5483,49 +5483,40 @@
               <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
               <span class="rv-perf-text" id="rv-perf-text">60 FPS | 16.6 ms</span>
             </div>
-            <div class="rv-dc-wrapper" style="position: relative; width: 100%; height: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; border: 1px solid rgba(249, 115, 22, 0.4); border-radius: 8px; overflow: hidden;">
-              <div class="rv-dc-ext-btn-wrap" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
-                <a href="${dcDedicatedUrl}" target="_blank" class="rv-btn rv-dc-ext-btn" style="font-size: 0.72rem; padding: 4px 10px; text-decoration: none; background: rgba(249, 115, 22, 0.3); border: 1px solid rgba(249, 115, 22, 0.6); color: #fb923c;">⛶ Plein Écran Dédié</a>
+            <div class="rv-dc-wrapper" style="position: relative; width: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #140d05 0%, #080503 100%); border: 1px solid rgba(249, 115, 22, 0.45); border-radius: 8px; overflow: hidden; padding: 28px 16px; text-align: center;">
+              <div style="font-size: 3.2rem; margin-bottom: 8px; filter: drop-shadow(0 0 16px rgba(249, 115, 22, 0.7));">🌀</div>
+              <h3 style="font-family: 'Cinzel', serif; font-size: 1.4rem; color: #fb923c; margin: 0 0 6px; letter-spacing: 1px;">
+                Sanctuaire Sega Dreamcast
+              </h3>
+              <p style="font-family: 'Cinzel', serif; font-size: 1rem; color: #f0f4f1; margin: 0 0 12px; font-weight: 600;">
+                ${isLauncher ? "Moteur Flycast WebAssembly (SH4 JIT 60 FPS)" : `Relique : "${nomFichier}"`}
+              </p>
+              <p style="font-size: 0.88rem; color: #cbd5e1; max-width: 520px; line-height: 1.5; margin: 0 auto 20px;">
+                L'émulation 128-bit Sega Dreamcast s'exécute via le compilateur dynamique <strong style="color:#fb923c;">SH4 JIT WebAssembly 60 FPS</strong> avec BIOS officiel Sega. Pour libérer 100% de la puissance graphique GPU/CPU de votre machine en plein écran sans latence, la relique s'exécute dans son Sanctuaire Dédié.
+              </p>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px;">
+                <a href="${dcDedicatedUrl}" target="_blank" class="rv-btn" style="background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); color: #fff; font-weight: 700; font-size: 1rem; padding: 12px 30px; border-radius: 6px; text-decoration: none; box-shadow: 0 4px 20px rgba(249, 115, 22, 0.45); display: inline-flex; align-items: center; gap: 8px;">
+                  ⚡ Invoquer dans le Sanctuaire Dédié (Plein Écran)
+                </a>
               </div>
-              <iframe id="rv-dc-frame" class="rv-embedded-frame" src="emulators/dreamcast/index.html?v=1.0&embedded=1${gameParam}${tokenParam}" allow="autoplay; fullscreen; gamepad" style="width: 100%; height: 100%; min-height: 480px; border: none;"></iframe>
+              <div style="width: 100%; max-width: 620px; margin-top: 8px;">
+                <details style="background: rgba(0,0,0,0.45); border: 1px solid rgba(249, 115, 22, 0.25); border-radius: 6px; padding: 10px 14px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer; text-align: left;">
+                  <summary style="outline: none; font-weight: 600; color: #fb923c; cursor: pointer;">ℹ️ Contrôles, Manettes & Reliques Personnalisées</summary>
+                  <p style="margin: 8px 0 4px; line-height: 1.5;">
+                    • <strong>Manettes compatibles :</strong> Xbox Series/One, DualSense PS5, DualShock 4, Nintendo Switch Pro et manettes Bluetooth standards.<br>
+                    • <strong>Mobile / Tablette :</strong> Manette virtuelle tactile complète (Gâchettes L/R, croix directionnelle, boutons ABXY, Start).<br>
+                    • <strong>Glisser-Déposer :</strong> Vous pouvez glisser-déposer n'importe quel fichier <code>.chd</code>, <code>.cdi</code> ou <code>.gdi</code> dans le sanctuaire dédié.
+                  </p>
+                </details>
+              </div>
             </div>
           `;
 
-          const frame = document.getElementById("rv-dc-frame");
-          this.pendingDcRom = romBlob ? { blob: romBlob, name: nomFichier } : null;
-
-          if (frame) {
-            const sendRomAndVolume = () => {
-              try {
-                if (frame.contentWindow) {
-                  frame.contentWindow.postMessage({
-                    type: "SET_VOLUME",
-                    volume: this.volumeActuel
-                  }, "*");
-                  if (this.pendingDcRom) {
-                    const romToSend = this.pendingDcRom;
-                    this.pendingDcRom = null;
-                    frame.contentWindow.postMessage({
-                      type: "LOAD_ROM",
-                      blob: romToSend.blob,
-                      name: romToSend.name
-                    }, "*");
-                  }
-                }
-              } catch(e) {}
-            };
-            frame.onload = () => setTimeout(sendRomAndVolume, 400);
-          }
-
           status.textContent = isLauncher
-            ? "🎮 Console Sega Dreamcast (Flycast SH4 JIT) prête | Insérez un .chd, .cdi ou .gdi !"
-            : `🎮 Relique Dreamcast : "${nomFichier}". Émulateur Flycast JIT actif à 60 FPS.`;
+            ? "🎮 Sanctuaire Sega Dreamcast prêt | Cliquez sur Invoquer dans le Sanctuaire Dédié."
+            : `🎮 Relique Dreamcast "${nomFichier}" prête | Cliquez sur Invoquer dans le Sanctuaire Dédié 60 FPS.`;
           status.style.color = "#fb923c";
           this.jeuEnCoursNom = nomFichier;
-          if (this.afficherPerfFps) {
-            const hud = document.getElementById("rv-perf-hud");
-            if (hud) hud.classList.add("active");
-          }
           this.rendreGrille();
           return;
         }

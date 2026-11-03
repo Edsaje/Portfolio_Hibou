@@ -522,11 +522,6 @@
       <span id="dc-hud-text">60 FPS | 16.6 ms</span>
     </div>
 
-    <!-- Bouton plein écran externe si mode iframe -->
-    <a id="dc-open-dedicated" href="index.html" target="_blank" class="dc-ext-button" style="display: none;">
-      ⛶ Plein Écran Dédié
-    </a>
-
     <!-- Conteneur Canvas et Effet CRT -->
     <div class="dc-canvas-container">
       <div class="dc-crt-overlay" id="dc-crt"></div>
@@ -650,8 +645,6 @@
       const isEmbedded = urlParams.get("embedded") === "1" || window.self !== window.top;
       if (isEmbedded) {
         document.body.classList.add("dc-embedded");
-        const extBtn = document.getElementById("dc-open-dedicated");
-        if (extBtn) extBtn.style.display = "inline-flex";
       }
 
       const canvas = document.getElementById("canvas");
