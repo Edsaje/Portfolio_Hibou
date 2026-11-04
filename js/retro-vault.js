@@ -197,10 +197,16 @@
                 volume: this.volumeActuel
               }, "*");
               if (this.pendingPspSave) {
-                frame.contentWindow.postMessage({
-                  type: "LOAD_PSP_SAVE",
-                  data: Array.from(this.pendingPspSave)
-                }, "*");
+                const saveToSend = this.pendingPspSave;
+                this.pendingPspSave = null;
+                this.toUint8Array(saveToSend).then((pspSaveBytes) => {
+                  if (pspSaveBytes && pspSaveBytes.length > 0 && frame.contentWindow) {
+                    frame.contentWindow.postMessage({
+                      type: "LOAD_PSP_SAVE",
+                      data: Array.from(pspSaveBytes)
+                    }, "*");
+                  }
+                }).catch(() => {});
               }
               if (this.pendingPspRom) {
                 frame.contentWindow.postMessage({
@@ -217,12 +223,14 @@
             if (frame && frame.contentWindow) {
               const saveToSend = this.pendingNdsSave;
               this.pendingNdsSave = null;
-              try {
-                frame.contentWindow.postMessage({
-                  type: "LOAD_DS_SAVE",
-                  data: Array.from(saveToSend)
-                }, "*");
-              } catch(err) {}
+              this.toUint8Array(saveToSend).then((uint8) => {
+                if (uint8 && uint8.length > 0 && frame.contentWindow) {
+                  frame.contentWindow.postMessage({
+                    type: "LOAD_DS_SAVE",
+                    data: Array.from(uint8)
+                  }, "*");
+                }
+              }).catch(() => {});
             }
           }
         } else if (e.data.type === "DC_READY" || e.data.type === "DC_RUNNER_READY") {
@@ -250,11 +258,15 @@
           const perfDot = document.getElementById("rv-perf-dot");
           if (hud && this.afficherPerfFps) hud.classList.add("active");
           if (perfText && typeof e.data.fps === "number") {
-            perfText.textContent = `${e.data.fps} FPS | ${e.data.ms} ms`;
+            perfText.textContent = `${e.data.fps} FPS`;
           }
           if (perfDot && typeof e.data.fps === "number") {
             perfDot.textContent = e.data.fps >= 55 ? "🟢" : (e.data.fps >= 30 ? "🟡" : "🔴");
           }
+        } else if (e.data.type === "TRIGGER_SAVE") {
+          this.sauvegarderPartie();
+        } else if (e.data.type === "TRIGGER_LOAD") {
+          this.chargerPartie();
         }
       });
     }
@@ -548,6 +560,21 @@
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
       });
+    }
+
+    async toUint8Array(data) {
+      if (!data) return null;
+      if (data instanceof Uint8Array) return data;
+      if (data instanceof Blob) {
+        const buf = await data.arrayBuffer();
+        return new Uint8Array(buf);
+      }
+      if (data instanceof ArrayBuffer) return new Uint8Array(data);
+      if (Array.isArray(data)) return new Uint8Array(data);
+      if (data.buffer && data.buffer instanceof ArrayBuffer) {
+        return new Uint8Array(data.buffer, data.byteOffset || 0, data.byteLength || data.length);
+      }
+      return null;
     }
 
     async getAllStatesDB() {
@@ -1312,7 +1339,7 @@
             <label class="rv-opt-check-row">
               <input type="checkbox" id="rv-opt-check-fps" ${this.afficherPerfFps ? 'checked' : ''}>
               <span class="rv-opt-check-label">
-                Afficher le compteur FPS & temps de trame (HUD en direct)
+                Afficher le compteur FPS (HUD en direct)
                 <span class="rv-opt-check-sub">Incrustation discrète : vert si 60 FPS stable, ambre si saccades.</span>
               </span>
             </label>
@@ -1669,8 +1696,7 @@
         const elapsed = now - lastTime;
         if (elapsed >= 500) {
           const fps = Math.round((frames * 1000) / elapsed);
-          const ms = (1000 / Math.max(1, fps)).toFixed(1);
-          if (textEl) textEl.textContent = `${fps} FPS | ${ms} ms`;
+          if (textEl) textEl.textContent = `${fps} FPS`;
           if (dotEl) {
             if (fps >= 52) {
               dotEl.textContent = "🟢";
@@ -3902,7 +3928,7 @@
                 <div id="rv-game-container">
                   <div class="rv-perf-hud" id="rv-perf-hud">
                     <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
-                    <span class="rv-perf-text" id="rv-perf-text">60 FPS | 16.6 ms</span>
+                    <span class="rv-perf-text" id="rv-perf-text">60 FPS</span>
                   </div>
                   <div class="rv-crt-overlay" id="rv-crt"></div>
                   <canvas id="rv-canvas"></canvas>
@@ -5375,7 +5401,7 @@
           container.innerHTML = `
             <div class="rv-perf-hud" id="rv-perf-hud">
               <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
-              <span class="rv-perf-text" id="rv-perf-text">60 FPS | 16.6 ms</span>
+              <span class="rv-perf-text" id="rv-perf-text">60 FPS</span>
             </div>
             <div class="rv-nds-wrapper">
               <div class="rv-nds-ext-btn-wrap" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
@@ -5416,10 +5442,14 @@
                   if (this.pendingNdsSave) {
                     const saveToSend = this.pendingNdsSave;
                     this.pendingNdsSave = null;
-                    frame.contentWindow.postMessage({
-                      type: "LOAD_DS_SAVE",
-                      data: Array.from(saveToSend)
-                    }, "*");
+                    this.toUint8Array(saveToSend).then((uint8) => {
+                      if (uint8 && uint8.length > 0 && frame.contentWindow) {
+                        frame.contentWindow.postMessage({
+                          type: "LOAD_DS_SAVE",
+                          data: Array.from(uint8)
+                        }, "*");
+                      }
+                    }).catch(() => {});
                   }
                   if (this.pendingNdsRom) {
                     const romToSend = this.pendingNdsRom;
@@ -5463,7 +5493,7 @@
           container.innerHTML = `
             <div class="rv-perf-hud" id="rv-perf-hud">
               <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
-              <span class="rv-perf-text" id="rv-perf-text">60 FPS | 16.6 ms</span>
+              <span class="rv-perf-text" id="rv-perf-text">60 FPS</span>
             </div>
             <div class="rv-psp-wrapper" style="position: relative; width: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #111a14 0%, #080d0a 100%); border: 1px solid rgba(212,175,55,0.3); border-radius: 8px; overflow: hidden; padding: 28px 16px; text-align: center;">
               <div style="font-size: 3rem; margin-bottom: 8px; filter: drop-shadow(0 0 16px rgba(212,175,55,0.6));">🦉</div>
@@ -5517,7 +5547,7 @@
           container.innerHTML = `
             <div class="rv-perf-hud" id="rv-perf-hud">
               <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
-              <span class="rv-perf-text" id="rv-perf-text">60 FPS | 16.6 ms</span>
+              <span class="rv-perf-text" id="rv-perf-text">60 FPS</span>
             </div>
             <div class="rv-dc-wrapper" style="position: relative; width: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #140d05 0%, #080503 100%); border: 1px solid rgba(249, 115, 22, 0.45); border-radius: 8px; overflow: hidden; padding: 28px 16px; text-align: center;">
               <div style="font-size: 3.2rem; margin-bottom: 8px; filter: drop-shadow(0 0 16px rgba(249, 115, 22, 0.7));">🌀</div>
@@ -5572,7 +5602,7 @@
           container.innerHTML = `
             <div class="rv-perf-hud" id="rv-perf-hud">
               <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
-              <span class="rv-perf-text" id="rv-perf-text">60 FPS | 16.6 ms</span>
+              <span class="rv-perf-text" id="rv-perf-text">60 FPS</span>
             </div>
             <div class="rv-ps2-wrapper" style="position: relative; width: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #0a1329 0%, #030712 100%); border: 1px solid rgba(59, 130, 246, 0.45); border-radius: 8px; overflow: hidden; padding: 28px 16px; text-align: center;">
               <div style="font-size: 3.2rem; margin-bottom: 8px; filter: drop-shadow(0 0 16px rgba(59, 130, 246, 0.7));">🔮</div>
@@ -5620,7 +5650,7 @@
         container.innerHTML = `
           <div class="rv-perf-hud" id="rv-perf-hud">
             <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
-            <span class="rv-perf-text" id="rv-perf-text">60 FPS | 16.6 ms</span>
+            <span class="rv-perf-text" id="rv-perf-text">60 FPS</span>
           </div>
           <div class="rv-crt-overlay" id="rv-crt"></div>
           <canvas id="rv-canvas"></canvas>
@@ -6018,17 +6048,21 @@
         if (this.jeuEnCoursType === "nds") {
           try {
             const data = await this.loadStateDB(this.jeuEnCoursNom);
-            if (!data || !data.state) {
+            if (!data || (!data.state && !data.sram)) {
               this.setStatutMessage("⚠️ Aucune sauvegarde trouvée pour cette cartouche DS dans le Sanctuaire.", "#fbbf24", true);
               return;
             }
+            const uint8 = await this.toUint8Array(data.state || data.sram);
             const frame = document.getElementById("rv-nds-frame");
-            if (frame && frame.contentWindow) {
+            if (frame && frame.contentWindow && uint8 && uint8.length > 0) {
               frame.contentWindow.postMessage({
                 type: "LOAD_DS_SAVE",
-                data: Array.from(data.state)
+                data: Array.from(uint8)
               }, "*");
-              this.setStatutMessage(`📂 Sauvegarde DS restaurée ! (${data.date})`, "#34d399", true);
+              const dateTxt = data.date || data.stateDate || data.sramDate || new Date().toLocaleTimeString();
+              this.setStatutMessage(`📂 Sauvegarde DS restaurée ! (${dateTxt})`, "#34d399", true);
+            } else {
+              this.setStatutMessage("⚠️ Données de sauvegarde DS introuvables ou vides.", "#ef4444", true);
             }
           } catch (e) {
             this.setStatutMessage("❌ Échec du chargement DS : " + e.message, "#ef4444", true);
@@ -6039,17 +6073,21 @@
         if (this.jeuEnCoursType === "psp") {
           try {
             const data = await this.loadStateDB(this.jeuEnCoursNom);
-            if (!data || !data.state) {
+            if (!data || (!data.state && !data.sram)) {
               this.setStatutMessage("⚠️ Aucune sauvegarde trouvée pour cette relique PSP dans le Sanctuaire.", "#fbbf24", true);
               return;
             }
+            const uint8 = await this.toUint8Array(data.state || data.sram);
             const frame = document.getElementById("rv-psp-frame");
-            if (frame && frame.contentWindow) {
+            if (frame && frame.contentWindow && uint8 && uint8.length > 0) {
               frame.contentWindow.postMessage({
                 type: "LOAD_PSP_SAVE",
-                data: Array.from(data.state)
+                data: Array.from(uint8)
               }, "*");
-              this.setStatutMessage(`📂 Sauvegarde PSP restaurée ! (${data.date})`, "#34d399", true);
+              const dateTxt = data.date || data.stateDate || data.sramDate || new Date().toLocaleTimeString();
+              this.setStatutMessage(`📂 Sauvegarde PSP restaurée ! (${dateTxt})`, "#34d399", true);
+            } else {
+              this.setStatutMessage("⚠️ Données de sauvegarde PSP introuvables ou vides.", "#ef4444", true);
             }
           } catch (e) {
             this.setStatutMessage("❌ Échec du chargement PSP : " + e.message, "#ef4444", true);

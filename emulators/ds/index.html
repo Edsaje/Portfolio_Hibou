@@ -401,6 +401,7 @@
       <button class="ds-btn ds-btn-secondary" id="btn-save-dsv" title="Télécharger le fichier de sauvegarde DSV">💾 Sauvegarder</button>
       <button class="ds-btn ds-btn-secondary" id="btn-restart" title="Redémarrer la console">🔄 Reset</button>
       <input type="file" id="file-input" accept=".nds" style="display: none;">
+      <input type="file" id="restore-file" accept=".dsv,.sav,.bin" style="display: none;" onchange="if(typeof uiSaveRestore==='function')uiSaveRestore();">
     </div>
   </div>
 
@@ -1150,6 +1151,25 @@
 
       window.addEventListener("keydown", (e) => {
         unlockAudio();
+        if (e.key === "F2") {
+          e.preventDefault();
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: "TRIGGER_SAVE" }, "*");
+          } else if (btnSave) {
+            btnSave.click();
+          }
+          return;
+        }
+        if (e.key === "F4") {
+          e.preventDefault();
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: "TRIGGER_LOAD" }, "*");
+          } else {
+            const rf = document.getElementById("restore-file");
+            if (rf) rf.click();
+          }
+          return;
+        }
         const btnId = UNIFIED_DS_KEY_MAP[e.code];
         if (btnId !== undefined && window.emuKeyState) {
           window.emuKeyState[btnId] = true;
@@ -1256,12 +1276,25 @@
             setStatus("💾 Fichier de sauvegarde .dsv exporté", "#34d399");
           }
         } else if (e.data.type === "LOAD_DS_SAVE" && e.data.data) {
-          const uint8 = new Uint8Array(e.data.data);
-          window.pendingSaveData = uint8;
-          if (typeof window.loadDsSaveData === "function") {
-            window.loadDsSaveData(uint8);
+          const rawData = e.data.data;
+          const uint8 = (rawData instanceof Uint8Array) ? rawData : new Uint8Array(rawData);
+          if (uint8 && uint8.length > 0) {
+            window.pendingSaveData = uint8;
+            if (typeof window.gameID === "string" && window.gameID && typeof localforage !== "undefined") {
+              try {
+                localforage.setItem("sav-" + window.gameID, uint8);
+              } catch(err) {}
+            }
+            if (typeof window.loadDsSaveData === "function") {
+              window.loadDsSaveData(uint8);
+            }
+            if (lastLoadedBlob) {
+              loadRomBlob(lastLoadedBlob, lastLoadedName, true);
+              setStatus("📂 Sauvegarde DS restaurée avec succès !", "#34d399");
+            } else {
+              setStatus("📂 Sauvegarde locale DS prête", "#34d399");
+            }
           }
-          setStatus("📂 Sauvegarde locale DS injectée", "#34d399");
         }
       });
 
