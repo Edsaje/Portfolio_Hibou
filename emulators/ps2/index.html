@@ -1029,36 +1029,41 @@
         mod.discImageDevice = new DiscImageDevice(mod);
         mod.ccall("initVm", "", [], []);
 
-        // Activer CInputProviderGamepad (source 1) comme source d'entrée universelle
-        // (gère la manette Gamepad API, les touches clavier unifiées PSP/PS1 et la manette tactile 360°)
+        // Activer la source 0 (CInputProviderEmscripten - Clavier & Entrées Canvas)
         if (mod.setInputSource) {
-          try { mod.setInputSource(1); } catch(e) {}
+          try { mod.setInputSource(0); } catch(e) {}
         }
 
-        // Configuration de secours pour CInputProviderEmscripten (source 0)
-        if (mod.setAxisBinding) {
-          try { mod.setAxisBinding(0, "KeyQ", "KeyD"); } catch(e) {} // Stick G X (AZERTY / QWERTY)
-          try { mod.setAxisBinding(1, "KeyZ", "KeyS"); } catch(e) {} // Stick G Y
-          try { mod.setAxisBinding(2, "KeyJ", "KeyL"); } catch(e) {} // Stick D X
-          try { mod.setAxisBinding(3, "KeyI", "KeyK"); } catch(e) {} // Stick D Y
-        }
-        if (mod.setButtonBinding) {
-          try { mod.setButtonBinding(4, "ArrowUp"); } catch(e) {}
-          try { mod.setButtonBinding(5, "ArrowDown"); } catch(e) {}
-          try { mod.setButtonBinding(6, "ArrowLeft"); } catch(e) {}
-          try { mod.setButtonBinding(7, "ArrowRight"); } catch(e) {}
-          try { mod.setButtonBinding(8, "KeyV"); } catch(e) {}      // Select
-          try { mod.setButtonBinding(9, "KeyB"); } catch(e) {}      // Start
-          try { mod.setButtonBinding(10, "KeyI"); } catch(e) {}     // Carré
-          try { mod.setButtonBinding(11, "KeyO"); } catch(e) {}     // Triangle
-          try { mod.setButtonBinding(12, "KeyL"); } catch(e) {}     // Rond
-          try { mod.setButtonBinding(13, "KeyK"); } catch(e) {}     // Croix
-          try { mod.setButtonBinding(14, "KeyU"); } catch(e) {}     // L1
-          try { mod.setButtonBinding(15, "Digit1"); } catch(e) {}   // L2
-          try { mod.setButtonBinding(16, "Digit2"); } catch(e) {}   // L3
-          try { mod.setButtonBinding(17, "KeyP"); } catch(e) {}     // R1
-          try { mod.setButtonBinding(18, "Digit3"); } catch(e) {}   // R2
-          try { mod.setButtonBinding(19, "Digit0"); } catch(e) {}   // R3
+        // Configuration des associations d'entrées officielles Play! WebAssembly
+        const defaultBindings = {
+          0: ["KeyF", "KeyH"],  // Stick Gauche X (-X, +X)
+          1: ["KeyT", "KeyG"],  // Stick Gauche Y (-Y, +Y)
+          2: ["KeyJ", "KeyL"],  // Stick Droit X (-X, +X)
+          3: ["KeyI", "KeyK"],  // Stick Droit Y (-Y, +Y)
+          4: "ArrowUp",         // D-Pad Haut
+          5: "ArrowDown",       // D-Pad Bas
+          6: "ArrowLeft",       // D-Pad Gauche
+          7: "ArrowRight",      // D-Pad Droite
+          8: "Backspace",       // SELECT
+          9: "Enter",           // START
+          10: "KeyA",           // ▢ Carré
+          11: "KeyS",           // △ Triangle
+          12: "KeyX",           // ◯ Rond
+          13: "KeyZ",           // ✕ Croix
+          14: "Key1",           // L1
+          15: "Key2",           // L2
+          16: "Key3",           // L3
+          17: "Key8",           // R1
+          18: "Key9",           // R2
+          19: "Key0"            // R3
+        };
+        for (const [idxStr, binding] of Object.entries(defaultBindings)) {
+          const idx = Number(idxStr);
+          if (Array.isArray(binding) && mod.setAxisBinding) {
+            try { mod.setAxisBinding(idx, binding[0], binding[1]); } catch(e) {}
+          } else if (typeof binding === "string" && mod.setButtonBinding) {
+            try { mod.setButtonBinding(idx, binding); } catch(e) {}
+          }
         }
 
         window.PlayModule = mod;
@@ -1157,36 +1162,204 @@
     }
     window.addEventListener("resize", handleResize);
 
-    // --- 8. Gestion des Entrées : Manette (Gamepad API Standard) ---
-    const lastButtons = [];
-    const lastAxes = [];
-    const AXIS_DEADZONE = 0.15;
+    // --- 8. Système de Transmission des Entrées à Play! WebAssembly ---
+    // Play! écoute les événements HTML5 Emscripten (keydown/keyup) directement sur #outputCanvas
+    // avec des codes normalisés (e.code) configurés sur la source 0 :
+    // - Boutons : KeyZ (✕), KeyX (◯), KeyA (▢), KeyS (△)
+    // - Menus : Enter (START), Backspace (SELECT)
+    // - Croix directionnelle : ArrowUp, ArrowDown, ArrowLeft, ArrowRight
+    // - Gâchettes : Key1 (L1), Key8 (R1), Key2 (L2), Key9 (R2), Key3 (L3), Key0 (R3)
+    // - Stick Gauche : KeyF (-X), KeyH (+X), KeyT (-Y), KeyG (+Y)
+    // - Stick Droit : KeyJ (-X), KeyL (+X), KeyI (-Y), KeyK (+Y)
+
+    function sendPlayKey(code, isDown) {
+      if (!code) return;
+      const cv = document.getElementById("outputCanvas");
+      if (!cv) return;
+      const evt = new KeyboardEvent(isDown ? "keydown" : "keyup", {
+        code: code,
+        key: code,
+        bubbles: true,
+        cancelable: true
+      });
+      evt._playSynthetic = true;
+      cv.dispatchEvent(evt);
+    }
+
+    function sendPlayKeys(codes, isDown) {
+      if (Array.isArray(codes)) {
+        for (const c of codes) sendPlayKey(c, isDown);
+      } else if (codes) {
+        sendPlayKey(codes, isDown);
+      }
+    }
+
+    // Mapping Clavier Unifié Sanctuaire (Standard PSP / PS1 / PS2) -> Codes Play!
+    const KEY_TO_PLAY_CODES = {
+      // Directions (Flèches, Z/S/Q/D, W/A) -> D-Pad + Stick Gauche simultanés
+      "ArrowUp": ["ArrowUp", "KeyT"],
+      "KeyW": ["ArrowUp", "KeyT"],
+      "KeyZ": ["ArrowUp", "KeyT"],      // AZERTY Z
+
+      "ArrowDown": ["ArrowDown", "KeyG"],
+      "KeyS": ["ArrowDown", "KeyG"],
+
+      "ArrowLeft": ["ArrowLeft", "KeyF"],
+      "KeyA": ["ArrowLeft", "KeyF"],
+      "KeyQ": ["ArrowLeft", "KeyF"],      // AZERTY Q
+
+      "ArrowRight": ["ArrowRight", "KeyH"],
+      "KeyD": ["ArrowRight", "KeyH"],
+
+      // Boutons PlayStation Unifiés (K/L/I/O, Pavé numérique, X/C/J)
+      // ✕ Croix
+      "KeyK": ["KeyZ"],
+      "KeyX": ["KeyZ"],
+      "Digit5": ["KeyZ"],
+      "Numpad5": ["KeyZ"],
+
+      // ◯ Rond
+      "KeyL": ["KeyX"],
+      "KeyC": ["KeyX"],
+      "Digit6": ["KeyX"],
+      "Numpad6": ["KeyX"],
+
+      // ▢ Carré
+      "KeyI": ["KeyA"],
+      "KeyJ": ["KeyA"],
+      "Digit4": ["KeyA"],
+      "Numpad4": ["KeyA"],
+
+      // △ Triangle
+      "KeyO": ["KeyS"],
+      "Digit8": ["KeyS"],
+      "Numpad8": ["KeyS"],
+
+      // Gâchettes
+      "KeyU": ["Key1"],                   // L1
+      "Digit7": ["Key1"],
+      "Numpad7": ["Key1"],
+
+      "KeyP": ["Key8"],                   // R1
+      "Digit9": ["Key8"],
+      "Numpad9": ["Key8"],
+
+      "Digit1": ["Key2"],                 // L2
+      "Numpad1": ["Key2"],
+      "KeyR": ["Key2"],
+      "ShiftLeft": ["Key2"],
+
+      "Digit3": ["Key9"],                 // R2
+      "Numpad3": ["Key9"],
+      "KeyE": ["Key9"],
+      "ShiftRight": ["Key9"],
+
+      // Menus
+      "KeyB": ["Enter"],                  // START
+      "Enter": ["Enter"],
+      "NumpadEnter": ["Enter"],
+
+      "KeyV": ["Backspace"],              // SELECT
+      "Space": ["Backspace"],
+      "Backspace": ["Backspace"],
+
+      // Stick Clicks
+      "Digit2": ["Key3"],                 // L3
+      "Numpad2": ["Key3"],
+
+      "Digit0": ["Key0"],                 // R3
+      "Numpad0": ["Key0"]
+    };
+
+    function handleKeyEvent(e) {
+      if (e._playSynthetic) return; // Laisser passer nos événements synthétiques sans boucle
+      const codes = KEY_TO_PLAY_CODES[e.code];
+      if (codes) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        const isDown = (e.type === "keydown");
+        sendPlayKeys(codes, isDown);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyEvent, { capture: true });
+    window.addEventListener("keyup", handleKeyEvent, { capture: true });
+
+    // Table de correspondance Standard Gamepad API / Manette Virtuelle -> Codes Play!
+    const VPAD_BUTTON_TO_PLAY_CODES = {
+      0: ["KeyZ"],               // ✕ Croix
+      1: ["KeyX"],               // ◯ Rond
+      2: ["KeyA"],               // ▢ Carré
+      3: ["KeyS"],               // △ Triangle
+      4: ["Key1"],               // L1
+      5: ["Key8"],               // R1
+      6: ["Key2"],               // L2
+      7: ["Key9"],               // R2
+      8: ["Backspace"],          // SELECT
+      9: ["Enter"],              // START
+      10: ["Key3"],              // L3
+      11: ["Key0"],              // R3
+      12: ["ArrowUp", "KeyT"],   // D-Pad Haut
+      13: ["ArrowDown", "KeyG"], // D-Pad Bas
+      14: ["ArrowLeft", "KeyF"], // D-Pad Gauche
+      15: ["ArrowRight", "KeyH"] // D-Pad Droite
+    };
+
+    // --- 9. Gestion des Entrées : Manette Physique (Gamepad API Standard) ---
+    const lastPadButtons = [];
+    const padAxesState = {
+      lUp: false, lDown: false, lLeft: false, lRight: false,
+      rUp: false, rDown: false, rLeft: false, rRight: false
+    };
 
     function pollGamepad() {
-      if (emulatorRunning && playModule) {
+      if (emulatorRunning) {
         const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
         let pad = null;
         for (const gp of gamepads) {
           if (gp && gp.connected) { pad = gp; break; }
         }
 
-        if (pad && playModule.gamepadButton) {
+        if (pad) {
+          // Boutons 0..15
           for (let i = 0; i < pad.buttons.length; i++) {
-            const pressed = pad.buttons[i].pressed ? 1 : 0;
-            if (lastButtons[i] !== pressed) {
-              lastButtons[i] = pressed;
-              try { playModule.gamepadButton(i, pressed); } catch(e) {}
+            const pressed = !!(pad.buttons[i] && pad.buttons[i].pressed);
+            if (lastPadButtons[i] !== pressed) {
+              lastPadButtons[i] = pressed;
+              const codes = VPAD_BUTTON_TO_PLAY_CODES[i];
+              if (codes) sendPlayKeys(codes, pressed);
             }
           }
-          if (playModule.gamepadAxis) {
-            for (let i = 0; i < pad.axes.length; i++) {
-              let val = pad.axes[i];
-              if (Math.abs(val) < AXIS_DEADZONE) val = 0;
-              const rounded = Math.round(val * 100) / 100;
-              if (lastAxes[i] !== rounded) {
-                lastAxes[i] = rounded;
-                try { playModule.gamepadAxis(i, rounded); } catch(e) {}
-              }
+
+          // Sticks analogiques
+          if (pad.axes && pad.axes.length >= 2) {
+            const thresh = 0.35;
+            const ax0 = pad.axes[0] || 0;
+            const ax1 = pad.axes[1] || 0;
+
+            const lLeft = ax0 < -thresh;
+            const lRight = ax0 > thresh;
+            const lUp = ax1 < -thresh;
+            const lDown = ax1 > thresh;
+
+            if (padAxesState.lLeft !== lLeft) { padAxesState.lLeft = lLeft; sendPlayKeys(["KeyF", "ArrowLeft"], lLeft); }
+            if (padAxesState.lRight !== lRight) { padAxesState.lRight = lRight; sendPlayKeys(["KeyH", "ArrowRight"], lRight); }
+            if (padAxesState.lUp !== lUp) { padAxesState.lUp = lUp; sendPlayKeys(["KeyT", "ArrowUp"], lUp); }
+            if (padAxesState.lDown !== lDown) { padAxesState.lDown = lDown; sendPlayKeys(["KeyG", "ArrowDown"], lDown); }
+
+            if (pad.axes.length >= 4) {
+              const ax2 = pad.axes[2] || 0;
+              const ax3 = pad.axes[3] || 0;
+
+              const rLeft = ax2 < -thresh;
+              const rRight = ax2 > thresh;
+              const rUp = ax3 < -thresh;
+              const rDown = ax3 > thresh;
+
+              if (padAxesState.rLeft !== rLeft) { padAxesState.rLeft = rLeft; sendPlayKey("KeyJ", rLeft); }
+              if (padAxesState.rRight !== rRight) { padAxesState.rRight = rRight; sendPlayKey("KeyL", rRight); }
+              if (padAxesState.rUp !== rUp) { padAxesState.rUp = rUp; sendPlayKey("KeyI", rUp); }
+              if (padAxesState.rDown !== rDown) { padAxesState.rDown = rDown; sendPlayKey("KeyK", rDown); }
             }
           }
         }
@@ -1194,82 +1367,6 @@
       requestAnimationFrame(pollGamepad);
     }
     requestAnimationFrame(pollGamepad);
-
-    // --- 9. Gestion des Entrées : Clavier Sanctuaire Unifié (Standard PSP / PS1) ---
-    const KEY_BUTTON_MAP = {
-      // D-Pad / Direction (Flèches, Z/S/Q/D, W/A)
-      "ArrowUp": 12, "KeyW": 12, "KeyZ": 12,
-      "ArrowDown": 13, "KeyS": 13,
-      "ArrowLeft": 14, "KeyA": 14, "KeyQ": 14,
-      "ArrowRight": 15, "KeyD": 15,
-
-      // Boutons PlayStation (Standard unifié PSP / PS1)
-      "KeyK": 0, "KeyX": 0, "Digit5": 0, "Numpad5": 0,       // ✕ Croix
-      "KeyL": 1, "KeyC": 1, "Digit6": 1, "Numpad6": 1,       // ◯ Rond
-      "KeyI": 2, "KeyJ": 2, "Digit4": 2, "Numpad4": 2,       // ▢ Carré
-      "KeyO": 3, "KeyF": 3, "Digit8": 3, "Numpad8": 3,       // △ Triangle
-
-      // Gâchettes
-      "KeyU": 4, "Digit7": 4, "Numpad7": 4,                   // L1
-      "KeyP": 5, "Digit9": 5, "Numpad9": 5,                   // R1
-      "Digit1": 6, "Numpad1": 6, "KeyR": 6, "ShiftLeft": 6,   // L2
-      "Digit3": 7, "Numpad3": 7, "KeyE": 7, "KeyT": 7, "ShiftRight": 7, // R2
-
-      // Menus
-      "KeyB": 9, "Enter": 9, "NumpadEnter": 9,                // START
-      "KeyV": 8, "Space": 8, "Backspace": 8,                  // SELECT
-
-      // Stick Clicks
-      "Digit2": 10, "Numpad2": 10,                           // L3
-      "Digit0": 11, "Numpad0": 11                            // R3
-    };
-
-    // État actif des directions pour le stick analogique simulé
-    const activeDirKeys = { up: false, down: false, left: false, right: false };
-
-    function updateSimulatedLeftStick() {
-      if (!playModule || !playModule.gamepadAxis) return;
-      let ax = 0;
-      let ay = 0;
-      if (activeDirKeys.left) ax -= 1.0;
-      if (activeDirKeys.right) ax += 1.0;
-      if (activeDirKeys.up) ay -= 1.0;
-      if (activeDirKeys.down) ay += 1.0;
-      try {
-        playModule.gamepadAxis(0, ax);
-        playModule.gamepadAxis(1, ay);
-      } catch(e) {}
-    }
-
-    window.addEventListener("keydown", (e) => {
-      if (!playModule || !playModule.gamepadButton) return;
-      const btn = KEY_BUTTON_MAP[e.code];
-      if (btn !== undefined) {
-        e.preventDefault();
-        try { playModule.gamepadButton(btn, 1); } catch(err) {}
-
-        if (btn === 12) activeDirKeys.up = true;
-        if (btn === 13) activeDirKeys.down = true;
-        if (btn === 14) activeDirKeys.left = true;
-        if (btn === 15) activeDirKeys.right = true;
-        if (btn >= 12 && btn <= 15) updateSimulatedLeftStick();
-      }
-    });
-
-    window.addEventListener("keyup", (e) => {
-      if (!playModule || !playModule.gamepadButton) return;
-      const btn = KEY_BUTTON_MAP[e.code];
-      if (btn !== undefined) {
-        e.preventDefault();
-        try { playModule.gamepadButton(btn, 0); } catch(err) {}
-
-        if (btn === 12) activeDirKeys.up = false;
-        if (btn === 13) activeDirKeys.down = false;
-        if (btn === 14) activeDirKeys.left = false;
-        if (btn === 15) activeDirKeys.right = false;
-        if (btn >= 12 && btn <= 15) updateSimulatedLeftStick();
-      }
-    });
 
     canvas.addEventListener("click", () => canvas.focus());
     canvas.addEventListener("pointerdown", () => canvas.focus());
@@ -1322,6 +1419,7 @@
       // Boutons réguliers, gâchettes & touches centrales avec capture de pointeur multi-touch
       vpad.querySelectorAll("[data-button]").forEach(btn => {
         const btnIdx = parseInt(btn.getAttribute("data-button"), 10);
+        const playCodes = VPAD_BUTTON_TO_PLAY_CODES[btnIdx];
         let activePointerId = null;
 
         const onDown = (e) => {
@@ -1332,9 +1430,7 @@
             try { btn.setPointerCapture(e.pointerId); } catch(err) {}
           }
           btn.classList.add("pressed");
-          if (playModule && playModule.gamepadButton) {
-            try { playModule.gamepadButton(btnIdx, 1); } catch(err) {}
-          }
+          if (playCodes) sendPlayKeys(playCodes, true);
         };
 
         const onUp = (e) => {
@@ -1343,9 +1439,7 @@
           e.stopPropagation();
           activePointerId = null;
           btn.classList.remove("pressed");
-          if (playModule && playModule.gamepadButton) {
-            try { playModule.gamepadButton(btnIdx, 0); } catch(err) {}
-          }
+          if (playCodes) sendPlayKeys(playCodes, false);
           if (btn.releasePointerCapture) {
             try { btn.releasePointerCapture(e.pointerId); } catch(err) {}
           }
@@ -1403,12 +1497,29 @@
       }
 
       // Gestion Joysticks Analogiques 360°
-      function initStick(zoneEl, thumbEl, axisXIdx, axisYIdx, feedDpad = false) {
+      function initStick(zoneEl, thumbEl, isLeftStick = true) {
         if (!zoneEl || !thumbEl) return;
         let stickPointerId = null;
         let stickCenter = { x: 0, y: 0 };
         const maxRadius = 38;
-        const dpadState = { 12: false, 13: false, 14: false, 15: false };
+        const activeState = { up: false, down: false, left: false, right: false };
+
+        const applyState = (dir, active) => {
+          if (activeState[dir] === active) return;
+          activeState[dir] = active;
+          if (isLeftStick) {
+            if (dir === "up") sendPlayKeys(["KeyT", "ArrowUp"], active);
+            if (dir === "down") sendPlayKeys(["KeyG", "ArrowDown"], active);
+            if (dir === "left") sendPlayKeys(["KeyF", "ArrowLeft"], active);
+            if (dir === "right") sendPlayKeys(["KeyH", "ArrowRight"], active);
+          } else {
+            // Right Stick
+            if (dir === "up") sendPlayKey("KeyI", active);
+            if (dir === "down") sendPlayKey("KeyK", active);
+            if (dir === "left") sendPlayKey("KeyJ", active);
+            if (dir === "right") sendPlayKey("KeyL", active);
+          }
+        };
 
         const start = (e) => {
           e.preventDefault();
@@ -1439,26 +1550,12 @@
 
           const normX = clamped > 0 ? (tx / maxRadius) : 0;
           const normY = clamped > 0 ? (ty / maxRadius) : 0;
+          const thresh = 0.35;
 
-          if (playModule && playModule.gamepadAxis) {
-            try {
-              playModule.gamepadAxis(axisXIdx, Math.round(normX * 100) / 100);
-              playModule.gamepadAxis(axisYIdx, Math.round(normY * 100) / 100);
-            } catch(err) {}
-          }
-
-          if (feedDpad && playModule && playModule.gamepadButton) {
-            const thresh = 0.4;
-            const up = normY < -thresh;
-            const down = normY > thresh;
-            const left = normX < -thresh;
-            const right = normX > thresh;
-
-            if (up !== dpadState[12]) { dpadState[12] = up; try { playModule.gamepadButton(12, up ? 1 : 0); } catch(err) {} }
-            if (down !== dpadState[13]) { dpadState[13] = down; try { playModule.gamepadButton(13, down ? 1 : 0); } catch(err) {} }
-            if (left !== dpadState[14]) { dpadState[14] = left; try { playModule.gamepadButton(14, left ? 1 : 0); } catch(err) {} }
-            if (right !== dpadState[15]) { dpadState[15] = right; try { playModule.gamepadButton(15, right ? 1 : 0); } catch(err) {} }
-          }
+          applyState("up", normY < -thresh);
+          applyState("down", normY > thresh);
+          applyState("left", normX < -thresh);
+          applyState("right", normX > thresh);
         };
 
         const end = (e) => {
@@ -1468,21 +1565,10 @@
           stickPointerId = null;
           thumbEl.style.transform = "translate(0px, 0px)";
 
-          if (playModule && playModule.gamepadAxis) {
-            try {
-              playModule.gamepadAxis(axisXIdx, 0);
-              playModule.gamepadAxis(axisYIdx, 0);
-            } catch(err) {}
-          }
-
-          if (feedDpad && playModule && playModule.gamepadButton) {
-            for (const b of [12, 13, 14, 15]) {
-              if (dpadState[b]) {
-                dpadState[b] = false;
-                try { playModule.gamepadButton(b, 0); } catch(err) {}
-              }
-            }
-          }
+          applyState("up", false);
+          applyState("down", false);
+          applyState("left", false);
+          applyState("right", false);
 
           if (zoneEl.releasePointerCapture) {
             try { zoneEl.releasePointerCapture(e.pointerId); } catch(err) {}
@@ -1495,8 +1581,8 @@
         zoneEl.addEventListener("pointercancel", end);
       }
 
-      initStick(stickLZone, document.getElementById("stick-l-thumb"), 0, 1, true);
-      initStick(stickRZone, document.getElementById("stick-r-thumb"), 2, 3, false);
+      initStick(stickLZone, document.getElementById("stick-l-thumb"), true);
+      initStick(stickRZone, document.getElementById("stick-r-thumb"), false);
     }
 
     setupVirtualPad();

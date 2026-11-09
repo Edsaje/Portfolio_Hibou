@@ -1285,14 +1285,14 @@
                 localforage.setItem("sav-" + window.gameID, uint8);
               } catch(err) {}
             }
+            let injected = false;
             if (typeof window.loadDsSaveData === "function") {
-              window.loadDsSaveData(uint8);
+              injected = window.loadDsSaveData(uint8);
             }
-            if (lastLoadedBlob) {
-              loadRomBlob(lastLoadedBlob, lastLoadedName, true);
-              setStatus("📂 Sauvegarde DS restaurée avec succès !", "#34d399");
+            if (injected) {
+              setStatus("📂 Sauvegarde injectée dans la cartouche DS !", "#34d399");
             } else {
-              setStatus("📂 Sauvegarde locale DS prête", "#34d399");
+              setStatus("📂 Sauvegarde locale DS prête pour le prochain démarrage", "#34d399");
             }
           }
         }
