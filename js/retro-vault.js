@@ -161,8 +161,10 @@
               await this.saveSramDB(gameName, uint8);
               await this.saveStateDB(gameName, uint8, null, true);
               const status = document.getElementById("rv-status");
-              if (status && e.data.type === "DS_SAVE_DATA") {
-                status.textContent = `💾 Sauvegarde cartouche DS synchronisée (${new Date().toLocaleTimeString()}) !`;
+              if (status) {
+                status.textContent = e.data.type === "DS_AUTO_SAVE"
+                  ? `💾 Sauvegarde en jeu synchronisée (${new Date().toLocaleTimeString()}) !`
+                  : `💾 Sauvegarde cartouche DS synchronisée (${new Date().toLocaleTimeString()}) !`;
                 status.style.color = "#34d399";
               }
               this.rendreGrille();
