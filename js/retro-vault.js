@@ -162,7 +162,7 @@
               await this.saveStateDB(gameName, uint8, null, true);
               const status = document.getElementById("rv-status");
               if (status && e.data.type === "DS_SAVE_DATA") {
-                status.textContent = `💾 Sauvegarde DS enregistrée dans le Sanctuaire (${new Date().toLocaleTimeString()}) !`;
+                status.textContent = `💾 Sauvegarde cartouche DS synchronisée (${new Date().toLocaleTimeString()}) !`;
                 status.style.color = "#34d399";
               }
               this.rendreGrille();
@@ -6045,7 +6045,7 @@
             }
 
             const dateTxt = data.date || data.stateDate || data.sramDate || new Date().toLocaleTimeString();
-            this.setStatutMessage(`📂 Restauration de la sauvegarde DS (${dateTxt})...`, "#34d399", true);
+            this.setStatutMessage(`📂 Cartouche DS rechargée avec ta sauvegarde (${dateTxt}) ! Charge ta partie dans le menu du jeu.`, "#34d399", true);
 
             frame.src = "emulators/ds/index.html?v=9.3&embedded=1";
           } catch (e) {
