@@ -218,19 +218,20 @@
             } catch(err) {}
           }
         } else if (e.data.type === "NDS_READY") {
-          if (this.pendingNdsSave) {
+          this.handleNdsReady();
+        } else if (e.data.type === "NDS_ROM_LOADED") {
+          if (e.data.blob && e.data.name) {
+            this.currentNdsRomBlob = e.data.blob;
+            this.jeuEnCoursNom = e.data.name;
+            this.jeuEnCoursType = "nds";
+          }
+        } else if (e.data.type === "TRIGGER_RESET") {
+          if (this.jeuEnCoursType === "nds") {
             const frame = document.getElementById("rv-nds-frame");
-            if (frame && frame.contentWindow) {
-              const saveToSend = this.pendingNdsSave;
-              this.pendingNdsSave = null;
-              this.toUint8Array(saveToSend).then((uint8) => {
-                if (uint8 && uint8.length > 0 && frame.contentWindow) {
-                  frame.contentWindow.postMessage({
-                    type: "LOAD_DS_SAVE",
-                    data: Array.from(uint8)
-                  }, "*");
-                }
-              }).catch(() => {});
+            if (frame && this.currentNdsRomBlob) {
+              this.pendingNdsRom = { blob: this.currentNdsRomBlob, name: this.jeuEnCoursNom };
+              frame.src = "emulators/ds/index.html?v=9.3&embedded=1";
+              this.setStatutMessage("🔄 Console Nintendo DS réinitialisée !", "#34d399", true);
             }
           }
         } else if (e.data.type === "DC_READY" || e.data.type === "DC_RUNNER_READY") {
@@ -269,6 +270,55 @@
           this.chargerPartie();
         }
       });
+    }
+
+    handleNdsReady() {
+      const frame = document.getElementById("rv-nds-frame");
+      if (!frame || !frame.contentWindow) return;
+
+      try {
+        frame.contentWindow.postMessage({
+          type: "SET_VOLUME",
+          volume: this.volumeActuel
+        }, "*");
+      } catch(e) {}
+      try {
+        frame.contentWindow.postMessage({
+          type: "SET_DS_LAYOUT",
+          layout: this.dispositionDS
+        }, "*");
+      } catch(e) {}
+
+      const saveToSend = this.pendingNdsSave;
+      this.pendingNdsSave = null;
+      const romToSend = this.pendingNdsRom;
+      this.pendingNdsRom = null;
+
+      const sendToFrame = (saveBytes) => {
+        if (!frame.contentWindow) return;
+        if (romToSend) {
+          const msg = {
+            type: "LOAD_ROM",
+            blob: romToSend.blob,
+            name: romToSend.name
+          };
+          if (saveBytes && saveBytes.length > 0) {
+            msg.save = Array.from(saveBytes);
+          }
+          frame.contentWindow.postMessage(msg, "*");
+        } else if (saveBytes && saveBytes.length > 0) {
+          frame.contentWindow.postMessage({
+            type: "LOAD_DS_SAVE",
+            data: Array.from(saveBytes)
+          }, "*");
+        }
+      };
+
+      if (saveToSend) {
+        this.toUint8Array(saveToSend).then(sendToFrame).catch(() => sendToFrame(null));
+      } else {
+        sendToFrame(null);
+      }
     }
 
     setStatus(text, color = "#d4af37") {
@@ -4849,47 +4899,6 @@
         this._orientationResizeTimer = setTimeout(handleMobileOrientation, 150);
       });
 
-      // Écoute des messages venant de l'iframe DS
-      window.addEventListener("message", (e) => {
-        if (e.data && e.data.type === "NDS_READY") {
-          const frame = document.getElementById("rv-nds-frame");
-          if (frame && frame.contentWindow) {
-            try {
-              frame.contentWindow.postMessage({
-                type: "SET_VOLUME",
-                volume: this.volumeActuel
-              }, "*");
-            } catch(e) {}
-            try {
-              frame.contentWindow.postMessage({
-                type: "SET_DS_LAYOUT",
-                layout: this.dispositionDS
-              }, "*");
-            } catch(e) {}
-            if (this.pendingNdsSave) {
-              const saveToSend = this.pendingNdsSave;
-              this.pendingNdsSave = null;
-              try {
-                frame.contentWindow.postMessage({
-                  type: "LOAD_DS_SAVE",
-                  data: Array.from(saveToSend)
-                }, "*");
-              } catch(e) {}
-            }
-            if (this.pendingNdsRom) {
-              const romToSend = this.pendingNdsRom;
-              this.pendingNdsRom = null; // CONSOMMER IMMÉDIATEMENT POUR ÉVITER LES DOUBLONS
-              try {
-                frame.contentWindow.postMessage({
-                  type: "LOAD_ROM",
-                  blob: romToSend.blob,
-                  name: romToSend.name
-                }, "*");
-              } catch (err) {}
-            }
-          }
-        }
-      });
       document.getElementById("rv-btn-crt").addEventListener("click", () => {
         const crt = document.getElementById("rv-crt");
         const btn = document.getElementById("rv-btn-crt");
@@ -5412,6 +5421,7 @@
           `;
 
           const frame = document.getElementById("rv-nds-frame");
+          this.currentNdsRomBlob = romBlob;
           this.pendingNdsRom = romBlob ? { blob: romBlob, name: nomFichier } : null;
 
           // Si connecté au Cloud VPS, rapatrier la dernière sauvegarde si disponible
@@ -5428,42 +5438,7 @@
           }
 
           if (frame) {
-            const sendRomAndVolume = () => {
-              try {
-                if (frame.contentWindow) {
-                  frame.contentWindow.postMessage({
-                    type: "SET_VOLUME",
-                    volume: this.volumeActuel
-                  }, "*");
-                  frame.contentWindow.postMessage({
-                    type: "SET_DS_LAYOUT",
-                    layout: this.dispositionDS
-                  }, "*");
-                  if (this.pendingNdsSave) {
-                    const saveToSend = this.pendingNdsSave;
-                    this.pendingNdsSave = null;
-                    this.toUint8Array(saveToSend).then((uint8) => {
-                      if (uint8 && uint8.length > 0 && frame.contentWindow) {
-                        frame.contentWindow.postMessage({
-                          type: "LOAD_DS_SAVE",
-                          data: Array.from(uint8)
-                        }, "*");
-                      }
-                    }).catch(() => {});
-                  }
-                  if (this.pendingNdsRom) {
-                    const romToSend = this.pendingNdsRom;
-                    this.pendingNdsRom = null; // CONSOMMER IMMÉDIATEMENT POUR ÉVITER LES DOUBLONS
-                    frame.contentWindow.postMessage({
-                      type: "LOAD_ROM",
-                      blob: romToSend.blob,
-                      name: romToSend.name
-                    }, "*");
-                  }
-                }
-              } catch (e) {}
-            };
-            frame.onload = () => setTimeout(sendRomAndVolume, 400);
+            frame.onload = () => setTimeout(() => this.handleNdsReady(), 400);
           }
 
           status.textContent = isLauncher
@@ -6053,17 +6028,26 @@
               return;
             }
             const uint8 = await this.toUint8Array(data.state || data.sram);
-            const frame = document.getElementById("rv-nds-frame");
-            if (frame && frame.contentWindow && uint8 && uint8.length > 0) {
-              frame.contentWindow.postMessage({
-                type: "LOAD_DS_SAVE",
-                data: Array.from(uint8)
-              }, "*");
-              const dateTxt = data.date || data.stateDate || data.sramDate || new Date().toLocaleTimeString();
-              this.setStatutMessage(`📂 Sauvegarde DS restaurée ! (${dateTxt})`, "#34d399", true);
-            } else {
+            if (!uint8 || uint8.length === 0) {
               this.setStatutMessage("⚠️ Données de sauvegarde DS introuvables ou vides.", "#ef4444", true);
+              return;
             }
+
+            const frame = document.getElementById("rv-nds-frame");
+            if (!frame) {
+              this.setStatutMessage("⚠️ Émulateur DS non trouvé.", "#ef4444", true);
+              return;
+            }
+
+            this.pendingNdsSave = uint8;
+            if (this.currentNdsRomBlob) {
+              this.pendingNdsRom = { blob: this.currentNdsRomBlob, name: this.jeuEnCoursNom };
+            }
+
+            const dateTxt = data.date || data.stateDate || data.sramDate || new Date().toLocaleTimeString();
+            this.setStatutMessage(`📂 Restauration de la sauvegarde DS (${dateTxt})...`, "#34d399", true);
+
+            frame.src = "emulators/ds/index.html?v=9.3&embedded=1";
           } catch (e) {
             this.setStatutMessage("❌ Échec du chargement DS : " + e.message, "#ef4444", true);
           }

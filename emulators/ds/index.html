@@ -1070,6 +1070,10 @@
       });
 
       btnReset.addEventListener("click", () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: "TRIGGER_RESET" }, "*");
+          return;
+        }
         applyFirmwareLanguage(currentLanguage);
         if (lastLoadedBlob) {
           loadRomBlob(lastLoadedBlob, lastLoadedName, true);
@@ -1098,6 +1102,15 @@
         if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
           const file = e.dataTransfer.files[0];
           loadRomBlob(file, file.name);
+          if (window.parent && window.parent !== window) {
+            try {
+              window.parent.postMessage({
+                type: "NDS_ROM_LOADED",
+                name: file.name,
+                blob: file
+              }, "*");
+            } catch(e) {}
+          }
         }
       });
 
@@ -1190,6 +1203,14 @@
         if (!e.data) return;
 
         if (e.data.type === "LOAD_ROM" && e.data.blob) {
+          if (e.data.save && e.data.save.length > 0) {
+            const raw = e.data.save;
+            const uint8 = (raw instanceof Uint8Array) ? raw : new Uint8Array(raw);
+            window.pendingSaveData = uint8;
+            if (typeof window.gameID === "string" && window.gameID && typeof localforage !== "undefined") {
+              try { localforage.setItem("sav-" + window.gameID, uint8); } catch(err) {}
+            }
+          }
           loadRomBlob(e.data.blob, e.data.name);
         } else if (e.data.type === "SET_DS_LAYOUT") {
           applyDsLayout(e.data.layout);
@@ -1248,28 +1269,40 @@
             }
           }
         } else if (e.data.type === "RESET") {
-          applyFirmwareLanguage(currentLanguage);
-          if (lastLoadedBlob) {
-            loadRomBlob(lastLoadedBlob, lastLoadedName, true);
-            setStatus("🔄 Console réinitialisée (Langue : " + (dsLangNames[currentLanguage] || "FR") + ")", "#34d399");
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: "TRIGGER_RESET" }, "*");
             return;
           }
+          applyFirmwareLanguage(currentLanguage);
           location.reload();
         } else if (e.data.type === "REQUEST_DS_SAVE" || e.data.type === "SAVE_STATE") {
           let saved = false;
+          let data = null;
           if (typeof window.getDsSaveData === "function") {
-            const data = window.getDsSaveData();
-            if (data && data.length > 0 && window.parent && window.parent !== window) {
-              try {
+            data = window.getDsSaveData();
+          }
+          if (data && data.length > 0 && window.parent && window.parent !== window) {
+            try {
+              window.parent.postMessage({
+                type: "DS_SAVE_DATA",
+                name: lastLoadedName,
+                data: Array.from(data)
+              }, "*");
+              saved = true;
+              setStatus("💾 Sauvegarde DS transmise au Sanctuaire !", "#34d399");
+            } catch(err) {}
+          }
+          if (!saved && typeof localforage !== "undefined" && window.gameID) {
+            localforage.getItem("sav-" + window.gameID).then(lfData => {
+              if (lfData && lfData.length > 0 && window.parent && window.parent !== window) {
                 window.parent.postMessage({
                   type: "DS_SAVE_DATA",
                   name: lastLoadedName,
-                  data: Array.from(data)
+                  data: Array.from(lfData)
                 }, "*");
-                saved = true;
                 setStatus("💾 Sauvegarde DS transmise au Sanctuaire !", "#34d399");
-              } catch(err) {}
-            }
+              }
+            }).catch(() => {});
           }
           if (!saved && e.data.type === "SAVE_STATE" && typeof uiSaveBackup === "function") {
             uiSaveBackup();
