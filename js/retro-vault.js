@@ -5409,6 +5409,11 @@
         if (cType === "nds") {
           container.classList.add("rv-is-nds");
 
+          const token = this.getCloudToken() || "";
+          const gameParam = !isLauncher ? `&game=${encodeURIComponent(nomFichier)}` : "";
+          const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
+          const dsDedicatedUrl = `emulators/ds/index.html?v=9.3${gameParam}${tokenParam}`;
+
           container.innerHTML = `
             <div class="rv-perf-hud" id="rv-perf-hud">
               <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
@@ -5416,7 +5421,7 @@
             </div>
             <div class="rv-nds-wrapper">
               <div class="rv-nds-ext-btn-wrap" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
-                <a href="emulators/ds/index.html?v=9.3" target="_blank" class="rv-btn rv-nds-ext-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
+                <a href="${dsDedicatedUrl}" target="_blank" class="rv-btn rv-nds-ext-btn" style="font-size: 0.72rem; padding: 4px 8px; text-decoration: none;">⛶ Plein Écran Dédié</a>
               </div>
               <iframe id="rv-nds-frame" class="rv-embedded-frame" src="emulators/ds/index.html?v=9.3&embedded=1" allow="autoplay; fullscreen; gamepad"></iframe>
             </div>

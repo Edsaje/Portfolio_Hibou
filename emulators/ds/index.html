@@ -400,6 +400,7 @@
       <button class="ds-btn" id="btn-open-rom">📁 Insérer ROM</button>
       <button class="ds-btn ds-btn-secondary" id="btn-save-dsv" title="Télécharger le fichier de sauvegarde DSV">💾 Sauvegarder</button>
       <button class="ds-btn ds-btn-secondary" id="btn-restart" title="Redémarrer la console">🔄 Reset</button>
+      <button class="ds-btn ds-btn-secondary" id="btn-fs" title="Basculer en Plein Écran">⛶ Plein Écran</button>
       <input type="file" id="file-input" accept=".nds" style="display: none;">
       <input type="file" id="restore-file" accept=".dsv,.sav,.bin" style="display: none;" onchange="if(typeof uiSaveRestore==='function')uiSaveRestore();">
     </div>
@@ -1361,6 +1362,93 @@
       };
       window.addEventListener("pagehide", flushDsSave);
       window.addEventListener("beforeunload", flushDsSave);
+
+      // Gestion du bouton Plein Écran dédié
+      const btnFs = document.getElementById("btn-fs");
+      if (btnFs) {
+        btnFs.addEventListener("click", () => {
+          if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+            else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen().catch(() => {});
+          } else {
+            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen().catch(() => {});
+          }
+        });
+      }
+
+      // Démarrage Automatique en mode Plein Écran Dédié (?game=...&token=...)
+      const urlParams = new URLSearchParams(window.location.search);
+      const autoGame = urlParams.get("game");
+      if (autoGame && !isEmbedded) {
+        setStatus(`⏳ Démarrage de "${autoGame}" en Plein Écran Dédié...`);
+
+        (async () => {
+          let romBlob = null;
+
+          // 1. Essai de récupération instantanée depuis la fenêtre parente (sans re-téléchargement)
+          try {
+            if (window.opener && window.opener.RetroVaultEngine) {
+              const rve = window.opener.RetroVaultEngine;
+              if (rve.currentNdsRomBlob) {
+                romBlob = rve.currentNdsRomBlob;
+              }
+              try {
+                const sData = await rve.loadStateDB(autoGame);
+                if (sData && (sData.sram || sData.state)) {
+                  const u8 = await rve.toUint8Array(sData.sram || sData.state);
+                  if (u8 && u8.length > 0) window.pendingSaveData = u8;
+                }
+              } catch(e) {}
+            }
+          } catch(e) {}
+
+          // 2. Si non disponible dans la fenêtre parente, téléchargement depuis le Sanctuaire / Cloud VPS
+          if (!romBlob) {
+            const romToken = urlParams.get("token") || (window.localStorage ? localStorage.getItem("rv_vps_token") : "") || "";
+            const tokenQuery = romToken ? `?token=${encodeURIComponent(romToken)}` : "";
+            const headers = romToken ? { "Authorization": `Bearer ${romToken}` } : {};
+
+            if (romToken) {
+              try {
+                const saveRes = await fetch(`../../api/saves.php?action=load&game=${encodeURIComponent(autoGame)}&type=sram&token=${encodeURIComponent(romToken)}`, { headers });
+                if (saveRes.ok) {
+                  const sBuf = await saveRes.arrayBuffer();
+                  if (sBuf && sBuf.byteLength > 0) {
+                    window.pendingSaveData = new Uint8Array(sBuf);
+                  }
+                }
+              } catch(sErr) {}
+            }
+
+            const urls = [
+              `../../assets/vault/${encodeURI(autoGame)}${tokenQuery}`,
+              `/assets/vault/${encodeURI(autoGame)}${tokenQuery}`,
+              `https://quentinbeaud.com/assets/vault/${encodeURI(autoGame)}${tokenQuery}`,
+              `https://roms.quentinbeaud.com/vault/${encodeURI(autoGame)}`
+            ];
+
+            for (const u of urls) {
+              try {
+                const res = await fetch(u, { headers });
+                if (res.ok) {
+                  romBlob = await res.blob();
+                  break;
+                }
+              } catch(e) {}
+            }
+          }
+
+          if (romBlob) {
+            loadRomBlob(romBlob, autoGame);
+          } else {
+            setStatus("❌ Impossible de charger la relique. Déposez votre fichier .nds pour jouer.", "#ef4444");
+          }
+        })().catch(err => {
+          console.warn("Échec lancement automatique DS Dédié:", err);
+          setStatus("❌ Erreur : " + err.message, "#ef4444");
+        });
+      }
 
       // Notifier le Sanctuaire parent que la console DS est prête
       try {
