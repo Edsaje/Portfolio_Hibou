@@ -1,4 +1,7 @@
 User-agent: *
+Allow: /
 Disallow: /assets/vault/
 Disallow: /api/
 Disallow: /emulators/
+
+Sitemap: https://quentinbeaud.com/sitemap.xml
