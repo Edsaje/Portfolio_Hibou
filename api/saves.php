@@ -330,6 +330,7 @@ if ($action === 'load' && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $data = file_get_contents($savePath);
 
     header('Content-Type: application/octet-stream');
+    header('Cache-Control: private, no-cache, no-store, must-revalidate');
     header('Content-Length: ' . strlen($data));
     header('X-Save-Game: ' . rawurlencode($meta['game'] ?? $gameName));
     header('X-Save-Type: ' . $reqType);
@@ -364,6 +365,7 @@ if ($action === 'list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
             }
         }
     }
+    header('Cache-Control: private, no-cache, no-store, must-revalidate');
     echo json_encode(['ok' => true, 'user' => $currentUser, 'saves' => $saves]);
     exit;
 }
