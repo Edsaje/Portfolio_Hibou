@@ -230,6 +230,11 @@ if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $savePath = $userDir . '/' . $key . $subExt;
     $metaPath = $userDir . '/' . $key . '.meta.json';
 
+    // Sécurité souveraine : Sauvegarde de secours automatique (.bak) avant écrasement
+    if (file_exists($savePath) && filesize($savePath) > 0) {
+        @copy($savePath, $savePath . '.bak');
+    }
+
     file_put_contents($savePath, $data, LOCK_EX);
 
     $meta = null;

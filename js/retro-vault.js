@@ -482,11 +482,38 @@
       }
     }
 
+    async estSauvegardeVierge(data) {
+      if (!data) return true;
+      let u8 = null;
+      if (data instanceof Uint8Array) u8 = data;
+      else if (data instanceof ArrayBuffer) u8 = new Uint8Array(data);
+      else if (Array.isArray(data)) u8 = new Uint8Array(data);
+      else if (data instanceof Blob) {
+        try {
+          const slice = await data.slice(0, 32768).arrayBuffer();
+          u8 = new Uint8Array(slice);
+        } catch(e) { return false; }
+      }
+      if (!u8 || u8.length === 0) return true;
+      const len = Math.min(u8.length, 32768);
+      for (let i = 0; i < len; i++) {
+        if (u8[i] !== 0xff && u8[i] !== 0x00) return false;
+      }
+      return true;
+    }
+
     async saveStateDB(key, blob, customDate = null, skipCloudUpload = false, customTimestamp = null) {
       const db = await this.getDB();
+      const existing = (await this.loadStateDB(key)) || {};
+
+      // Protection anti-régression : Ne jamais remplacer une sauvegarde existante par un buffer vierge
+      if (await this.estSauvegardeVierge(blob) && existing.state && !(await this.estSauvegardeVierge(existing.state))) {
+        console.warn("[RetroVault] State vierge ignorée pour protéger la progression existante :", key);
+        return;
+      }
+
       const dateStr = customDate || new Date().toLocaleString();
       const ts = customTimestamp || Date.now();
-      const existing = (await this.loadStateDB(key)) || {};
       existing.state = blob;
       existing.stateDate = dateStr;
       existing.stateTimestamp = ts;
@@ -510,9 +537,16 @@
 
     async saveSramDB(key, blob, customDate = null, skipCloudUpload = false, customTimestamp = null) {
       const db = await this.getDB();
+      const existing = (await this.loadStateDB(key)) || {};
+
+      // Protection anti-régression : Ne jamais remplacer une sauvegarde existante par un buffer vierge
+      if (await this.estSauvegardeVierge(blob) && existing.sram && !(await this.estSauvegardeVierge(existing.sram))) {
+        console.warn("[RetroVault] Sauvegarde cartouche vierge ignorée pour protéger la progression existante :", key);
+        return;
+      }
+
       const dateStr = customDate || new Date().toLocaleString();
       const ts = customTimestamp || Date.now();
-      const existing = (await this.loadStateDB(key)) || {};
       existing.sram = blob;
       existing.sramDate = dateStr;
       existing.sramTimestamp = ts;

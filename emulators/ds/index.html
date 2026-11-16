@@ -1024,6 +1024,11 @@
             player.loadURL(url, function() {
               isRomLoading = false;
               unlockAudio();
+              const saveToInject = window.activePendingSave || window.pendingSaveData;
+              if (saveToInject && typeof window.loadDsSaveData === "function") {
+                window.loadDsSaveData(saveToInject);
+                console.log("[DS] Sauvegarde cartouche injectée après chargement ROM.");
+              }
               if (isSM64) {
                 setStatus("🎮 " + lastLoadedName + " | 🕹️ Stick 360° ACTIF (Mode Tactile conseillé dans Options SM64DS)", "#34d399");
               } else {
@@ -1208,6 +1213,7 @@
             const raw = e.data.save;
             const uint8 = (raw instanceof Uint8Array) ? raw : new Uint8Array(raw);
             window.pendingSaveData = uint8;
+            window.activePendingSave = uint8;
             if (typeof window.gameID === "string" && window.gameID && typeof localforage !== "undefined") {
               try { localforage.setItem("sav-" + window.gameID, uint8); } catch(err) {}
             }
@@ -1314,6 +1320,7 @@
           const uint8 = (rawData instanceof Uint8Array) ? rawData : new Uint8Array(rawData);
           if (uint8 && uint8.length > 0) {
             window.pendingSaveData = uint8;
+            window.activePendingSave = uint8;
             if (typeof window.gameID === "string" && window.gameID && typeof localforage !== "undefined") {
               try {
                 localforage.setItem("sav-" + window.gameID, uint8);
@@ -1332,17 +1339,53 @@
         }
       });
 
+      // Fonction d'injection robuste avec gestion du dépassement de taille (.dsv footer)
+      window.loadDsSaveData = function(uint8Arr) {
+        if (typeof Module === "undefined" || !Module._savGetPointer || !uint8Arr) return false;
+        try {
+          let arr = (uint8Arr instanceof Uint8Array) ? uint8Arr : new Uint8Array(uint8Arr);
+          let len = arr.length;
+          if (!len || len <= 0) return false;
+          const targetSize = (typeof Module._savGetSize === "function") ? Module._savGetSize() : 0;
+          if (targetSize > 0 && len > targetSize) {
+            // Tronquer le footer .dsv (122 octets) pour correspondre exactement à la SRAM cartouche
+            arr = arr.subarray(0, targetSize);
+            len = targetSize;
+          }
+          const ptr = Module._savGetPointer(len);
+          if (!ptr) return false;
+          Module.HEAPU8.set(arr, ptr);
+          if (typeof Module._savUpdateChangeFlag === "function") {
+            Module._savUpdateChangeFlag();
+          }
+          return true;
+        } catch (err) {
+          console.warn("[DS] Erreur injection sauvegarde:", err);
+          return false;
+        }
+      };
+
       // Synchronisation automatique des sauvegardes DS vers le Sanctuaire parent
       window.onDsSaveUpdated = function(uint8Arr, gId) {
         if (window.parent && window.parent !== window && uint8Arr) {
-          try {
-            window.parent.postMessage({
-              type: "DS_AUTO_SAVE",
-              name: lastLoadedName,
-              gameID: gId,
-              data: Array.from(uint8Arr)
-            }, "*");
-          } catch(err) {}
+          let hasData = false;
+          const checkLimit = Math.min(uint8Arr.length, 32768);
+          for (let i = 0; i < checkLimit; i++) {
+            if (uint8Arr[i] !== 0xff && uint8Arr[i] !== 0x00) {
+              hasData = true;
+              break;
+            }
+          }
+          if (hasData) {
+            try {
+              window.parent.postMessage({
+                type: "DS_AUTO_SAVE",
+                name: lastLoadedName,
+                gameID: gId,
+                data: Array.from(uint8Arr)
+              }, "*");
+            } catch(err) {}
+          }
         }
       };
 
@@ -1350,13 +1393,23 @@
         if (typeof window.getDsSaveData === "function") {
           const data = window.getDsSaveData();
           if (data && data.length > 0 && window.parent && window.parent !== window) {
-            try {
-              window.parent.postMessage({
-                type: "DS_AUTO_SAVE",
-                name: lastLoadedName,
-                data: Array.from(data)
-              }, "*");
-            } catch(err) {}
+            let hasData = false;
+            const checkLimit = Math.min(data.length, 32768);
+            for (let i = 0; i < checkLimit; i++) {
+              if (data[i] !== 0xff && data[i] !== 0x00) {
+                hasData = true;
+                break;
+              }
+            }
+            if (hasData) {
+              try {
+                window.parent.postMessage({
+                  type: "DS_AUTO_SAVE",
+                  name: lastLoadedName,
+                  data: Array.from(data)
+                }, "*");
+              } catch(err) {}
+            }
           }
         }
       };
@@ -1397,7 +1450,10 @@
                 const sData = await rve.loadStateDB(autoGame);
                 if (sData && (sData.sram || sData.state)) {
                   const u8 = await rve.toUint8Array(sData.sram || sData.state);
-                  if (u8 && u8.length > 0) window.pendingSaveData = u8;
+                  if (u8 && u8.length > 0) {
+                    window.pendingSaveData = u8;
+                    window.activePendingSave = u8;
+                  }
                 }
               } catch(e) {}
             }
@@ -1416,6 +1472,7 @@
                   const sBuf = await saveRes.arrayBuffer();
                   if (sBuf && sBuf.byteLength > 0) {
                     window.pendingSaveData = new Uint8Array(sBuf);
+                    window.activePendingSave = window.pendingSaveData;
                   }
                 }
               } catch(sErr) {}
