@@ -329,6 +329,10 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
+      touch-action: none;
+      -webkit-touch-callout: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     /* Overlay glisser-déposer */
@@ -418,7 +422,7 @@
     </div>
   </div>
 
-  <script src="desmond.min.js?v=9.3"></script>
+  <script src="desmond.min.js?v=9.4"></script>
   <script>
     (function() {
       // Détection automatique du mode imbriqué (dans RetroVault)
@@ -683,6 +687,8 @@
           isEnabled() { return enabled; },
           setEnabled(val) { enabled = !!val; },
           toggle() { enabled = !enabled; return enabled; },
+          setUserTouch(val) { isUserPhysicalTouch = !!val; },
+          isUserTouch() { return isUserPhysicalTouch; },
 
           process(gamepad) {
             if (!enabled || !gamepad) return false;
@@ -811,6 +817,10 @@
             margin: 0 auto !important;
             padding: 4px !important;
             overflow: hidden !important;
+            touch-action: none !important;
+            -webkit-touch-callout: none !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
           }
           canvas {
             image-rendering: pixelated !important;
@@ -824,10 +834,18 @@
             display: block !important;
             box-sizing: content-box !important;
             flex-shrink: 0 !important;
+            touch-action: none !important;
+            -webkit-touch-callout: none !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
           }
           #bottom {
             cursor: crosshair !important;
             border-color: rgba(212, 175, 55, 0.7) !important;
+            touch-action: none !important;
+            -webkit-touch-callout: none !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
           }
           /* Forçage Côte à côte explicite */
           #player.ds-side-by-side {
@@ -936,6 +954,123 @@
         window.addEventListener("resize", updateCanvasDimensions);
       }
       setupCanvasScaling();
+
+      // ====================================================================
+      // GESTION DU TACTILE DS (POINTER & TOUCH EVENTS POUR MOBILE ET STYLET)
+      // ====================================================================
+      function setupBottomTouchControls() {
+        if (!player || !player.shadowRoot) return;
+        const bottomCanvas = player.shadowRoot.getElementById("bottom");
+        if (!bottomCanvas) {
+          setTimeout(setupBottomTouchControls, 100);
+          return;
+        }
+
+        let isPointerDown = false;
+        let activePointerId = null;
+
+        const updateCoords = (clientX, clientY) => {
+          const rect = bottomCanvas.getBoundingClientRect();
+          if (!rect.width || !rect.height) return;
+          const rx = (clientX - rect.left) / rect.width;
+          const ry = (clientY - rect.top) / rect.height;
+          const clampedX = Math.max(0, Math.min(1, rx));
+          const clampedY = Math.max(0, Math.min(1, ry));
+          window.touchX = Math.round(clampedX * 255);
+          window.touchY = Math.round(clampedY * 191);
+        };
+
+        const handlePointerDown = (e) => {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          isPointerDown = true;
+          activePointerId = e.pointerId;
+          if (typeof DSAnalogBridge !== "undefined" && DSAnalogBridge.setUserTouch) {
+            DSAnalogBridge.setUserTouch(true);
+          }
+          try {
+            bottomCanvas.setPointerCapture(e.pointerId);
+          } catch(err) {}
+          updateCoords(e.clientX, e.clientY);
+          window.touched = 1;
+          if (typeof tryInitSound === "function") tryInitSound();
+          if (e.cancelable) e.preventDefault();
+        };
+
+        const handlePointerMove = (e) => {
+          if (!isPointerDown) return;
+          updateCoords(e.clientX, e.clientY);
+          window.touched = 1;
+          if (e.cancelable) e.preventDefault();
+        };
+
+        const handlePointerEnd = (e) => {
+          if (activePointerId !== null && e.pointerId === activePointerId) {
+            isPointerDown = false;
+            activePointerId = null;
+            try {
+              bottomCanvas.releasePointerCapture(e.pointerId);
+            } catch(err) {}
+          }
+          if (!isPointerDown) {
+            window.touched = 0;
+            if (typeof DSAnalogBridge !== "undefined" && DSAnalogBridge.setUserTouch) {
+              DSAnalogBridge.setUserTouch(false);
+            }
+          }
+          if (e.cancelable) e.preventDefault();
+        };
+
+        bottomCanvas.addEventListener("pointerdown", handlePointerDown, { passive: false });
+        bottomCanvas.addEventListener("pointermove", handlePointerMove, { passive: false });
+        bottomCanvas.addEventListener("pointerup", handlePointerEnd, { passive: false });
+        bottomCanvas.addEventListener("pointercancel", handlePointerEnd, { passive: false });
+        bottomCanvas.addEventListener("lostpointercapture", handlePointerEnd, { passive: false });
+
+        // Événements Touch directs en secours (iOS Safari / WebKit)
+        bottomCanvas.addEventListener("touchstart", (e) => {
+          if (e.touches && e.touches.length > 0) {
+            isPointerDown = true;
+            if (typeof DSAnalogBridge !== "undefined" && DSAnalogBridge.setUserTouch) {
+              DSAnalogBridge.setUserTouch(true);
+            }
+            updateCoords(e.touches[0].clientX, e.touches[0].clientY);
+            window.touched = 1;
+            if (typeof tryInitSound === "function") tryInitSound();
+          }
+          if (e.cancelable) e.preventDefault();
+        }, { passive: false });
+
+        bottomCanvas.addEventListener("touchmove", (e) => {
+          if (e.touches && e.touches.length > 0) {
+            updateCoords(e.touches[0].clientX, e.touches[0].clientY);
+            window.touched = 1;
+          }
+          if (e.cancelable) e.preventDefault();
+        }, { passive: false });
+
+        bottomCanvas.addEventListener("touchend", (e) => {
+          if (!e.touches || e.touches.length === 0) {
+            isPointerDown = false;
+            window.touched = 0;
+            if (typeof DSAnalogBridge !== "undefined" && DSAnalogBridge.setUserTouch) {
+              DSAnalogBridge.setUserTouch(false);
+            }
+          }
+          if (e.cancelable) e.preventDefault();
+        }, { passive: false });
+
+        bottomCanvas.addEventListener("touchcancel", (e) => {
+          if (!e.touches || e.touches.length === 0) {
+            isPointerDown = false;
+            window.touched = 0;
+            if (typeof DSAnalogBridge !== "undefined" && DSAnalogBridge.setUserTouch) {
+              DSAnalogBridge.setUserTouch(false);
+            }
+          }
+          if (e.cancelable) e.preventDefault();
+        }, { passive: false });
+      }
+      setupBottomTouchControls();
 
       // ====================================================================
       // GESTION DE LA DISPOSITION DES DEUX ÉCRANS NINTENDO DS
