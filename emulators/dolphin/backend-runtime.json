@@ -1,0 +1,382 @@
+{
+  "schemaVersion": 1,
+  "package": "dolphin-browser-runtime",
+  "coreId": "sha256:1c22fd3317d6b46b0bfe42e7c721f067ea53bd15d000e55cf7a3bf3c0aaed795",
+  "files": [
+    {
+      "path": "LICENSE",
+      "size": 17337,
+      "sha256": "aaf135472f81c5b4a0dca9367e5bb5e9750032b5bebe5442b36e4c0a47430df3"
+    },
+    {
+      "path": "cores/dolphin/dolphin-core-upstream.build.json",
+      "size": 10671,
+      "sha256": "eabde71630855e86b7bed17ec94b695b2a743699665d336dd0f1fe9be6e50c28"
+    },
+    {
+      "path": "cores/dolphin/dolphin-core-upstream.js",
+      "size": 270438,
+      "sha256": "ac10fd394e1743b49fe7a9a00c106bb58a1826ed15f39d1750b265134c3ba29e"
+    },
+    {
+      "path": "cores/dolphin/dolphin-core-upstream.wasm",
+      "size": 13240224,
+      "sha256": "1c22fd3317d6b46b0bfe42e7c721f067ea53bd15d000e55cf7a3bf3c0aaed795"
+    },
+    {
+      "path": "provenance/dolphin-core-abi-v1.json",
+      "size": 18125,
+      "sha256": "1d80c9dfbfd0135fdaee3d8824b2538ea5b5f32d9904eabbfc2c27af898a513d"
+    },
+    {
+      "path": "provenance/dolphin-source.lock.json",
+      "size": 20626,
+      "sha256": "87f39f2a1f149d20e401ee84a0f5dafb4147fc07bdc9cd6e0ec6d7dabab6c3c3"
+    },
+    {
+      "path": "src/audio-pcm-producer.js",
+      "size": 5434,
+      "sha256": "6b5f8dc493d25212d7dc5f1753ee69e6006b66603312d1a4730cd48e3eb37225"
+    },
+    {
+      "path": "src/audio-pcm-ring.js",
+      "size": 7901,
+      "sha256": "470a22753ad5b0563ab68f18c72a044aa700d6e51b780a1861c2a9faf4710dbc"
+    },
+    {
+      "path": "src/audio-worklet-processor.js",
+      "size": 838,
+      "sha256": "30095d01d380741be97b540ed77490ad9e12b076d7c0712d67c0cc96346fc139"
+    },
+    {
+      "path": "src/audio.js",
+      "size": 13055,
+      "sha256": "66a0273c05c49987cb20bf9801e0605a6b56b708aae8e27331049145eac7a943"
+    },
+    {
+      "path": "src/causal-telemetry.js",
+      "size": 68696,
+      "sha256": "e8a3799c80e542818351125822dd30cdc91db63bb7dcb1c93caf0c98d033203e"
+    },
+    {
+      "path": "src/core-host.js",
+      "size": 69192,
+      "sha256": "f509f876fa22c0d891e4c1f4463241ede0b4c33ff104f0d212b7558390d777f8"
+    },
+    {
+      "path": "src/diagnostic-log-filter.js",
+      "size": 1947,
+      "sha256": "ea865f1059d093411437f5a666e0126903f0d1f8ee3639db3a64a9ee4895943c"
+    },
+    {
+      "path": "src/dol.js",
+      "size": 1371,
+      "sha256": "f7478a83f365582ea2ccaacc82797ce720cd835559e4e8a1c92def3a27466a64"
+    },
+    {
+      "path": "src/dolphin-adapter.js",
+      "size": 4937,
+      "sha256": "c046786c8c7ee1d1b8e69ec2a6e31baf93f97a750fb09350b4eed675f0dc53da"
+    },
+    {
+      "path": "src/dolphin-state-file.js",
+      "size": 1906,
+      "sha256": "b737bb2d6feb0430b9ff0398a3e65bfb1bfec6d3bb49239ebfedba7600b615e2"
+    },
+    {
+      "path": "src/frame-reuse-telemetry.js",
+      "size": 1695,
+      "sha256": "92edb198e314d429cbf6671b289a64e17d3e4d258921af2dff2ed71eb21da519"
+    },
+    {
+      "path": "src/framebuffer-regression.js",
+      "size": 1864,
+      "sha256": "3975248e80c4d9669375c481a0fc4e22e20e416eef65b075cc76e78ef5ef6978"
+    },
+    {
+      "path": "src/game-compatibility.js",
+      "size": 1428,
+      "sha256": "9c59c41d9ecc5c0fdbcfcb77ef76f29b3603f946fb5c28ef98b015d0430ffe00"
+    },
+    {
+      "path": "src/game-profiles.js",
+      "size": 6137,
+      "sha256": "301f30296d6dc4f37eaf11d3a68f970e7df655e121380f5042c41db8d681d9a1"
+    },
+    {
+      "path": "src/gpu-completion-telemetry.js",
+      "size": 4560,
+      "sha256": "8ee06e05e6062cb0e805ac5cd9a44d6aabc80a3ec6a5b607c593c2f2d25aa051"
+    },
+    {
+      "path": "src/incremental-sha256.js",
+      "size": 7793,
+      "sha256": "daea2976bf7588c8f9287e89a2dbd2d278de7f57e4833de81330c639d0178cc8"
+    },
+    {
+      "path": "src/input-latency-telemetry.js",
+      "size": 6293,
+      "sha256": "f5717dc093fc7db8c56063ef45fd9ae2dcbff2495c28e39f82232d6453d12923"
+    },
+    {
+      "path": "src/input-transport.js",
+      "size": 2802,
+      "sha256": "4890d0a507543bf0e8d2f71ad10b72fa2775fb1b571b13e05f2225127a6facfa"
+    },
+    {
+      "path": "src/input-visual-marker.js",
+      "size": 18580,
+      "sha256": "8e8e0ea23bf2ba3b536563bf0e2345277a7d049b0495eb6a3163201fd4a4febe"
+    },
+    {
+      "path": "src/input.js",
+      "size": 10467,
+      "sha256": "cc71d9658ec0568e4488745a2d6e612bd8210eff78e47965985ef9f7c5a7e5f2"
+    },
+    {
+      "path": "src/jit-cache-identity.js",
+      "size": 2470,
+      "sha256": "cefdd0471021456bd80bf90437cf8b9f5fe20e1fa6f414d56ea3792a3c3333c3"
+    },
+    {
+      "path": "src/main-profiler.js",
+      "size": 16968,
+      "sha256": "9301ee171741924eeb07409d783858d44f85e2fea510cfc05c939e5df1b762a8"
+    },
+    {
+      "path": "src/pages-bootstrap.js",
+      "size": 1268,
+      "sha256": "fc61173c947c9ec3ec5b2c6a45ae09c5c4fbd8503bcc2bc959deaf23f9672114"
+    },
+    {
+      "path": "src/prebuilt-jit-cache-format.js",
+      "size": 5777,
+      "sha256": "7a44548a41fc416214ff6798026fd5e7584a970f8f65bf3dc97b7f603c6c7bef"
+    },
+    {
+      "path": "src/presentation-pacing.js",
+      "size": 5683,
+      "sha256": "f26925c393d82664a5ca1272077cb1d556febbf16f6486c5dbd9ca121eaa63aa"
+    },
+    {
+      "path": "src/save-states.js",
+      "size": 3726,
+      "sha256": "8c7475fdd32bcaafa0b45cdd7201c4d62c4de01163420c0e78de3e0be689e45f"
+    },
+    {
+      "path": "src/upstream-discio-worker.js",
+      "size": 631939,
+      "sha256": "368de47d47dbe40670bc533494d49a6ca9d53dd607418f9a679c60184c9f0ea7"
+    },
+    {
+      "path": "src/upstream-main-thread-adapter.js",
+      "size": 20402,
+      "sha256": "559a1fc68117085116a5e985e54be950da78e708c3ac13f937157e1652471909"
+    },
+    {
+      "path": "src/upstream-worker-adapter.js",
+      "size": 44650,
+      "sha256": "a450ef834bdc2125fca590369fa737bdddf4e958bf04930d0d5b4e0d5fcf903e"
+    },
+    {
+      "path": "src/upstream-worker-protocol.js",
+      "size": 5096,
+      "sha256": "cda5e35361494df50d7d8e1d049efefc0c74e7335f7a0b46bbadb105012e6de2"
+    },
+    {
+      "path": "src/video-backend.js",
+      "size": 958,
+      "sha256": "9fd135054d32de6d0827f3cea9dedb8daf8ed4398bfff361ce34ba345ae97bb3"
+    },
+    {
+      "path": "src/wasm/demo-core.js",
+      "size": 2395,
+      "sha256": "8256fdd6fb43b489d23d94576c46357db880cf55b4a17e5b43190a3f45fc274d"
+    },
+    {
+      "path": "src/wgpu-consumer-reset-attestation.js",
+      "size": 3385,
+      "sha256": "d3813888622b5377100e0b58a16a60cb8f5462e3e402606526ba13d95914532b"
+    },
+    {
+      "path": "src/wgpu-device-lifecycle.js",
+      "size": 858,
+      "sha256": "4a8f8a721a78d316f58e00797441c75b794509b6faf0cfef9644de6539c43bf0"
+    },
+    {
+      "path": "src/wgpu-dirty-range-projection.js",
+      "size": 12787,
+      "sha256": "6ab98084f0ed55d7e841c62dbf2d870ab10f21df8cf19b488dc183bd54dd2720"
+    },
+    {
+      "path": "src/wgpu-fragment-depth.js",
+      "size": 1791,
+      "sha256": "91f6274e196cfe8c42bb6cecddadfdc9339a7e350ef4da148d2850be2d2279af"
+    },
+    {
+      "path": "src/wgpu-frame-interpolator.js",
+      "size": 9449,
+      "sha256": "6e5d82b667f02378770d196bee16370d3249c0f0826de074b45f233687e1edfd"
+    },
+    {
+      "path": "src/wgpu-geometry-packet.js",
+      "size": 15911,
+      "sha256": "48e57fca366d503128a1e2827b0ea47cb1d1f8ade0aec2fef8cf65d03d08e723"
+    },
+    {
+      "path": "src/wgpu-leaf-replay-executor.js",
+      "size": 10365,
+      "sha256": "7b0e0a420c1f4c1fa556b6a76340187c2e316458b942cfd6102d267323b924f4"
+    },
+    {
+      "path": "src/wgpu-legacy-semantic-decoder.js",
+      "size": 12733,
+      "sha256": "2f167fae7ba10525a74d3500503bfa4f98a9582b81e5889d9f75ec351a8fdd8c"
+    },
+    {
+      "path": "src/wgpu-mapped-drain-coalescer.js",
+      "size": 10100,
+      "sha256": "e511a7d099ee7e39b6f747bdc3664bbe0b80e5a188fc5382c80444134b14ccaf"
+    },
+    {
+      "path": "src/wgpu-mapped-staging-pool.js",
+      "size": 33136,
+      "sha256": "e4a3ad1b169c5fb9e888e82f1433cc7cfdebbc44516835a8e56c67a542bebd4c"
+    },
+    {
+      "path": "src/wgpu-ownership-command-correlator.js",
+      "size": 36008,
+      "sha256": "d4636d72837faa5bc9353a582242d8ae28c0f7d695fa41ac80a7bf666241afba"
+    },
+    {
+      "path": "src/wgpu-ownership-trace.js",
+      "size": 14338,
+      "sha256": "c9195290791e07666708d68834a02dc71333d20238d22d014bfad87246857bbf"
+    },
+    {
+      "path": "src/wgpu-pass-package-projection.js",
+      "size": 12368,
+      "sha256": "a2a927fb57920a07061ef8b3c77f38ee30760cf0cb9f8989bb48fa972a6dc818"
+    },
+    {
+      "path": "src/wgpu-pass-state-cache.js",
+      "size": 20751,
+      "sha256": "5559c0ee184a188f6ca6e5f08093844ea59aac459b7e82df903992e27392ab58"
+    },
+    {
+      "path": "src/wgpu-renderer-runtime.js",
+      "size": 14307,
+      "sha256": "a7f221188aaa9dc307dd9518488c60f8c4ccf52a5cecf5c4dffbc33c218cdb2e"
+    },
+    {
+      "path": "src/wgpu-renderer-worker-control.js",
+      "size": 11264,
+      "sha256": "99718a55af7a2f9c8fdfc842a49eb2e39f0719a96a9dc8b6a9925aa38ec93384"
+    },
+    {
+      "path": "src/wgpu-renderer-worker-probe.js",
+      "size": 6410,
+      "sha256": "e3573d4406f6c2177ecb1bdb3c376f7776f1ba4b43433236b1b6734b4a877386"
+    },
+    {
+      "path": "src/wgpu-replay-diagnostics.js",
+      "size": 39205,
+      "sha256": "51d93e6463b7f234bb70eb4c1efa362c710c7ba03bc079870d12be8e6f73914a"
+    },
+    {
+      "path": "src/wgpu-replay-quiescence.js",
+      "size": 3195,
+      "sha256": "9d09b59427ddc901b90b369f3b4d5c057f63c1ba635cb81b1e104d7283e9cf5d"
+    },
+    {
+      "path": "src/wgpu-resource-generation-tracker.js",
+      "size": 26723,
+      "sha256": "9e471bb98eb7cbff4631e597d82e1d9f3720b05dd9029f23b71fe5229a77f290"
+    },
+    {
+      "path": "src/wgpu-ring-backpressure.js",
+      "size": 2265,
+      "sha256": "40cba996259fd50f8366c49bf513950b116c9640d9856dfed276948a0b6e2a7e"
+    },
+    {
+      "path": "src/wgpu-sampler-state.js",
+      "size": 1567,
+      "sha256": "0cfe8b0d6ae9dedb1cf76d46351137783506d5c3e6233a894c143e79987fccba"
+    },
+    {
+      "path": "src/wgpu-semantic-digest.js",
+      "size": 16543,
+      "sha256": "3a84ef49f902f3732231a1b7d22c1a6bf779b76d12a5b9cf4f2449e8c7c9aaed"
+    },
+    {
+      "path": "src/wgpu-semantic-parity-sink.js",
+      "size": 8139,
+      "sha256": "613b99f30f90b67872d79df421e4ee06ee178096b313326b02e42d708ca9a92f"
+    },
+    {
+      "path": "src/wgpu-semantic-runtime.js",
+      "size": 19573,
+      "sha256": "06cadaeb2b0285829d78c90916359146604b595a7c4545368884a127efea2b02"
+    },
+    {
+      "path": "src/wgpu-semantic-v2-decoder.js",
+      "size": 21226,
+      "sha256": "577f78afae4bede505e3a4af123f63b37ebe364cca958a8e47eaac64a1be7407"
+    },
+    {
+      "path": "src/wgpu-sparse-ubo-copy-forward.js",
+      "size": 7503,
+      "sha256": "08661edab9d9db7a4500587e4e6f9d24bf576b17b450e714fd0ac23cf6b926cc"
+    },
+    {
+      "path": "src/wgpu-synthetic-diagnostics.js",
+      "size": 45351,
+      "sha256": "2c16985ab5f40a88edb68f7311a0b68c9844a4595dfffd6045cec0ca04669aab"
+    },
+    {
+      "path": "src/wgpu-ubo-compute-codec.js",
+      "size": 13118,
+      "sha256": "e22b6018bb2500a699393971f395553fec8b43ac417820135a4a99cbb3710b6b"
+    },
+    {
+      "path": "src/wgpu-ubo-compute-projection.js",
+      "size": 15475,
+      "sha256": "dd04e6619a238d829e0de74db608567525f8f25b252c106963840df134388cf4"
+    },
+    {
+      "path": "src/wgpu-ubo-compute-reconstruction.js",
+      "size": 22717,
+      "sha256": "d70ee7357fd8ab3c0d1ced427c6b561e35fc94b14ed258f4fd79ff11a0652c3a"
+    },
+    {
+      "path": "src/wgpu-ubo-packet.js",
+      "size": 2519,
+      "sha256": "3216a215b1bd4eca49734e11a934c2fcd4d0166a52f334faf0897279bd00c65e"
+    },
+    {
+      "path": "src/wgpu-upload-attribution.js",
+      "size": 16466,
+      "sha256": "91ded4e08a71512a5be88695bdb33663b49c97704d6825f39cdf337e302a5e87"
+    },
+    {
+      "path": "src/wgpu-upload-probe-executor.js",
+      "size": 28161,
+      "sha256": "ce77119ef6292def31d75967a8da9213f0746ba5c14d4ac9c0ab34ea616c4821"
+    },
+    {
+      "path": "src/wgpu-upload-run-projection.js",
+      "size": 11761,
+      "sha256": "f58874238197bcafd4ec37f171366f73a52776611714c9f269bd29e81459579c"
+    },
+    {
+      "path": "src/wgpu-upload-watermark.js",
+      "size": 2808,
+      "sha256": "00f9fb14c250c90ec65915b1b66b3b78b4b2fb1964fe7d18368fd656511fa51b"
+    },
+    {
+      "path": "src/wgpu-visual-cadence.js",
+      "size": 3353,
+      "sha256": "6774b6d4bac85aba2fdf4d3f85bde36c44b1b696eed538dc341bb82e3c4bc676"
+    }
+  ]
+}

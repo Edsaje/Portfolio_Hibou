@@ -26,6 +26,8 @@
     nds: { label: "Nintendo DS", core: "desmume", tag: "tag-nds", hasExtra: true },
     psp: { label: "PlayStation Portable", core: "ppsspp", tag: "tag-psp", hasExtra: true },
     dreamcast: { label: "Sega Dreamcast", core: "flycast", tag: "tag-dc", hasExtra: true },
+    gamecube: { label: "Nintendo GameCube", core: "dolphin", tag: "tag-gc", hasExtra: true },
+    wii: { label: "Nintendo Wii", core: "dolphin", tag: "tag-wii", hasExtra: true },
     pce: { label: "PC Engine", core: "mednafen_pce_fast", tag: "tag-pce", hasExtra: false },
     arcade: { label: "Arcade", core: "fbneo", tag: "tag-arcade", hasExtra: true }
   };
@@ -423,6 +425,24 @@
                   titre: "PlayStation 2 — Sanctuaire Émotion Play!",
                   console: "ps2",
                   desc: "Moteur Play! WebAssembly 60 FPS avec lecture ISO / CHD en streaming. Glissez ou insérez un fichier .iso, .chd, .cso ou .bin."
+                });
+              }
+              const hasGc = parsed.some(j => j.console === "gamecube");
+              if (!hasGc) {
+                parsed.push({
+                  nom: "console-gc-launcher",
+                  titre: "Nintendo GameCube — Moteur Dolphin 60 FPS",
+                  console: "gamecube",
+                  desc: "Moteur Dolphin WebAssembly & WebGPU 60 FPS (Dual-Core). Glissez ou insérez un fichier .iso, .gcm, .ciso ou .rvz."
+                });
+              }
+              const hasWii = parsed.some(j => j.console === "wii");
+              if (!hasWii) {
+                parsed.push({
+                  nom: "console-wii-launcher",
+                  titre: "Nintendo Wii — Moteur Dolphin WebGPU & Wiimote",
+                  console: "wii",
+                  desc: "Moteur Dolphin WebGPU avec visée Wiimote, secousses et nunchuk émulés. Glissez ou insérez un fichier .wbfs, .iso ou .rvz."
                 });
               }
               this.tousLesJeux = parsed;
@@ -1921,6 +1941,8 @@
       if (["cso"].includes(ext) || nom.includes("console-psp-launcher") || /locoroco/i.test(nom)) return "psp";
       if (["cdi", "gdi"].includes(ext) || nom.includes("console-dc-launcher") || /dreamcast|crazy taxi|sonic adventure|shenmue|jet grind/i.test(nom)) return "dreamcast";
       if (nom.includes("console-ps2-launcher") || /capcom 2|marvel vs|playstation 2|ps2/i.test(nom)) return "ps2";
+      if (["gcm", "ciso", "gcz"].includes(ext) || nom.includes("console-gc-launcher") || /gamecube|melee|wind waker|sunshine|luigi.s mansion/i.test(nom)) return "gamecube";
+      if (["wbfs", "rvz"].includes(ext) || nom.includes("console-wii-launcher") || /wii|mario kart wii|super mario galaxy|xenoblade/i.test(nom)) return "wii";
       if (["sfc", "smc"].includes(ext)) return "snes";
       if (["gba"].includes(ext)) return "gba";
       if (["gb", "gbc"].includes(ext)) return "gb";
@@ -1932,7 +1954,13 @@
         if (/crazy taxi|sonic|shenmue|dreamcast|jet grind|virtua/i.test(nom)) return "dreamcast";
         return "ps1";
       }
-      if (["iso", "cue", "pbp", "img"].includes(ext)) return "ps1";
+      if (["iso"].includes(ext)) {
+        if (/wii|galaxy|mario kart wii|xenoblade|brawl/i.test(nom)) return "wii";
+        if (/gamecube|melee|wind waker|sunshine|luigi/i.test(nom)) return "gamecube";
+        if (/capcom 2|marvel vs|ps2/i.test(nom)) return "ps2";
+        return "ps1";
+      }
+      if (["cue", "pbp", "img"].includes(ext)) return "ps1";
       return "nes";
     }
 
@@ -2973,6 +3001,8 @@
         .tag-md { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
         .tag-ps1 { background: rgba(59, 130, 246, 0.25); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.5); }
         .tag-ps2 { background: rgba(37, 99, 235, 0.3); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.6); }
+        .tag-gc { background: rgba(147, 51, 234, 0.25); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.5); }
+        .tag-wii { background: rgba(6, 182, 212, 0.25); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.5); }
         .tag-psp { background: rgba(14, 165, 233, 0.25); color: #7dd3fc; border: 1px solid rgba(14, 165, 233, 0.5); }
         .tag-dc { background: rgba(249, 115, 22, 0.25); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.5); }
         .tag-nds { background: rgba(244, 63, 94, 0.25); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.5); }
@@ -4049,7 +4079,7 @@
                     <button class="rv-btn" id="rv-btn-screen-size" title="Ajuster la taille de l'écran (Normal 1x, Grand 1.5x, Maxi)">🔍 Écran : 1x</button>
                     <button class="rv-btn" id="rv-btn-nds-layout" style="display: none;" title="Changer la disposition des deux écrans DS (Côte à côte / Superposé)">↔️ DS : Côte à côte</button>
                     <button class="rv-btn" id="rv-btn-fullscreen">⛶ Plein Écran</button>
-                    <input type="file" id="rv-file-input" style="display: none;" accept=".nes,.sfc,.smc,.gba,.gb,.gbc,.md,.bin,.gen,.zip,.iso,.cue,.chd,.pbp,.img,.pce,.nds,.cso">
+                    <input type="file" id="rv-file-input" style="display: none;" accept=".nes,.sfc,.smc,.gba,.gb,.gbc,.md,.bin,.gen,.zip,.iso,.cue,.chd,.pbp,.img,.pce,.nds,.cso,.gcm,.rvz,.wbfs,.ciso">
                     <button class="rv-btn" id="rv-btn-upload">📁 Insérer ROM</button>
                   </div>
                 </div>
@@ -4132,6 +4162,8 @@
             </div>
             <div class="rv-tabs" id="rv-tabs">
               <button class="rv-tab active" data-filter="all">🔮 TOUTES</button>
+              <button class="rv-tab" data-filter="gamecube">🟣 GAMECUBE</button>
+              <button class="rv-tab" data-filter="wii">💿 WII</button>
               <button class="rv-tab" data-filter="ps2">🔮 PLAYSTATION 2</button>
               <button class="rv-tab" data-filter="dreamcast">🌀 DREAMCAST</button>
               <button class="rv-tab" data-filter="psp">🔴 PSP</button>
@@ -5419,10 +5451,10 @@
           this.partieEnCours = null;
         }
 
-        const isLauncher = nomFichier.includes("console-nds-launcher") || nomFichier.includes("console-psp-launcher") || nomFichier.includes("console-dc-launcher") || nomFichier.includes("console-ps2-launcher");
+        const isLauncher = nomFichier.includes("console-nds-launcher") || nomFichier.includes("console-psp-launcher") || nomFichier.includes("console-dc-launcher") || nomFichier.includes("console-ps2-launcher") || nomFichier.includes("console-gc-launcher") || nomFichier.includes("console-wii-launcher");
         let romBlob = customBlob;
 
-        if (!romBlob && !isLauncher && cType !== "psp" && cType !== "dreamcast" && cType !== "ps2") {
+        if (!romBlob && !isLauncher && cType !== "psp" && cType !== "dreamcast" && cType !== "ps2" && cType !== "gamecube" && cType !== "wii") {
           if (!this.isCloudConnected()) {
             throw new Error("Relique inaccessible en mode invité.");
           }
@@ -5658,7 +5690,75 @@
           return;
         }
 
+        if (cType === "gamecube" || cType === "wii") {
+          container.classList.add(cType === "gamecube" ? "rv-is-gc" : "rv-is-wii");
+          container.classList.remove("rv-is-ps2");
+          container.classList.remove("rv-is-nds");
+          container.classList.remove("rv-is-psp");
+          container.classList.remove("rv-is-dreamcast");
+
+          const isGc = cType === "gamecube";
+          const isLauncher = nomFichier.includes("console-gc-launcher") || nomFichier.includes("console-wii-launcher");
+          const token = this.getCloudToken() || "";
+          const gameParam = !isLauncher ? `&game=${encodeURIComponent(nomFichier)}` : "";
+          const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
+          const dolphinDedicatedUrl = `emulators/dolphin/index.html?v=1.0${gameParam}${tokenParam}`;
+
+          const consoleColor = isGc ? "#c084fc" : "#67e8f9";
+          const consoleGrad = isGc 
+            ? "radial-gradient(circle at center, #1e112a 0%, #0c0712 100%)" 
+            : "radial-gradient(circle at center, #082029 0%, #030d12 100%)";
+          const consoleBorder = isGc ? "rgba(168, 85, 247, 0.45)" : "rgba(6, 182, 212, 0.45)";
+          const consoleBtnGrad = isGc 
+            ? "linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)" 
+            : "linear-gradient(135deg, #0891b2 0%, #0e7490 100%)";
+
+          container.innerHTML = `
+            <div class="rv-perf-hud" id="rv-perf-hud">
+              <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
+              <span class="rv-perf-text" id="rv-perf-text">60 FPS</span>
+            </div>
+            <div class="rv-dolphin-wrapper" style="position: relative; width: 100%; min-height: 480px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: ${consoleGrad}; border: 1px solid ${consoleBorder}; border-radius: 8px; overflow: hidden; padding: 28px 16px; text-align: center;">
+              <div style="font-size: 3.2rem; margin-bottom: 8px; filter: drop-shadow(0 0 16px ${consoleColor});">${isGc ? "🟣" : "💿"}</div>
+              <h3 style="font-family: 'Cinzel', serif; font-size: 1.4rem; color: ${consoleColor}; margin: 0 0 6px; letter-spacing: 1px;">
+                Sanctuaire Nintendo ${isGc ? "GameCube" : "Wii"}
+              </h3>
+              <p style="font-family: 'Cinzel', serif; font-size: 1rem; color: #f0f4f1; margin: 0 0 12px; font-weight: 600;">
+                ${isLauncher ? `Moteur Dolphin WebGPU 60 FPS (${isGc ? "GameCube" : "Nintendo Wii"})` : `Relique : "${nomFichier}"`}
+              </p>
+              <p style="font-size: 0.88rem; color: #cbd5e1; max-width: 540px; line-height: 1.5; margin: 0 auto 20px;">
+                L'émulation Nintendo ${isGc ? "GameCube" : "Wii"} s'exécute via le moteur officiel <strong style="color:${consoleColor};">Dolphin WebGPU 60 FPS</strong> avec multithreading WebAssembly (Dual-Core) et streaming direct OPFS depuis le disque. Pour libérer 100% de la puissance graphique de votre GPU/CPU en plein écran sans latence, la relique s'exécute dans son Sanctuaire Dédié.
+              </p>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px;">
+                <a href="${dolphinDedicatedUrl}" target="_blank" class="rv-btn" style="background: ${consoleBtnGrad}; color: #fff; font-weight: 700; font-size: 1rem; padding: 12px 30px; border-radius: 6px; text-decoration: none; box-shadow: 0 4px 20px ${consoleBorder}; display: inline-flex; align-items: center; gap: 8px;">
+                  ⚡ Invoquer dans le Sanctuaire Dédié (WebGPU 60 FPS)
+                </a>
+              </div>
+              <div style="width: 100%; max-width: 620px; margin-top: 8px;">
+                <details style="background: rgba(0,0,0,0.45); border: 1px solid ${consoleBorder}; border-radius: 6px; padding: 10px 14px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer; text-align: left;">
+                  <summary style="outline: none; font-weight: 600; color: ${consoleColor}; cursor: pointer;">ℹ️ Contrôles, Manettes & Reliques Personnalisées</summary>
+                  <p style="margin: 8px 0 4px; line-height: 1.5;">
+                    • <strong>Manettes compatibles :</strong> PlayStation DualSense/DualShock, Xbox One/Series, Switch Pro et manettes USB/Bluetooth.<br>
+                    • <strong>Wii Remote :</strong> Visée et curseur émulés via la souris, le tactile ou le stick droit de la manette (secousses et inclinaisons supportées).<br>
+                    • <strong>Glisser-Déposer :</strong> Vous pouvez glisser-déposer n'importe quel fichier <code>.iso</code>, <code>.gcm</code>, <code>.wbfs</code>, <code>.rvz</code> ou <code>.ciso</code> dans le sanctuaire dédié.
+                  </p>
+                </details>
+              </div>
+            </div>
+          `;
+
+          status.textContent = isLauncher
+            ? `🎮 Sanctuaire Nintendo ${isGc ? "GameCube" : "Wii"} prêt | Cliquez sur Invoquer dans le Sanctuaire Dédié.`
+            : `🎮 Relique ${isGc ? "GameCube" : "Wii"} "${nomFichier}" prête | Cliquez sur Invoquer dans le Sanctuaire Dédié 60 FPS.`;
+          status.style.color = consoleColor;
+          this.jeuEnCoursNom = nomFichier;
+          this.rendreGrille();
+          return;
+        }
+
         container.classList.remove("rv-is-ps2");
+        container.classList.remove("rv-is-gc");
+        container.classList.remove("rv-is-wii");
         container.classList.remove("rv-is-dreamcast");
 
         container.classList.remove("rv-is-nds");

@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "coreId": "sha256:1c22fd3317d6b46b0bfe42e7c721f067ea53bd15d000e55cf7a3bf3c0aaed795",
+  "files": [
+    {
+      "path": "app-icon.svg",
+      "size": 534,
+      "sha256": "122222e9afb6b166432f2eb62d6e01fac05c782dc0402d63d4976c6e800f2485"
+    },
+    {
+      "path": "coi-serviceworker.js",
+      "size": 1872,
+      "sha256": "5a1a957bc6be4bbd95a2c903aa25a1a247ba520f0fee45dfe814256eb72688a4"
+    },
+    {
+      "path": "icon.png",
+      "size": 953172,
+      "sha256": "b2661c27ee173ffaaf404d99e2868fd397561967a48ea38ee08b0cefe298dc8b"
+    },
+    {
+      "path": "index.html",
+      "size": 35098,
+      "sha256": "d28423eedab64c35939901c97bdb271317453b16efc939eb289a8772d29dc346"
+    },
+    {
+      "path": "progress/mario-galaxy-2.json",
+      "size": 2300,
+      "sha256": "5dc5905d27d55ec78b53e0de992482a7f74a3994f0d984733dde91c6d74e6cfe"
+    },
+    {
+      "path": "src/app.js",
+      "size": 67623,
+      "sha256": "9d3efdef006ab8e44baa4b93e240b71da7aefeb52cc3c30c51f5f9a36b853b9a"
+    },
+    {
+      "path": "src/azahar-theme.css",
+      "size": 29512,
+      "sha256": "b274f6b5d3e438f2a003fbaf3ac01775047fa7d9fb0878f11caf7ae7bb2f79ae"
+    },
+    {
+      "path": "src/boot-progress.js",
+      "size": 5644,
+      "sha256": "20e42123fca7589547f1a308bfb96c29e4f1824a52ef509e7aa9b3357170dcbe"
+    },
+    {
+      "path": "src/bootstrap.js",
+      "size": 696,
+      "sha256": "b72f7f6d65805ff4c720f2faa388b59db858dc816af4737e10524395d4425e24"
+    },
+    {
+      "path": "src/button-source.js",
+      "size": 1104,
+      "sha256": "5e17b2abf64d32e8f4b4f1417629b2fced509db0aa121e43b6b60a50dd63f809"
+    },
+    {
+      "path": "src/lan-server.js",
+      "size": 1608,
+      "sha256": "f28a51d364bce5661d16c82af41c5acafbcf5a8ab8cb52050bffd7160e11a89d"
+    },
+    {
+      "path": "src/lan.js",
+      "size": 12699,
+      "sha256": "657229e8e34669184d8ab3ed5d85573ff1d4963a6b0acc5cc9e55c086234f5b7"
+    },
+    {
+      "path": "src/library-download.js",
+      "size": 5649,
+      "sha256": "07959210097af3aa67f18fd31afbe9053248dc83587bc6d3c8a8615a6a1de454"
+    },
+    {
+      "path": "src/library.js",
+      "size": 15581,
+      "sha256": "03ee9f387fd84712b0bcda8b5e46441a859620347521213807f7576e4b844e79"
+    },
+    {
+      "path": "src/mobile-controls.js",
+      "size": 6096,
+      "sha256": "315a106475f4ad7f70f4755c6b43487fabf16d346330296afe6e871517680ecf"
+    },
+    {
+      "path": "src/opfs-writer-worker.js",
+      "size": 1178,
+      "sha256": "431e55d6652f1c9361d17a237b5cdef4fe7be0725f06520636fb417fb986fadb"
+    },
+    {
+      "path": "src/opfs-writer.js",
+      "size": 1852,
+      "sha256": "333b80bbbb97dced4162ee2f63a0d4f4a1304e150160f76779cd810bfa7b787e"
+    },
+    {
+      "path": "src/preferences.js",
+      "size": 2532,
+      "sha256": "73e4a80fd7c06db32f199c4d83443a6ab0c147adb9f257512a792857a57add36"
+    },
+    {
+      "path": "src/save-state-panel.js",
+      "size": 8689,
+      "sha256": "daea235db8c2b49fee26e5d430f2b708a55cbe161db1555e06e63b25a4cd9c8d"
+    },
+    {
+      "path": "src/settings.js",
+      "size": 8126,
+      "sha256": "4081be81dc9dc115b160a87304cdfaa0f97ed1299e85dd36f17e19e0b8a2111c"
+    },
+    {
+      "path": "src/styles.css",
+      "size": 28247,
+      "sha256": "51d36c3ea5dd8a4a0eeb0868165a805b044888bb9a1047973f3948e34dada341"
+    },
+    {
+      "path": "src/widget-layout.js",
+      "size": 18874,
+      "sha256": "5231468e1e86dd90dfea6cd4ef61fd247360d5feaee8d55195d5f1cfc08b531d"
+    },
+    {
+      "path": "src/wii-catalog.json",
+      "size": 17542,
+      "sha256": "91c9dc5371326a9baf7673ebe6f55e06c473a47866d66396b101695128a78f11"
+    }
+  ]
+}

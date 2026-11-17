@@ -1,0 +1,593 @@
+{
+  "schemaVersion": 1,
+  "abiVersion": 1,
+  "coreId": "sha256:1c22fd3317d6b46b0bfe42e7c721f067ea53bd15d000e55cf7a3bf3c0aaed795",
+  "upstreamCommit": "e22551eae1c84a7e4d0b6a5c519ef4ed4ef69df1",
+  "artifacts": [
+    {
+      "path": "cores/dolphin/dolphin-core-upstream.js",
+      "hashMode": "lf-normalized",
+      "size": 270438,
+      "sha256": "ac10fd394e1743b49fe7a9a00c106bb58a1826ed15f39d1750b265134c3ba29e"
+    },
+    {
+      "path": "cores/dolphin/dolphin-core-upstream.wasm",
+      "size": 13240224,
+      "sha256": "1c22fd3317d6b46b0bfe42e7c721f067ea53bd15d000e55cf7a3bf3c0aaed795"
+    }
+  ],
+  "contractSources": [
+    {
+      "path": "core/upstream/dolphin_web_discio.cpp",
+      "hashMode": "lf-normalized",
+      "size": 47728,
+      "sha256": "56b21ea5aa768798a8769e6bf871aa2b73838d19495f6733000d07957dc6bab6"
+    },
+    {
+      "path": "core/upstream/dolphin_web_raster_profile.h",
+      "hashMode": "lf-normalized",
+      "size": 33186,
+      "sha256": "cbd5bd078934d2a22b7220543e15f5d2185682c92953a7dc63e2e8663b932162"
+    },
+    {
+      "path": "core/upstream/dolphin_web_xfb_fastpaths.h",
+      "hashMode": "lf-normalized",
+      "size": 2948,
+      "sha256": "a0262feec1d2044dc576b6f67240a8a99b36a4ba27cf37013cc99d855f3c755e"
+    },
+    {
+      "path": "core/upstream/dolphin_web_core.cpp",
+      "hashMode": "lf-normalized",
+      "size": 50344,
+      "sha256": "d7d138bdbed8bb5a397a03ccbfedae95589067dd36b5c4003af1da55e5bfc330"
+    },
+    {
+      "path": "src/app.js",
+      "hashMode": "lf-normalized",
+      "size": 56025,
+      "sha256": "29d2b2735c352c2c1f57a407e2f0fbff31d7a793ee0fefee6c1e600b3ef63379"
+    },
+    {
+      "path": "src/audio.js",
+      "hashMode": "lf-normalized",
+      "size": 13055,
+      "sha256": "66a0273c05c49987cb20bf9801e0605a6b56b708aae8e27331049145eac7a943"
+    },
+    {
+      "path": "src/audio-pcm-ring.js",
+      "hashMode": "lf-normalized",
+      "size": 7901,
+      "sha256": "470a22753ad5b0563ab68f18c72a044aa700d6e51b780a1861c2a9faf4710dbc"
+    },
+    {
+      "path": "src/audio-pcm-producer.js",
+      "hashMode": "lf-normalized",
+      "size": 5434,
+      "sha256": "6b5f8dc493d25212d7dc5f1753ee69e6006b66603312d1a4730cd48e3eb37225"
+    },
+    {
+      "path": "src/audio-worklet-processor.js",
+      "hashMode": "lf-normalized",
+      "size": 838,
+      "sha256": "30095d01d380741be97b540ed77490ad9e12b076d7c0712d67c0cc96346fc139"
+    },
+    {
+      "path": "src/causal-telemetry.js",
+      "hashMode": "lf-normalized",
+      "size": 68696,
+      "sha256": "e8a3799c80e542818351125822dd30cdc91db63bb7dcb1c93caf0c98d033203e"
+    },
+    {
+      "path": "src/core-host.js",
+      "hashMode": "lf-normalized",
+      "size": 69192,
+      "sha256": "f509f876fa22c0d891e4c1f4463241ede0b4c33ff104f0d212b7558390d777f8"
+    },
+    {
+      "path": "src/diagnostic-log-filter.js",
+      "hashMode": "lf-normalized",
+      "size": 1947,
+      "sha256": "ea865f1059d093411437f5a666e0126903f0d1f8ee3639db3a64a9ee4895943c"
+    },
+    {
+      "path": "src/gpu-completion-telemetry.js",
+      "hashMode": "lf-normalized",
+      "size": 4560,
+      "sha256": "8ee06e05e6062cb0e805ac5cd9a44d6aabc80a3ec6a5b607c593c2f2d25aa051"
+    },
+    {
+      "path": "src/input-latency-telemetry.js",
+      "hashMode": "lf-normalized",
+      "size": 6293,
+      "sha256": "f5717dc093fc7db8c56063ef45fd9ae2dcbff2495c28e39f82232d6453d12923"
+    },
+    {
+      "path": "src/input-transport.js",
+      "hashMode": "lf-normalized",
+      "size": 2802,
+      "sha256": "4890d0a507543bf0e8d2f71ad10b72fa2775fb1b571b13e05f2225127a6facfa"
+    },
+    {
+      "path": "src/input-visual-marker.js",
+      "hashMode": "lf-normalized",
+      "size": 18580,
+      "sha256": "8e8e0ea23bf2ba3b536563bf0e2345277a7d049b0495eb6a3163201fd4a4febe"
+    },
+    {
+      "path": "src/frame-reuse-telemetry.js",
+      "hashMode": "lf-normalized",
+      "size": 1695,
+      "sha256": "92edb198e314d429cbf6671b289a64e17d3e4d258921af2dff2ed71eb21da519"
+    },
+    {
+      "path": "src/main-profiler.js",
+      "hashMode": "lf-normalized",
+      "size": 16968,
+      "sha256": "9301ee171741924eeb07409d783858d44f85e2fea510cfc05c939e5df1b762a8"
+    },
+    {
+      "path": "src/presentation-pacing.js",
+      "hashMode": "lf-normalized",
+      "size": 5683,
+      "sha256": "f26925c393d82664a5ca1272077cb1d556febbf16f6486c5dbd9ca121eaa63aa"
+    },
+    {
+      "path": "src/upstream-discio-worker.js",
+      "hashMode": "lf-normalized",
+      "size": 631939,
+      "sha256": "368de47d47dbe40670bc533494d49a6ca9d53dd607418f9a679c60184c9f0ea7"
+    },
+    {
+      "path": "src/wgpu-renderer-worker-probe.js",
+      "hashMode": "lf-normalized",
+      "size": 6410,
+      "sha256": "e3573d4406f6c2177ecb1bdb3c376f7776f1ba4b43433236b1b6734b4a877386"
+    },
+    {
+      "path": "src/wgpu-upload-probe-executor.js",
+      "hashMode": "lf-normalized",
+      "size": 28161,
+      "sha256": "ce77119ef6292def31d75967a8da9213f0746ba5c14d4ac9c0ab34ea616c4821"
+    },
+    {
+      "path": "src/upstream-main-thread-adapter.js",
+      "hashMode": "lf-normalized",
+      "size": 20402,
+      "sha256": "559a1fc68117085116a5e985e54be950da78e708c3ac13f937157e1652471909"
+    },
+    {
+      "path": "src/upstream-worker-adapter.js",
+      "hashMode": "lf-normalized",
+      "size": 44650,
+      "sha256": "a450ef834bdc2125fca590369fa737bdddf4e958bf04930d0d5b4e0d5fcf903e"
+    },
+    {
+      "path": "src/upstream-worker-protocol.js",
+      "hashMode": "lf-normalized",
+      "size": 5096,
+      "sha256": "cda5e35361494df50d7d8e1d049efefc0c74e7335f7a0b46bbadb105012e6de2"
+    },
+    {
+      "path": "src/wgpu-pass-state-cache.js",
+      "hashMode": "lf-normalized",
+      "size": 20751,
+      "sha256": "5559c0ee184a188f6ca6e5f08093844ea59aac459b7e82df903992e27392ab58"
+    },
+    {
+      "path": "src/wgpu-dirty-range-projection.js",
+      "hashMode": "lf-normalized",
+      "size": 12787,
+      "sha256": "6ab98084f0ed55d7e841c62dbf2d870ab10f21df8cf19b488dc183bd54dd2720"
+    },
+    {
+      "path": "src/wgpu-replay-diagnostics.js",
+      "hashMode": "lf-normalized",
+      "size": 39205,
+      "sha256": "51d93e6463b7f234bb70eb4c1efa362c710c7ba03bc079870d12be8e6f73914a"
+    },
+    {
+      "path": "src/wgpu-replay-quiescence.js",
+      "hashMode": "lf-normalized",
+      "size": 3195,
+      "sha256": "9d09b59427ddc901b90b369f3b4d5c057f63c1ba635cb81b1e104d7283e9cf5d"
+    },
+    {
+      "path": "src/wgpu-upload-attribution.js",
+      "hashMode": "lf-normalized",
+      "size": 16466,
+      "sha256": "91ded4e08a71512a5be88695bdb33663b49c97704d6825f39cdf337e302a5e87"
+    },
+    {
+      "path": "src/wgpu-upload-watermark.js",
+      "hashMode": "lf-normalized",
+      "size": 2808,
+      "sha256": "00f9fb14c250c90ec65915b1b66b3b78b4b2fb1964fe7d18368fd656511fa51b"
+    },
+    {
+      "path": "src/wgpu-pass-package-projection.js",
+      "hashMode": "lf-normalized",
+      "size": 12368,
+      "sha256": "a2a927fb57920a07061ef8b3c77f38ee30760cf0cb9f8989bb48fa972a6dc818"
+    },
+    {
+      "path": "src/wgpu-ownership-trace.js",
+      "hashMode": "lf-normalized",
+      "size": 14338,
+      "sha256": "c9195290791e07666708d68834a02dc71333d20238d22d014bfad87246857bbf"
+    },
+    {
+      "path": "src/incremental-sha256.js",
+      "hashMode": "lf-normalized",
+      "size": 7793,
+      "sha256": "daea2976bf7588c8f9287e89a2dbd2d278de7f57e4833de81330c639d0178cc8"
+    },
+    {
+      "path": "src/wgpu-legacy-semantic-decoder.js",
+      "hashMode": "lf-normalized",
+      "size": 12733,
+      "sha256": "2f167fae7ba10525a74d3500503bfa4f98a9582b81e5889d9f75ec351a8fdd8c"
+    },
+    {
+      "path": "src/wgpu-semantic-digest.js",
+      "hashMode": "lf-normalized",
+      "size": 16543,
+      "sha256": "3a84ef49f902f3732231a1b7d22c1a6bf779b76d12a5b9cf4f2449e8c7c9aaed"
+    },
+    {
+      "path": "src/wgpu-ownership-command-correlator.js",
+      "hashMode": "lf-normalized",
+      "size": 36008,
+      "sha256": "d4636d72837faa5bc9353a582242d8ae28c0f7d695fa41ac80a7bf666241afba"
+    },
+    {
+      "path": "src/wgpu-resource-generation-tracker.js",
+      "hashMode": "lf-normalized",
+      "size": 26723,
+      "sha256": "9e471bb98eb7cbff4631e597d82e1d9f3720b05dd9029f23b71fe5229a77f290"
+    },
+    {
+      "path": "src/wgpu-semantic-parity-sink.js",
+      "hashMode": "lf-normalized",
+      "size": 8139,
+      "sha256": "613b99f30f90b67872d79df421e4ee06ee178096b313326b02e42d708ca9a92f"
+    },
+    {
+      "path": "src/wgpu-semantic-v2-decoder.js",
+      "hashMode": "lf-normalized",
+      "size": 21226,
+      "sha256": "577f78afae4bede505e3a4af123f63b37ebe364cca958a8e47eaac64a1be7407"
+    },
+    {
+      "path": "src/wgpu-consumer-reset-attestation.js",
+      "hashMode": "lf-normalized",
+      "size": 3385,
+      "sha256": "d3813888622b5377100e0b58a16a60cb8f5462e3e402606526ba13d95914532b"
+    },
+    {
+      "path": "src/wgpu-semantic-runtime.js",
+      "hashMode": "lf-normalized",
+      "size": 19573,
+      "sha256": "06cadaeb2b0285829d78c90916359146604b595a7c4545368884a127efea2b02"
+    },
+    {
+      "path": "src/wgpu-visual-cadence.js",
+      "hashMode": "lf-normalized",
+      "size": 3353,
+      "sha256": "6774b6d4bac85aba2fdf4d3f85bde36c44b1b696eed538dc341bb82e3c4bc676"
+    },
+    {
+      "path": "src/wgpu-sparse-ubo-copy-forward.js",
+      "hashMode": "lf-normalized",
+      "size": 7503,
+      "sha256": "08661edab9d9db7a4500587e4e6f9d24bf576b17b450e714fd0ac23cf6b926cc"
+    },
+    {
+      "path": "src/wgpu-mapped-staging-pool.js",
+      "hashMode": "lf-normalized",
+      "size": 33136,
+      "sha256": "e4a3ad1b169c5fb9e888e82f1433cc7cfdebbc44516835a8e56c67a542bebd4c"
+    },
+    {
+      "path": "src/jit-cache-identity.js",
+      "hashMode": "lf-normalized",
+      "size": 2470,
+      "sha256": "cefdd0471021456bd80bf90437cf8b9f5fe20e1fa6f414d56ea3792a3c3333c3"
+    },
+    {
+      "path": "src/wgpu-ubo-compute-projection.js",
+      "hashMode": "lf-normalized",
+      "size": 15475,
+      "sha256": "dd04e6619a238d829e0de74db608567525f8f25b252c106963840df134388cf4"
+    },
+    {
+      "path": "src/wgpu-upload-run-projection.js",
+      "hashMode": "lf-normalized",
+      "size": 11761,
+      "sha256": "f58874238197bcafd4ec37f171366f73a52776611714c9f269bd29e81459579c"
+    },
+    {
+      "path": "src/wgpu-ubo-compute-codec.js",
+      "hashMode": "lf-normalized",
+      "size": 13118,
+      "sha256": "e22b6018bb2500a699393971f395553fec8b43ac417820135a4a99cbb3710b6b"
+    },
+    {
+      "path": "src/wgpu-ubo-compute-reconstruction.js",
+      "hashMode": "lf-normalized",
+      "size": 22717,
+      "sha256": "d70ee7357fd8ab3c0d1ced427c6b561e35fc94b14ed258f4fd79ff11a0652c3a"
+    },
+    {
+      "path": "src/wgpu-renderer-runtime.js",
+      "hashMode": "lf-normalized",
+      "size": 14307,
+      "sha256": "a7f221188aaa9dc307dd9518488c60f8c4ccf52a5cecf5c4dffbc33c218cdb2e"
+    },
+    {
+      "path": "src/save-states.js",
+      "hashMode": "lf-normalized",
+      "size": 3726,
+      "sha256": "8c7475fdd32bcaafa0b45cdd7201c4d62c4de01163420c0e78de3e0be689e45f"
+    },
+    {
+      "path": "src/dolphin-state-file.js",
+      "hashMode": "lf-normalized",
+      "size": 1906,
+      "sha256": "b737bb2d6feb0430b9ff0398a3e65bfb1bfec6d3bb49239ebfedba7600b615e2"
+    },
+    {
+      "path": "core/upstream/dolphin_web_controller.h",
+      "hashMode": "lf-normalized",
+      "size": 4234,
+      "sha256": "23b16db791533807e74c515632996c4041680ced303ca441f443f648f0338267"
+    },
+    {
+      "path": "src/wgpu-fragment-depth.js",
+      "hashMode": "lf-normalized",
+      "size": 1791,
+      "sha256": "91f6274e196cfe8c42bb6cecddadfdc9339a7e350ef4da148d2850be2d2279af"
+    },
+    {
+      "path": "src/game-compatibility.js",
+      "hashMode": "lf-normalized",
+      "size": 1428,
+      "sha256": "9c59c41d9ecc5c0fdbcfcb77ef76f29b3603f946fb5c28ef98b015d0430ffe00"
+    },
+    {
+      "path": "src/wgpu-frame-interpolator.js",
+      "hashMode": "lf-normalized",
+      "size": 9449,
+      "sha256": "6e5d82b667f02378770d196bee16370d3249c0f0826de074b45f233687e1edfd"
+    }
+  ],
+  "memoryContract": {
+    "wasmPageBytes": 65536,
+    "jsGlue": {
+      "initialMemoryBytes": 1610612736,
+      "initialPages": 24576
+    },
+    "wasmImports": [
+      {
+        "module": "a",
+        "name": "a",
+        "flags": 3,
+        "minimum": 24576,
+        "maximum": 24576,
+        "shared": true,
+        "memory64": false
+      }
+    ],
+    "wrapperDynamicJitPages": [
+      24576
+    ],
+    "activePatchSeries": {
+      "initialMemoryBytes": 1610612736,
+      "initialPages": 24576
+    }
+  },
+  "memoryContractStatus": "consistent",
+  "sourceOnlyExportsPendingRebuild": [],
+  "moduleExports": [
+    "_AcknowledgeWebGpuOwnershipTraceCapture",
+    "_AudioBuffer",
+    "_AudioBufferFrames",
+    "_AudioChannels",
+    "_AudioSampleRate",
+    "_BootDisc",
+    "_CoreInit",
+    "_DolphinWeb_RecordCacheHit",
+    "_DolphinWeb_RecordCacheMiss",
+    "_DolphinWeb_RecordInstanceUs",
+    "_DolphinWeb_RecordModuleUs",
+    "_FrameBuffer",
+    "_FrameHeight",
+    "_FrameWidth",
+    "_GetApploaderDate",
+    "_GetApploaderSize",
+    "_GetAudioStats",
+    "_GetBootDolOffset",
+    "_GetBootDolSize",
+    "_GetCPUCoreName",
+    "_GetCachedInterpreterDisableMask",
+    "_GetCoreState",
+    "_GetCoreStateName",
+    "_GetCoreStatus",
+    "_GetCoreTicksHigh",
+    "_GetCoreTicksLow",
+    "_GetCoreTicksPerSecond",
+    "_GetCoreTitle",
+    "_GetDataSize",
+    "_GetDiscNumber",
+    "_GetFrame",
+    "_GetFrameRingCapacity",
+    "_GetFrameRingEntryPtr",
+    "_GetFrameRingEntrySize",
+    "_GetFrameRingHead",
+    "_GetFrameSignalPtr",
+    "_GetFstOffset",
+    "_GetFstSize",
+    "_GetGameId",
+    "_GetGameTitle",
+    "_GetLastLoadedCheckpointGeneration",
+    "_GetLastLoadedCoreTicksHigh",
+    "_GetLastLoadedCoreTicksLow",
+    "_GetLastLoadedPPCPC",
+    "_GetMakerId",
+    "_GetPPCPC",
+    "_GetPlatform",
+    "_GetPpcProfileStats",
+    "_GetPpcWasmBlockCompileCount",
+    "_GetPpcWasmBlockRunCount",
+    "_GetPpcWasmHelperStats",
+    "_GetRawSize",
+    "_GetRegion",
+    "_GetRendererFeatureMask",
+    "_GetRootEntryCount",
+    "_GetRootEntryIsDirectory",
+    "_GetRootEntryName",
+    "_GetRootEntryOffset",
+    "_GetRootEntryPath",
+    "_GetRootEntrySize",
+    "_GetVideoStats",
+    "_GetWebGpuCommandStreamGeometrySmokeError",
+    "_GetWebGpuDenseUboSmokeError",
+    "_GetWebGpuOwnershipTraceCapacity",
+    "_GetWebGpuOwnershipTracePtr",
+    "_GetWebGpuStateCacheStats",
+    "_GetWebGpuVertexManagerGeometrySmokeError",
+    "_GetWebInputState",
+    "_LoadCoreState",
+    "_LoadState",
+    "_LoadStateFile",
+    "_MixAudio",
+    "_MountDisc",
+    "_PumpHostJobs",
+    "_ReadDisc",
+    "_ReadDiscFile",
+    "_Reset",
+    "_ResetCore",
+    "_RunFrame",
+    "_RunPpcWasmAddiSmoke",
+    "_RunPpcWasmDolphinStateAddiSmoke",
+    "_RunPpcWasmDoublePrecisionArithmeticSmoke",
+    "_RunPpcWasmFloatCompareSmoke",
+    "_RunPpcWasmIntegerBlockSmoke",
+    "_RunPpcWasmMultipleWordMemorySmoke",
+    "_RunPpcWasmPairedQuantizedMemorySmoke",
+    "_RunPpcWasmSinglePrecisionArithmeticSmoke",
+    "_RunPpcWasmStateAddiSmoke",
+    "_RunWasmJitSmoke",
+    "_RunWebGpuCommandStreamGeometryParitySmoke",
+    "_RunWebGpuCommandStreamGeometryRollbackSmoke",
+    "_RunWebGpuDenseUboPacketSmoke",
+    "_RunWebGpuDenseUboRollbackSmoke",
+    "_RunWebGpuVertexManagerGeometryLifecycleSmoke",
+    "_RunWebGpuVertexManagerGeometryParitySmoke",
+    "_RunWebGpuVertexManagerGeometryRangeSmoke",
+    "_RunWebGpuVertexManagerGeometryRollbackSmoke",
+    "_SaveCoreState",
+    "_SaveState",
+    "_SaveStateFile",
+    "_SetAudioMuted",
+    "_SetCachedInterpreterDisableMask",
+    "_SetCorePaused",
+    "_SetCpuCore",
+    "_SetCpuOverclock",
+    "_SetCpuThread",
+    "_SetEmulationSpeed",
+    "_SetFastSoftwareRaster",
+    "_SetInputMask",
+    "_SetInputState",
+    "_SetPpcProfileEnabled",
+    "_SetPpcWasmJitEnabled",
+    "_SetPresentationScale",
+    "_SetRendererFeatureMask",
+    "_SetSoftwareRasterProfileEnabled",
+    "_SetSoftwareTevHotCaseMode",
+    "_SetVideoBackend",
+    "_SetWebGpuDrawProfileEnabled",
+    "_SetWebGpuGeometryPackEnabled",
+    "_SetWebGpuGeometryRangeEnabled",
+    "_SetWebGpuOwnershipTraceEnabled",
+    "_SetWebGpuProducerProfileEnabled",
+    "_SetWebGpuStateCacheEnabled",
+    "_SetWebGpuUboCacheEnabled",
+    "_SetWebGpuUboPackEnabled",
+    "_SetWebGpuUploadArenaMiB",
+    "_SetWgpuDeepDiagnosticsEnabled",
+    "_SetWgpuIdleFifoTailElisionEnabled",
+    "_SetXfbFastPaths",
+    "_StopCore",
+    "_TestDcbxLoopPattern",
+    "_TestPpcWasmDirectCandidate",
+    "_TestPpcWasmDirectCandidateCompiles",
+    "_free",
+    "_malloc"
+  ],
+  "runtimeMethods": [
+    "FS",
+    "HEAPU8",
+    "NODEFS",
+    "PThread",
+    "UTF8ToString",
+    "WORKERFS",
+    "ccall",
+    "cwrap"
+  ],
+  "workerProtocol": {
+    "requestEnvelopeFields": [
+      "id",
+      "type",
+      "payload",
+      "oneWay"
+    ],
+    "responseEnvelopeFields": [
+      "id",
+      "ok",
+      "error"
+    ],
+    "requestTypes": [
+      "bootProbe",
+      "configureAudioWorklet",
+      "load",
+      "loadState",
+      "loadStateFile",
+      "mixAudio",
+      "mountFile",
+      "prepareHardwareRenderer",
+      "rendererDiagnostics",
+      "reset",
+      "runFrame",
+      "saveState",
+      "saveStateFile",
+      "setAudioMuted",
+      "setInputMask",
+      "setInputState",
+      "validationBeginWgpuRendererProbeMeasurement",
+      "validationFinalizeWgpuMappedDrain",
+      "validationFinalizeWgpuRendererProbe",
+      "validationFinalizeWgpuReplay",
+      "validationReadCoreProgress",
+      "validationReadJitCacheReadiness",
+      "validationReadWebInput",
+      "validationSetCorePaused"
+    ],
+    "notificationFields": {
+      "detachedOglFrame": [
+        "type",
+        "bitmap",
+        "width",
+        "height"
+      ],
+      "status": [
+        "type",
+        "message"
+      ]
+    }
+  },
+  "limitations": [
+    "Two independent builds matched the baked JS, WASM, code, and data identities; gameplay validation remains machine- and scene-specific.",
+    "Legacy patches 0001-0009 are research history and are deliberately excluded from the active source lock.",
+    "The true hardware WebGPU renderer remains experimental and GPU-dependent despite fixed-battle validation on one AMD GPU."
+  ]
+}

@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Sanctuaire Dolphin — GameCube &amp; Wii — Quentin Beaud</title>
+    <link rel="icon" type="image/svg+xml" href="./app-icon.svg" />
+    <link rel="stylesheet" href="./src/styles.css">
+    <link rel="stylesheet" href="./src/azahar-theme.css">
+    <link rel="stylesheet" href="./dark-sanctuary.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a href="../../#retro-vault" class="sanctuary-back-btn" title="Retourner au Sanctuaire RetroVault">⬅ Sanctuaire</a>
+        <button type="button" class="menu-toggle" id="btn-layout-menu" aria-label="Layout menu" aria-expanded="false" aria-controls="layout-menu"><span></span><span></span><span></span></button>
+        <div class="brand">
+          <span class="mark" aria-hidden="true"></span>
+          <div>
+            <h1>🐬 Sanctuaire Dolphin</h1>
+            <p id="coreLabel">Émulateur GameCube &amp; Wii — Moteur WebGPU &amp; Multithread 60 FPS</p>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <span class="status-pill" id="statusPill">Booting</span>
+          <button class="icon-button" id="overlayToggle" type="button" title="Toggle FPS overlay" aria-pressed="true">FPS</button>
+          <button class="icon-button" id="debugToggle" type="button" title="Toggle diagnostics" aria-expanded="false" aria-controls="debugPanel">DBG</button>
+          <button class="icon-button tip" id="panelToggle" type="button"
+                  data-tip="Show or hide the side panel" aria-expanded="true"
+                  aria-controls="controlPanel" aria-label="Hide side panel">PANEL</button>
+          <button class="icon-button" id="fullscreenButton" type="button" title="Fullscreen" aria-label="Fullscreen">[]</button>
+        </div>
+      </header>
+
+          <aside class="layout-menu" id="layout-menu" hidden aria-label="Layout menu">
+        <div class="layout-menu-header">
+            <h2>☰ Layout</h2>
+            <button type="button" class="btn btn-secondary layout-menu-close" id="btn-layout-menu-close" aria-label="Close layout menu">✕</button>
+        </div>
+        <div class="speed-control">
+            <label for="layout-widget-width">
+                <span>Widget width</span><output id="layout-widget-width-value">260px</output>
+            </label>
+            <input id="layout-widget-width" type="range" min="200" max="480" step="10" value="260"
+                   aria-label="Minimum widget width">
+        </div>
+        <div class="speed-control">
+            <label for="layout-gap">
+                <span>Spacing</span><output id="layout-gap-value">12px</output>
+            </label>
+            <input id="layout-gap" type="range" min="4" max="28" step="2" value="12" aria-label="Spacing between widgets">
+        </div>
+        <label class="mode-help audio-toggle">
+            <input type="checkbox" id="layout-beside-screen" checked>
+            Place widgets beside the screen when there is room
+        </label>
+        <h3 class="layout-menu-subhead">Widgets</h3>
+        <ul class="layout-widget-list" id="layout-widget-list"></ul>
+        <div class="mode-help">Drag a widget by its title to move it, drag its corner to resize it, or use the buttons here. Double-click a corner to reset that widget's size.</div>
+        <button type="button" class="btn btn-primary" id="btn-layout-reset" style="margin-top:10px;">↺ Reset to default layout</button>
+        <button type="button" class="btn btn-secondary" id="resetAllButton" style="margin-top:10px;">Reset all settings &amp; layout</button>
+        <p class="mode-help">Resetting settings restarts the emulator. Cached games and save states are kept.</p>
+    </aside>
+    <div class="layout-menu-backdrop" id="layout-menu-backdrop" hidden></div>
+
+
+      <main class="workspace main-layout">
+        <section class="play-area canvas-panel" aria-label="Emulator">
+          <div class="crt-set" id="dropZone">
+            <!-- LCD strip in the bezel. Carries the game identity that used to
+                 live in the side panel, so the panel can be hidden entirely
+                 without losing what is loaded. -->
+            <div class="lcd-strip" aria-hidden="true">
+              <span class="lcd-title" id="lcdTitle">NO DISC</span>
+              <span class="lcd-meta" id="lcdMeta"></span>
+            </div>
+            <div class="crt-bezel">
+              <div class="screen-viewport">
+                <canvas id="screen" width="640" height="480" aria-label="Emulator screen"></canvas>
+                <div class="blank-probe-notice" id="blankProbeNotice" role="status" hidden></div>
+                <div class="screen-osd" id="screenHud">
+                  <span><strong id="hudFps">0</strong> present</span>
+                  <span><strong id="hudVisualFps">0</strong> visual</span>
+                  <span><strong id="hudSpeed">0%</strong> speed</span>
+                  <span><strong id="hudJit">JIT off</strong></span>
+                  <span id="hudResolution">640x480</span>
+                  <span><strong id="hudCoreFps">0</strong> core</span>
+                  <span><strong id="hudFrame">0</strong> frame</span>
+                  <span><strong id="hudGlSwap">0</strong> gl</span>
+                  <span><strong id="hudMode">-</strong></span>
+                  <span><strong id="hudWatchdog">0/0</strong> wd</span>
+                  <span><strong id="hudGap">0/0</strong>ms gap</span>
+                  <span><strong id="hudGlError">0x0</strong> glerr</span>
+                  <span><strong id="hudDraw">0/0</strong> draw</span>
+                  <span><strong id="hudNz">0</strong> nz</span>
+                  <span><strong id="hudUnderDrop">0/0</strong> u/d</span>
+                  <span><strong id="hudQueue">0/0</strong> q</span>
+                  <span><strong id="hudJitCache">0/0</strong> jitc</span>
+                  <span><strong id="hudRunloop">-/-</strong>us runloop</span>
+                  <span><strong id="hudWgx">-</strong> wgx</span>
+                  <span id="hudStatus" style="opacity:.7"></span>
+                </div>
+                <div class="drop-badge" id="dropBadge">Drop disc</div>
+                <div class="scanlines" aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="crt-footer">
+              <span class="power-light"></span>
+              <div class="transport" aria-label="Playback controls">
+                <label class="file-button tip" data-tip="Open a GameCube disc image">
+                  <span class="glyph" aria-hidden="true">&#x23CF;</span>
+                  <span class="btn-text">Open disc</span>
+                  <input id="romInput" type="file" accept=".iso,.gcm,.rvz,.wbfs,.wad,.dol,.elf">
+                </label>
+                <button id="runButton" class="tip" type="button" data-tip="Pause or resume emulation" aria-label="Pause">
+                  <span class="glyph" aria-hidden="true">&#x23F8;</span>
+                </button>
+                <button id="resetButton" class="tip" type="button" data-tip="Reset the console" aria-label="Reset">
+                  <span class="glyph" aria-hidden="true">&#x21BB;</span>
+                </button>
+                <button id="muteButton" class="tip" type="button" data-tip="Mute or unmute audio" aria-label="Muted">
+                  <span class="glyph" aria-hidden="true">&#x1F507;</span>
+                </button>
+                <span class="transport-sep" aria-hidden="true"></span>
+                <button id="saveButton" class="tip" type="button" data-tip="Save state to the selected slot" aria-label="Save state" disabled>
+                  <span class="glyph" aria-hidden="true">&#x1F4BE;</span>
+                  <span class="btn-text">Save state</span>
+                </button>
+                <button id="loadButton" class="tip" type="button" data-tip="Load state from the selected slot" aria-label="Load state" disabled>
+                  <span class="glyph" aria-hidden="true">&#x21BA;</span>
+                  <span class="btn-text">Load state</span>
+                </button>
+                <button id="dlStateButton" class="tip" type="button" data-tip="Download the current save state" aria-label="Download state" disabled>
+                  <span class="glyph" aria-hidden="true">&#x2B07;</span>
+                </button>
+                <label class="file-button tip" data-tip="Upload a save state file" aria-label="Upload state">
+                  <span class="glyph" aria-hidden="true">&#x2B06;</span>
+                  <input id="ulStateInput" type="file" accept=".sav" disabled>
+                </label>
+              </div>
+                            <label class="aspect-select tip" data-tip="Screen aspect ratio">
+                <span class="sr-only">Aspect ratio</span>
+                <select id="aspectSelect">
+                  <option value="4:3">4:3</option>
+                  <option value="16:9">16:9</option>
+                </select>
+              </label>
+              <span class="volume-dial tip" data-tip="Volume">
+                            <input id="volumeDial" type="range" min="0" max="100" value="100"
+                            aria-label="Volume" orient="vertical">
+                            <span class="dial-face" aria-hidden="true"><i></i></span>
+                            </span>
+                            </div>
+                            </div>
+
+              <div class="touch-controls" id="touch-controls" role="group" aria-label="On-screen controls" hidden>
+                <div class="touch-half touch-left">
+                  <div class="touch-shoulders"><button class="touch-btn touch-shoulder" data-touch-button="L" aria-label="Nunchuk C / left trigger">C / L</button><button class="touch-btn touch-shoulder" data-touch-button="R" aria-label="Nunchuk Z / right trigger">Z / R</button></div>
+                  <div class="touch-stick" data-touch-stick="main" role="group" aria-label="Movement stick"><i class="touch-stick-knob"></i></div>
+                  <div class="touch-dpad" role="group" aria-label="D-pad">
+                    <button class="touch-dpad-arm touch-dpad-up" data-touch-button="D_UP" aria-label="D-pad up"></button><button class="touch-dpad-arm touch-dpad-left" data-touch-button="D_LEFT" aria-label="D-pad left"></button><button class="touch-dpad-arm touch-dpad-right" data-touch-button="D_RIGHT" aria-label="D-pad right"></button><button class="touch-dpad-arm touch-dpad-down" data-touch-button="D_DOWN" aria-label="D-pad down"></button><span class="touch-dpad-center"></span>
+                  </div>
+                  <div class="touch-system"><button class="touch-btn touch-system-btn" data-touch-button="Z" aria-label="Minus / GameCube Z">− / Z</button><button class="touch-btn touch-system-btn" data-touch-button="WII_HOME">HOME</button><button class="touch-btn touch-system-btn" data-touch-button="NUNCHUK_SHAKE" aria-label="Shake Nunchuk">NC ↝</button></div>
+                </div>
+                <div class="touch-half touch-right">
+                  <div class="touch-shoulders"><button class="touch-btn touch-shoulder" data-touch-button="START" aria-label="Plus / Start">+ / START</button><button class="touch-btn touch-shoulder" data-touch-button="WII_SHAKE" aria-label="Shake Wii Remote">SHAKE</button></div>
+                  <div class="touch-stick touch-stick-cstick" data-touch-stick="pointer" role="group" aria-label="Wii pointer / C-stick"><i class="touch-stick-knob"></i></div>
+                  <div class="touch-face">
+                    <button class="touch-btn touch-face-btn touch-face-x" data-touch-button="X" aria-label="Wii 1 / GameCube X">1 / X</button><button class="touch-btn touch-face-btn touch-face-y" data-touch-button="Y" aria-label="Wii 2 / GameCube Y">2 / Y</button><button class="touch-btn touch-face-btn touch-face-a" data-touch-button="A">A</button><button class="touch-btn touch-face-btn touch-face-b" data-touch-button="B">B</button>
+                  </div>
+                </div>
+              </div>
+                            </section>
+
+                            <aside class="control-panel" id="controlPanel" aria-label="Emulator controls">
+                            <div class="controls-panel" id="widget-grid">
+                            <section class="panel-block game-block card" data-widget="game">
+                            <h2>Game</h2>
+<span id="gameSize">No file</span>
+                            <p class="game-title" id="gameTitle">No game loaded</p>
+                            <p class="muted" id="mountNote">Dolphin WASM core</p>
+                            </section>
+
+                            <section class="panel-block card save-state-panel" data-widget="savestates" id="saveStatePanel">
+                            <h2>Save states</h2>
+                            <p class="save-state-status muted" data-save-status role="status" aria-live="polite">Open a game, then save your progress to a slot.</p>
+                            <ol class="save-slot-list" data-save-slots aria-label="Save slots"></ol>
+                            <div class="save-state-files">
+                            <button type="button" data-save-download disabled>Download .sav</button>
+                            <button type="button" data-save-upload disabled>Upload .sav</button>
+                            </div>
+                            <p class="muted save-state-note">Save stores your current progress; saving again replaces that slot. To continue later, open the same game and choose Load. Slots stay in this browser for the same emulator build. Download .sav for a backup. The Save state / Load state buttons use the selected slot, including in fullscreen.</p>
+                            </section>
+
+                            <section class="panel-block card" data-widget="lanplay" id="lanPlay">
+                            <h2>LAN Play</h2>
+                            <p class="muted">Share the host screen and Wii controls on one network. Host runs the game; guest controls the same player. Video only, no streamed audio. Open this site over HTTPS (or localhost) on both devices.</p>
+                            <label>Play server URL<input id="lanServerUrl" type="url" placeholder="https://play-server.example"></label>
+                            <button id="lanConnect" type="button">Connect to server</button>
+                            <button id="lanDisconnect" type="button">Disconnect from server</button>
+                            <fieldset id="lanLobbyActions" disabled>
+                            <legend>Server lobbies</legend>
+                            <label>Lobby name<input id="lanLobbyName" maxlength="60" value="LAN game"></label>
+                            <label><input id="lanPublic" type="checkbox">Public lobby (listed on this server)</label>
+                            <button id="lanHost" type="button">Host lobby</button>
+                            <label>Private invitation or public lobby ID<input id="lanInvite"></label>
+                            <button id="lanJoin" type="button">Join lobby</button>
+                            <button id="lanLeave" type="button">Leave lobby</button>
+                            <p id="lanRoom" role="status">No lobby joined.</p>
+                            <ul id="lanLobbies" aria-label="Public lobbies"></ul>
+                            </fieldset>
+                            <p id="lanStatus" role="status" aria-live="polite">Disconnected.</p>
+                            <video id="lanVideo" controls autoplay playsinline muted hidden></video>
+                            <div id="lanControls" aria-label="Remote controls"></div>
+                            </section>
+                            <section class="panel-block card" data-widget="lansaves">
+                            <h2>LAN Saves</h2>
+                            <p class="muted">Connect to a play server and join a lobby through LAN Play, then send a downloaded .sav (up to 64 MB). Received files load only when you choose Load, with the matching game and emulator build. These are save states, not memory card files.</p>
+                            <fieldset id="lanSaveActions" disabled><legend>Connected lobby saves</legend>
+                            <label>Send .sav<input id="lanSend" type="file" accept=".sav"></label>
+                            <p id="lanReceived" role="status">No save received.</p>
+                            <button id="lanDownload" type="button" disabled>Download received save</button>
+                            <button id="lanLoad" type="button" disabled>Load received save</button>
+                            </fieldset>
+                            </section>
+
+                            <form class="settings-panel card" data-widget="settings" data-default-span="2" id="settingsForm">
+                            <h2>Settings</h2>
+<span id="settingsSummary">Startup</span>
+
+                            <div class="setting-grid">
+                            <label>
+                              <span>Core</span>
+                              <select id="settingCore">
+
+                              <option value="upstream">Upstream</option>
+                              </select>
+                            </label>
+
+                            <label>
+                              <span>Renderer</span>
+                              <select id="settingVideo">
+                              <option value="auto">Automatic (WebGPU preferred)</option>
+                              <option value="software">Software fallback</option>
+                              <option value="wgpu">WebGPU hardware (experimental)</option>
+                              <option value="ogl">OpenGL GPU</option>
+                              <option value="null">Null video</option>
+                              </select>
+                            </label>
+
+                            <label>
+                              <span>GPU path</span>
+                              <select id="settingOglProxy">
+                              <option value="proxy">Compatible GL</option>
+                              <option value="worker">Direct worker GL</option>
+                              <option value="main">Main thread GL</option>
+                              <option value="readback">Readback debug</option>
+                              </select>
+                            </label>
+
+                            <label>
+                              <span>Resolution</span>
+                              <select id="settingResolution">
+                              <option value="full">Full 640x480</option>
+                              <option value="0.75">75% present</option>
+                              <option value="half">Half 320x240</option>
+                              </select>
+                            </label>
+
+                            <label>
+                              <span>Speed</span>
+                              <select id="settingSpeed">
+                              <option value="0.5">0.5x</option>
+                              <option value="0.75">0.75x</option>
+                              <option value="1">1x</option>
+                              <option value="1.25">1.25x</option>
+                              <option value="1.5">1.5x</option>
+                              <option value="unlimited">Unlimited</option>
+                              </select>
+                            </label>
+
+                            <label>
+                              <span>CPU</span>
+                              <select id="settingCpu">
+                              <option value="auto">Auto</option>
+                              <option value="single">Single thread</option>
+                              <option value="dual">Dual core</option>
+                              </select>
+                            </label>
+
+                            <label>
+                              <span>Presenter</span>
+                              <select id="settingPresenter">
+                              <option value="webgpu">WebGPU</option>
+                              <option value="webgl">WebGL</option>
+                              <option value="2d">Canvas 2D</option>
+                              </select>
+                            </label>
+
+                            <label>
+                              <span>Display upscaling (applies immediately)</span>
+                              <select id="displayUpscaling">
+                                <option value="smooth" selected>Smooth (on)</option>
+                                <option value="crisp">Crisp pixels</option>
+                              </select>
+                            </label>
+                            <p class="muted">Enlarges the image to fit the screen. Smooth softens pixel edges; crisp keeps them sharp. Internal game resolution stays the same.</p>
+
+                            <label>
+                              <span>Frame queue</span>
+                              <select id="settingQueue">
+                              <option value="2">2 frames</option>
+                              <option value="4">4 frames</option>
+                              <option value="8">8 frames</option>
+                              <option value="12">12 frames</option>
+                              </select>
+                            </label>
+
+                            <label>
+                              <span>Pacing</span>
+                              <select id="settingPacing">
+                              <option value="auto">Automatic</option>
+                              <option value="tick">Tick</option>
+                              <option value="smooth">Smooth</option>
+                              <option value="direct">Direct</option>
+                              </select>
+                            </label>
+
+                            <label>
+                              <span>Raster quality</span>
+                              <select id="settingFastSw">
+                              <option value="0">Full quality</option>
+                              <option value="1">Balanced</option>
+                              <option value="2">Emergency speed</option>
+                              </select>
+                            </label>
+
+                            <label>
+                              <span>JIT tier</span>
+                              <select id="settingJitTier">
+                              <option value="guarded">Guarded</option>
+                              <option value="mixed">Mixed experimental</option>
+                              </select>
+                            </label>
+                            </div>
+
+                            <div class="toggle-row">
+                            <label class="switch-line">
+                              <input id="settingWasmJit" type="checkbox">
+                              <span>WASM JIT</span>
+                            </label>
+                            <label class="switch-line">
+                              <input id="settingForceJit" type="checkbox">
+                              <span>Force JIT</span>
+                            </label>
+                            <label class="switch-line" title="Hardware WebGPU on 90 Hz+ displays: adds motion-interpolated in-between images. Game speed and physics are unchanged; adds up to one frame of delay.">
+                              <input id="settingFrameInterp" type="checkbox">
+                              <span>Frame interpolation</span>
+                            </label>
+                            <label class="switch-line">
+                              <input id="settingMetrics" type="checkbox">
+                              <span>Collect Metrics</span>
+                            </label>
+                            <label class="switch-line tip" data-tip="Pick the renderer from measured per-game results">
+                              <input id="settingAutoProfile" type="checkbox" checked>
+                              <span>Auto per-game</span>
+                            </label>
+                            </div>
+
+                            <div class="settings-actions">
+                            <button id="settingsApplyButton" type="submit">Apply restart</button>
+                            <button id="settingsPresetButton" type="button" title="Hardware WebGPU with software fallback and automatic JIT startup">Optimal settings</button>
+                            <button id="settingsResetButton" type="button">Reset settings</button>
+                            </div>
+                            <p class="muted" id="settingsSaveStatus" role="status">Settings save in this browser. Use Apply restart to activate emulator changes. Display, input and layout changes apply immediately.</p>
+                            <p class="muted">Reset settings restores preferences and restarts the emulator. Cached games and save states are kept. Reset the layout from the ☰ menu.</p>
+                            </form>
+
+                            <section class="panel-block card" data-widget="input">
+                            <h2>Input</h2>
+                            <label class="switch-line"><input id="nunchukConnected" type="checkbox" role="switch" checked><span>Nunchuk connected</span></label>
+                            <p class="muted">Switch off when a game asks you to disconnect the extension controller. MotionPlus stays connected. Changes apply immediately.</p>
+<span id="inputSource">Keyboard</span>
+                            <div class="control-grid" id="controlGrid"></div>
+                            <label class="touch-mode-label">On-screen controls <select id="touchMode"><option value="auto">Automatic</option><option value="on">Always show</option><option value="off">Hidden</option></select></label>
+                            <label class="touch-look-label">Touch size <input id="touchSize" type="range" min="70" max="150" step="5" value="100" aria-label="On-screen control size"></label>
+                            <label class="touch-look-label">Touch opacity <input id="touchOpacity" type="range" min="20" max="100" step="5" value="100" aria-label="On-screen control opacity"></label>
+                            <p class="keyboard-hint">X = A · Z = B · Enter = Start / + · WASD = move · IJKL = aim</p>
+                            <details class="input-settings"><summary>Keyboard, mouse &amp; Bluetooth controller</summary>
+                            <p>GameCube port 1 and Wii Remote + Nunchuk. Wii: X = A, Z = B, V/B = 1/2, Enter = +, C = −, Q/E = Nunchuk C/Z, H = Home. Keyboard: WASD main stick, IJKL C-stick, arrows D-pad, X/Z/V/B face buttons, Enter Start, Q/E triggers, C Z.</p>
+                            <div id="keyboardBindings" class="control-grid"></div>
+                            <button type="button" id="resetBindings">Reset keyboard bindings</button>
+                            <label>Mouse / Wii pointer <select id="mouseMode"><option value="cstick" selected>Wii pointer / C-stick</option><option value="stick">Main stick</option><option value="tilt">Wii tilt (hold and drag)</option><option value="off">Disabled</option></select></label>
+                            <p>Mouse hover tracks the Wii pointer over the play area by default, including fullscreen. No click is needed to aim. Main stick: hold and drag, release to center. Left / right buttons = A / B. Middle click = Remote shake; Shift + middle click or Forward side button = Nunchuk shake. In Wii tilt mode, hold and drag from the center; release to stop tilting. Minus remains on keyboard C.</p>
+                            <p>Simulated Wii motion: Space = Remote shake, left Shift = Nunchuk shake, numpad 4/6/8/2 = tilt left/right/forward/backward. All bindings can be changed above.</p>
+                            <label>Controller <select id="controllerSelect"><option value="auto">Automatic</option><option value="off">Disabled</option></select></label>
+                            <label>Controller right stick <select id="controllerMotionMode"><option value="pointer">Wii pointer / C-stick</option><option value="tilt">Wii tilt</option></select></label>
+                            <label>Stick deadzone <input id="controllerDeadzone" type="range" min="0" max="0.5" step="0.01" value="0.18"></label>
+                            <p id="controllerStatus" role="status">Pair in device Bluetooth settings, then press a controller button.</p>
+                            <p>USB and Bluetooth standard controllers: face buttons A/B/1/2, left stick = Nunchuk, right stick = Wii pointer, D-pad, Start = +, shoulders/triggers = Nunchuk C/Z, Select = −, Guide = Home. GameCube mappings also work. Click the left / right stick to shake the Remote / Nunchuk. Select Wii tilt above to tilt with the right stick; release to center. These controls simulate motion; physical controller motion sensors are not required.</p>
+                            </details>
+                            </section>
+<section class="debug-panel" id="debugPanel" aria-label="Diagnostics" hidden>
+                            <section class="panel-block">
+                            <div class="section-heading">
+                            <h2>Boot</h2>
+                            <span id="bootStatus">No disc</span>
+                            </div>
+                            <div class="metric-row">
+                            <span>Apploader</span>
+                            <strong id="bootApploader">-</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>Boot DOL</span>
+                            <strong id="bootDol">-</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>FST</span>
+                            <strong id="bootFst">-</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>Image</span>
+                            <strong id="bootImage">-</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>Entry</span>
+                            <strong id="bootEntry">-</strong>
+                            </div>
+                            <p class="muted compact" id="bootBlocker">No boot attempt</p>
+                            <div class="root-entry-list" id="rootEntryList" aria-label="Disc root entries"></div>
+                            </section>
+
+                            <section class="panel-block">
+                            <div class="section-heading">
+                            <h2>Runtime</h2>
+                            <span id="coreMode">Demo</span>
+                            </div>
+                            <div class="metric-row">
+                            <span>Frame</span>
+                            <strong id="frameCounter">0</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>Present FPS</span>
+                            <strong id="fpsCounter">0</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>Visual FPS</span>
+                            <strong id="visualFpsCounter">0</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>UI FPS</span>
+                            <strong id="uiFpsCounter">0</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>Core FPS</span>
+                            <strong id="coreFpsCounter">0</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>Game Speed</span>
+                            <strong id="gameSpeedCounter">0%</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>Frame Gap</span>
+                            <strong id="presentationGapCounter">0 ms</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>Latency</span>
+                            <strong id="presentationLagCounter">0f / 0 ms</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>Audio</span>
+                            <strong id="audioStatus">Audio off</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>Ticks</span>
+                            <strong id="coreTicks">0</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>PPC PC</span>
+                            <strong id="ppcPc">-</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>CPU</span>
+                            <strong id="cpuCoreName">-</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>WASM JIT exp</span>
+                            <strong id="ppcWasmJit">0 / 0</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>WASM Helper</span>
+                            <strong id="ppcWasmHelperStats">-</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>Frame Profile</span>
+                            <strong id="frameProfileStats">-</strong>
+                            </div>
+                            <div class="metric-row">
+                            <span>Adapter</span>
+                            <strong id="adapterStatus">Fallback</strong>
+                            </div>
+                            </section>
+
+
+
+                            <section class="panel-block">
+                            <div class="section-heading">
+                            <h2>Source &amp; license</h2>
+                            <span>GPL-2.0-or-later</span>
+                            </div>
+                            <p class="muted compact">Dolphin is free software. <a href="./LICENSE">License</a> · <a id="sourceDownload" href="https://github.com/Shubin123/dolphin_web/releases/tag/v0.1.3">Download source</a></p>
+                            </section>
+                            </section>
+                            </div>
+</aside>
+                            </main>
+                            </div>
+
+                            <script type="module" src="./src/pages-bootstrap.js"></script>
+                            </body>
+                            </html>

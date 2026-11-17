@@ -1,0 +1,169 @@
+/* ====================================================================
+   SANCTUAIRE DOLPHIN — THÈME DARK FANTASY & OR ANTIQUE
+   Portfolio Quentin Beaud — RetroVault
+   ==================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+  --bg: #070d0a !important;
+  --surface: #0f1c16 !important;
+  --surface-2: #162920 !important;
+  --line: rgba(212, 175, 55, 0.3) !important;
+  --text: #f0f4f1 !important;
+  --muted: #a8b8ad !important;
+  --button: #162920 !important;
+  --button-hover: #223f31 !important;
+  --focus: #d4af37 !important;
+  --amber: #d4af37 !important;
+  --cabinet: #0f1c16 !important;
+  --cabinet-dark: #070d0a !important;
+}
+
+body {
+  background: radial-gradient(circle at 50% 20%, #0d1a14 0%, #070d0a 80%, #040806 100%) !important;
+  font-family: 'Outfit', sans-serif !important;
+  color: #f0f4f1 !important;
+}
+
+body::before {
+  background: repeating-linear-gradient(45deg, rgba(212, 175, 55, 0.05) 0 1px, transparent 1px 6px) !important;
+}
+
+/* En-tête Grimoire */
+.topbar {
+  background: rgba(7, 13, 10, 0.96) !important;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.35) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.topbar h1, .brand h1 {
+  font-family: 'Cinzel', serif !important;
+  color: #d4af37 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+  text-shadow: 0 0 12px rgba(212, 175, 55, 0.4) !important;
+}
+
+#coreLabel {
+  color: #a8b8ad !important;
+  font-size: 0.82rem !important;
+}
+
+/* Bouton Retour Sanctuaire */
+.sanctuary-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(212, 175, 55, 0.12) !important;
+  border: 1px solid rgba(212, 175, 55, 0.45) !important;
+  color: #f0f4f1 !important;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.sanctuary-back-btn:hover {
+  background: rgba(212, 175, 55, 0.25) !important;
+  border-color: #d4af37 !important;
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.4) !important;
+  color: #fff !important;
+}
+
+/* Bezel & Canvas */
+.crt-set, .control-panel, .panel-section, .library-section, .layout-menu {
+  background: rgba(15, 28, 22, 0.92) !important;
+  border: 1px solid rgba(212, 175, 55, 0.35) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(212, 175, 55, 0.2) !important;
+  border-radius: 8px !important;
+}
+
+.crt-bezel {
+  background: #050a08 !important;
+  border: 1px solid rgba(212, 175, 55, 0.25) !important;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9) !important;
+}
+
+.lcd-strip {
+  background: #09130e !important;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3) !important;
+}
+
+.lcd-title {
+  color: #d4af37 !important;
+  font-family: 'Cinzel', serif !important;
+  letter-spacing: 1px !important;
+}
+
+/* Boutons & Contrôles */
+.btn, button, .icon-button, .library-download-link, .transport button, .transport select, .file-button {
+  background: linear-gradient(135deg, #162920 0%, #0f1c16 100%) !important;
+  border: 1px solid rgba(212, 175, 55, 0.4) !important;
+  color: #f0f4f1 !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+  font-family: 'Outfit', sans-serif !important;
+}
+
+.btn:hover, button:hover, .icon-button:hover, .file-button:hover {
+  background: linear-gradient(135deg, #223f31 0%, #162920 100%) !important;
+  border-color: #d4af37 !important;
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.35) !important;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #b45309 0%, #d4af37 100%) !important;
+  color: #070d0a !important;
+  font-weight: 700 !important;
+  border-color: #d4af37 !important;
+}
+
+/* Badge Statut Vert Émeraude */
+.status-pill {
+  background: rgba(52, 211, 153, 0.15) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(52, 211, 153, 0.4) !important;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Overlay OSD FPS */
+.screen-osd {
+  font-family: 'JetBrains Mono', monospace !important;
+  background: rgba(7, 13, 10, 0.85) !important;
+  border: 1px solid rgba(212, 175, 55, 0.3) !important;
+  border-radius: 4px !important;
+  color: #34d399 !important;
+}
+
+.screen-osd strong {
+  color: #d4af37 !important;
+}
+
+/* Panneau latéral et menus */
+h2, h3, .section-heading h2 {
+  font-family: 'Cinzel', serif !important;
+  color: #d4af37 !important;
+}
+
+.muted {
+  color: #a8b8ad !important;
+}
+
+input, select, textarea {
+  background: #09130e !important;
+  color: #f0f4f1 !important;
+  border: 1px solid rgba(212, 175, 55, 0.35) !important;
+  border-radius: 4px !important;
+}
+
+input:focus, select:focus {
+  border-color: #d4af37 !important;
+  outline: none !important;
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.4) !important;
+}
