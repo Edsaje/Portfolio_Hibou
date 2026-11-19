@@ -175,18 +175,34 @@
         if (desc.type === 'offer' && !this.isHost) {
           this._setStatus('Offre de liaison reçue de l\'hôte, préparation de la réponse...');
           await this.peerConnection.setRemoteDescription(new RTCSessionDescription(desc));
+          if (this.pendingIceCandidates && this.pendingIceCandidates.length > 0) {
+            for (const cand of this.pendingIceCandidates) {
+              try { await this.peerConnection.addIceCandidate(new RTCIceCandidate(cand)); } catch(e) {}
+            }
+            this.pendingIceCandidates = [];
+          }
           const answer = await this.peerConnection.createAnswer();
           await this.peerConnection.setLocalDescription(answer);
-          await this._waitForIceComplete();
           await this._request('signal', { description: this.peerConnection.localDescription });
           this._setStatus('Réponse envoyée. Finalisation P2P...');
         } else if (desc.type === 'answer' && this.isHost) {
           this._setStatus('Réponse de l\'invité acceptée. Connexion en cours...');
           await this.peerConnection.setRemoteDescription(new RTCSessionDescription(desc));
+          if (this.pendingIceCandidates && this.pendingIceCandidates.length > 0) {
+            for (const cand of this.pendingIceCandidates) {
+              try { await this.peerConnection.addIceCandidate(new RTCIceCandidate(cand)); } catch(e) {}
+            }
+            this.pendingIceCandidates = [];
+          }
         } else if (desc.candidate) {
-          try {
-            await this.peerConnection.addIceCandidate(new RTCIceCandidate(desc.candidate));
-          } catch (iceErr) {}
+          if (this.peerConnection && this.peerConnection.remoteDescription) {
+            try {
+              await this.peerConnection.addIceCandidate(new RTCIceCandidate(desc.candidate));
+            } catch (iceErr) {}
+          } else {
+            if (!this.pendingIceCandidates) this.pendingIceCandidates = [];
+            this.pendingIceCandidates.push(desc.candidate);
+          }
         }
       } else if (event.type === 'peer-left' || event.type === 'closed') {
         this._setStatus('Le partenaire a quitté le salon.');
@@ -196,34 +212,14 @@
       }
     }
 
-    _waitForIceComplete(timeoutMs = 5000) {
-      return new Promise((resolve) => {
-        if (!this.peerConnection || this.peerConnection.iceGatheringState === 'complete') {
-          return resolve();
-        }
-        const timer = setTimeout(() => {
-          if (this.peerConnection) this.peerConnection.removeEventListener('icegatheringstatechange', check);
-          resolve();
-        }, timeoutMs);
-
-        const check = () => {
-          if (this.peerConnection?.iceGatheringState === 'complete') {
-            clearTimeout(timer);
-            this.peerConnection.removeEventListener('icegatheringstatechange', check);
-            resolve();
-          }
-        };
-        this.peerConnection.addEventListener('icegatheringstatechange', check);
-      });
-    }
-
     // ==========================================
     // CÔTÉ HÔTE (Joueur 1)
     // ==========================================
     async hostGame(canvasElement, options = {}) {
-      this.disconnect();
+      this.disconnect(true);
       this.isHost = true;
       this.role = 'host';
+      this.pendingIceCandidates = [];
 
       this._setStatus('Création du salon Céleste...');
       const res = await this._request('create', {
@@ -262,6 +258,9 @@
       try {
         const audioCtx = window._lastGameAudioContext || globalAudioContext;
         if (audioCtx && typeof audioCtx.createMediaStreamDestination === 'function') {
+          if (audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(() => {});
+          }
           globalAudioDestNode = audioCtx.createMediaStreamDestination();
           window._rvLanAudioDest = globalAudioDestNode;
           const audioTrack = globalAudioDestNode.stream.getAudioTracks()[0];
@@ -288,7 +287,6 @@
       try {
         const offer = await this.peerConnection.createOffer();
         await this.peerConnection.setLocalDescription(offer);
-        await this._waitForIceComplete();
         await this._request('signal', { description: this.peerConnection.localDescription });
         this._setStatus('Offre P2P transmise. En attente de la réponse de l\'invité...');
       } catch (e) {
@@ -300,9 +298,10 @@
     // CÔTÉ INVITÉ (Joueur 2)
     // ==========================================
     async joinGame(roomCode) {
-      this.disconnect();
+      this.disconnect(true);
       this.isHost = false;
       this.role = 'guest';
+      this.pendingIceCandidates = [];
 
       const cleanCode = String(roomCode).trim().toUpperCase();
       this._setStatus(`Recherche du salon "${cleanCode}"...`);
@@ -321,14 +320,22 @@
     _initPeerConnection() {
       this.peerConnection = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
+      // Signalisation ICE Trickle immédiate
+      this.peerConnection.onicecandidate = (event) => {
+        if (event.candidate && this.token) {
+          this._request('signal', { description: { candidate: event.candidate } }).catch(() => {});
+        }
+      };
+
       this.peerConnection.ondatachannel = (e) => {
         this.dataChannel = e.channel;
         this._wireDataChannel(this.dataChannel);
       };
 
       this.peerConnection.ontrack = (event) => {
-        if (event.streams && event.streams[0]) {
-          this.callbacks.onTrack(event.streams[0]);
+        const stream = (event.streams && event.streams[0]) ? event.streams[0] : null;
+        if (typeof this.callbacks.onTrack === 'function') {
+          this.callbacks.onTrack(stream, event.track);
         }
       };
 
@@ -340,6 +347,7 @@
           this.callbacks.onConnected();
           if (!this.isHost) {
             this._startGuestInputLoop();
+            this._setupGuestKeyboard();
             this._startPingLoop();
           }
         } else if (state === 'disconnected' || state === 'failed') {
@@ -450,26 +458,84 @@
       }
     }
 
+    _setupGuestKeyboard() {
+      if (this.keyboardCleanup) {
+        this.keyboardCleanup();
+        this.keyboardCleanup = null;
+      }
+
+      const KEY_TO_BUTTON = {
+        'ArrowUp': 'up', 'KeyW': 'up', 'KeyZ': 'up',
+        'ArrowDown': 'down', 'KeyS': 'down',
+        'ArrowLeft': 'left', 'KeyA': 'left', 'KeyQ': 'left',
+        'ArrowRight': 'right', 'KeyD': 'right',
+        'KeyK': 'a', 'KeyX': 'a',
+        'KeyJ': 'b', 'KeyC': 'b',
+        'KeyI': 'x', 'KeyV': 'x',
+        'KeyU': 'y', 'KeyF': 'y',
+        'Enter': 'start', 'NumpadEnter': 'start',
+        'Space': 'select', 'Backspace': 'select', 'ShiftRight': 'select',
+        'KeyE': 'r', 'KeyO': 'r', 'ShiftLeft': 'l'
+      };
+
+      const onKeyDown = (e) => {
+        if (["INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
+        const btn = KEY_TO_BUTTON[e.code];
+        this.sendInput(btn || e.code, true, 2, {
+          code: e.code,
+          key: e.key,
+          keyCode: e.keyCode,
+          type: 'keydown'
+        });
+        if (btn) e.preventDefault();
+      };
+
+      const onKeyUp = (e) => {
+        if (["INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
+        const btn = KEY_TO_BUTTON[e.code];
+        this.sendInput(btn || e.code, false, 2, {
+          code: e.code,
+          key: e.key,
+          keyCode: e.keyCode,
+          type: 'keyup'
+        });
+        if (btn) e.preventDefault();
+      };
+
+      window.addEventListener('keydown', onKeyDown);
+      window.addEventListener('keyup', onKeyUp);
+
+      this.keyboardCleanup = () => {
+        window.removeEventListener('keydown', onKeyDown);
+        window.removeEventListener('keyup', onKeyUp);
+      };
+    }
+
     // Envoi d'une touche joueur (par l'invité)
-    sendInput(button, isDown, player = 2) {
+    sendInput(button, isDown, player = 2, extra = null) {
       if (!this.dataChannel || this.dataChannel.readyState !== 'open') return;
       try {
         const payload = JSON.stringify({
           t: 'input',
           p: player,
           b: button,
-          d: isDown ? 1 : 0
+          d: isDown ? 1 : 0,
+          ...(extra || {})
         });
         this.dataChannel.send(payload);
       } catch (e) {}
     }
 
     // Déconnexion propre
-    disconnect() {
+    disconnect(silent = false) {
       this._stopPolling();
       if (this.gamepadLoopId) {
         cancelAnimationFrame(this.gamepadLoopId);
         this.gamepadLoopId = null;
+      }
+      if (this.keyboardCleanup) {
+        this.keyboardCleanup();
+        this.keyboardCleanup = null;
       }
       if (this.token) {
         this._request('leave').catch(() => {});
@@ -490,7 +556,9 @@
       this.lastButtonStates = {};
       this.lastAxesStates = { up: false, down: false, left: false, right: false };
       this._setStatus('Déconnecté.');
-      this.callbacks.onDisconnected();
+      if (!silent) {
+        this.callbacks.onDisconnected();
+      }
     }
 
     // =========================================================================
@@ -624,6 +692,9 @@
           }
           .sanct-lan-video-overlay video {
             width: 100%; height: 100%; object-fit: contain;
+          }
+          @keyframes sanctSpin {
+            to { transform: rotate(360deg); }
           }
         `;
         document.head.appendChild(s);
@@ -830,9 +901,17 @@
             await session.joinGame(code);
           } catch (err) {
             alert("Échec de connexion : " + err.message);
+            SanctuaireLAN.unmountGuestView();
             SanctuaireLAN.openModal({ ...options, initialTab: "join" });
           }
         };
+      }
+
+      // Pré-remplissage automatique si code fourni
+      const prefill = options.prefillCode || "";
+      if (prefill) {
+        const inp = document.getElementById("sanct-join-code-input");
+        if (inp) inp.value = prefill;
       }
 
       const btnLeaveGuest = document.getElementById("sanct-btn-leave-guest");
@@ -853,11 +932,21 @@
       overlay.id = "sanct-lan-guest-overlay";
       overlay.className = "sanct-lan-video-overlay";
 
+      const loadingBox = document.createElement("div");
+      loadingBox.id = "sanct-guest-loading";
+      loadingBox.style.cssText = "display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #d4af37; font-family: var(--font-heading, 'Cinzel', serif); text-align: center; padding: 24px; z-index: 10;";
+      loadingBox.innerHTML = `
+        <div style="width: 46px; height: 46px; border: 3px solid rgba(212,175,55,0.25); border-top-color: #d4af37; border-radius: 50%; animation: sanctSpin 0.9s linear infinite;"></div>
+        <div style="font-size: 1.2rem; font-weight: 700; letter-spacing: 1px;">⚔️ Connexion au Sanctuaire...</div>
+        <div id="sanct-guest-loading-sub" style="font-size: 0.85rem; color: #a8b8ad; font-family: sans-serif; max-width: 380px;">Négociation de la liaison directe P2P (60 FPS)...</div>
+      `;
+
       const video = document.createElement("video");
       video.id = "sanct-lan-guest-video";
       video.autoplay = true;
       video.playsInline = true;
-      video.muted = false;
+      video.muted = true; // Démarrer en sourdine pour contourner le blocage autoplay des navigateurs
+      video.style.cssText = "display: none; width: 100%; height: 100%; object-fit: contain; background: #000;";
 
       const hud = document.createElement("div");
       hud.className = "sanct-lan-guest-hud";
@@ -867,10 +956,11 @@
         <span>🎮 Joueur 2</span>
         <span style="color: #a8b8ad;">|</span>
         <span id="sanct-guest-ping">🟢 Ping : -- ms</span>
-        <button type="button" class="sanct-lan-btn" id="sanct-guest-unmute" style="font-size: 0.72rem; padding: 2px 8px;">🔊 Son</button>
-        <button type="button" class="sanct-lan-btn" id="sanct-guest-leave" style="font-size: 0.72rem; padding: 2px 8px; color: #f87171;">✕ Quitter</button>
+        <button type="button" class="sanct-lan-btn" id="sanct-guest-unmute" style="font-size: 0.72rem; padding: 3px 10px;">🔊 Activer le Son</button>
+        <button type="button" class="sanct-lan-btn" id="sanct-guest-leave" style="font-size: 0.72rem; padding: 3px 10px; color: #f87171;">✕ Quitter</button>
       `;
 
+      overlay.appendChild(loadingBox);
       overlay.appendChild(video);
       document.body.appendChild(overlay);
       document.body.appendChild(hud);
@@ -879,7 +969,7 @@
       if (btnUnmute) {
         btnUnmute.onclick = () => {
           video.muted = !video.muted;
-          btnUnmute.textContent = video.muted ? "🔇 Muet" : "🔊 Son";
+          btnUnmute.textContent = video.muted ? "🔊 Activer le Son" : "🔇 Couper le Son";
           video.play().catch(() => {});
         };
       }
@@ -892,12 +982,31 @@
         };
       }
 
-      session.callbacks.onTrack = (stream) => {
-        video.srcObject = stream;
-        video.play().catch(() => {
-          video.muted = true;
-          video.play();
-        });
+      // Flux média composite unique recevant vidéo et audio
+      let remoteStream = new MediaStream();
+      video.srcObject = remoteStream;
+
+      session.callbacks.onTrack = (stream, track) => {
+        if (track) {
+          if (!remoteStream.getTracks().some(t => t.id === track.id)) {
+            remoteStream.addTrack(track);
+          }
+        } else if (stream) {
+          stream.getTracks().forEach(t => {
+            if (!remoteStream.getTracks().some(existing => existing.id === t.id)) {
+              remoteStream.addTrack(t);
+            }
+          });
+        }
+
+        loadingBox.style.display = "none";
+        video.style.display = "block";
+        video.play().catch(e => console.warn("[Sanctuaire LAN] Video play:", e));
+      };
+
+      session.callbacks.onConnected = () => {
+        const sub = document.getElementById("sanct-guest-loading-sub");
+        if (sub) sub.textContent = "⚡ P2P connecté ! Attente de la première trame 60 FPS...";
       };
 
       session.callbacks.onPing = (rtt) => {
@@ -924,10 +1033,12 @@
         const code = params.get("lan");
         if (code) {
           setTimeout(() => {
-            SanctuaireLAN.openModal({ ...options, initialTab: "join" });
-            const inp = document.getElementById("sanct-join-code-input");
-            if (inp) inp.value = code.trim().toUpperCase();
-          }, 450);
+            SanctuaireLAN.openModal({
+              ...options,
+              initialTab: "join",
+              prefillCode: code.trim().toUpperCase()
+            });
+          }, 350);
         }
       } catch(e) {}
     }

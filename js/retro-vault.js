@@ -1619,11 +1619,14 @@
       });
     }
 
-    async openLanModal(initialTab = "host") {
+    async openLanModal(initialTab = "host", prefillCode = "") {
       await this.ensureLanRelayLoaded();
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = prefillCode || urlParams.get("lan") || "";
       SanctuaireLAN.openModal({
         title: "Sanctuaire Rétro — Coop LAN P2P",
         initialTab: initialTab,
+        prefillCode: code.toUpperCase(),
         getCanvas: () => {
           const dsFrame = document.getElementById("rv-nds-frame");
           if (dsFrame && dsFrame.contentDocument) {
@@ -6948,10 +6951,8 @@
         const lanCode = urlParams.get("lan");
         if (lanCode) {
           setTimeout(() => {
-            this.openLanModal("join");
-            const codeInp = document.getElementById("rv-lan-join-code-input");
-            if (codeInp) codeInp.value = lanCode.toUpperCase();
-          }, 400);
+            this.openLanModal("join", lanCode);
+          }, 350);
         }
       } catch (e) {}
 
