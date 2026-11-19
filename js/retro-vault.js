@@ -1645,7 +1645,24 @@
         },
         onInput: (packet) => {
           if (!this.partieEnCours) return;
-          const btn = packet.b;
+          const rawBtn = String(packet.b || "").trim();
+          const MAP = {
+            'numpad6': 'a', '6': 'a', 'keyl': 'a', 'keyk': 'a', 'keyx': 'a', 'a': 'a',
+            'numpad5': 'b', '5': 'b', 'keyj': 'b', 'keyc': 'b', 'b': 'b',
+            'numpad9': 'x', '9': 'x', 'keyo': 'x', 'keyi': 'x', 'keyv': 'x', 'x': 'x',
+            'numpad8': 'y', '8': 'y', 'keyu': 'y', 'keyf': 'y', 'y': 'y',
+            'numpad7': 'l', '7': 'l', 'shiftleft': 'l', 'l': 'l', 'l1': 'l',
+            'numpad3': 'r', '3': 'r', 'keyp': 'r', 'keye': 'r', 'r': 'r', 'r1': 'r',
+            'numpad1': 'l2', '1': 'l2', 'l2': 'l2',
+            'numpad2': 'r2', '2': 'r2', 'r2': 'r2',
+            'arrowup': 'up', 'keyw': 'up', 'keyz': 'up', 'up': 'up',
+            'arrowdown': 'down', 'keys': 'down', 'down': 'down',
+            'arrowleft': 'left', 'keya': 'left', 'keyq': 'left', 'left': 'left',
+            'arrowright': 'right', 'keyd': 'right', 'right': 'right',
+            'enter': 'start', 'numpadenter': 'start', 'start': 'start',
+            'space': 'select', 'shiftright': 'select', 'backspace': 'select', 'numpad0': 'select', 'select': 'select'
+          };
+          const btn = MAP[rawBtn.toLowerCase()] || rawBtn.toLowerCase();
           const player = packet.p || 2;
           try {
             if (packet.d) {
@@ -1708,7 +1725,24 @@
         },
         onInput: (packet) => {
           if (!this.partieEnCours) return;
-          const btn = packet.b;
+          const rawBtn = String(packet.b || "").trim();
+          const MAP = {
+            'numpad6': 'a', '6': 'a', 'keyl': 'a', 'keyk': 'a', 'keyx': 'a', 'a': 'a',
+            'numpad5': 'b', '5': 'b', 'keyj': 'b', 'keyc': 'b', 'b': 'b',
+            'numpad9': 'x', '9': 'x', 'keyo': 'x', 'keyi': 'x', 'keyv': 'x', 'x': 'x',
+            'numpad8': 'y', '8': 'y', 'keyu': 'y', 'keyf': 'y', 'y': 'y',
+            'numpad7': 'l', '7': 'l', 'shiftleft': 'l', 'l': 'l', 'l1': 'l',
+            'numpad3': 'r', '3': 'r', 'keyp': 'r', 'keye': 'r', 'r': 'r', 'r1': 'r',
+            'numpad1': 'l2', '1': 'l2', 'l2': 'l2',
+            'numpad2': 'r2', '2': 'r2', 'r2': 'r2',
+            'arrowup': 'up', 'keyw': 'up', 'keyz': 'up', 'up': 'up',
+            'arrowdown': 'down', 'keys': 'down', 'down': 'down',
+            'arrowleft': 'left', 'keya': 'left', 'keyq': 'left', 'left': 'left',
+            'arrowright': 'right', 'keyd': 'right', 'right': 'right',
+            'enter': 'start', 'numpadenter': 'start', 'start': 'start',
+            'space': 'select', 'shiftright': 'select', 'backspace': 'select', 'numpad0': 'select', 'select': 'select'
+          };
+          const btn = MAP[rawBtn.toLowerCase()] || rawBtn.toLowerCase();
           const player = packet.p || 2;
           try {
             if (packet.d) {

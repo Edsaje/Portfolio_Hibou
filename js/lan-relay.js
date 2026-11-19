@@ -486,22 +486,47 @@
       }
 
       const KEY_TO_BUTTON = {
+        // Directions (Flèches, ZSQD, WASD)
         'ArrowUp': 'up', 'KeyW': 'up', 'KeyZ': 'up',
         'ArrowDown': 'down', 'KeyS': 'down',
         'ArrowLeft': 'left', 'KeyA': 'left', 'KeyQ': 'left',
         'ArrowRight': 'right', 'KeyD': 'right',
-        'KeyK': 'a', 'KeyX': 'a',
+
+        // Touche A (Validation / Saut) : Numpad 6, Chiffre 6, K, X, L
+        'Numpad6': 'a', 'Digit6': 'a', '6': 'a',
+        'KeyK': 'a', 'KeyX': 'a', 'KeyL': 'a',
+
+        // Touche B (Course / Action secondaire) : Numpad 5, Chiffre 5, J, C
+        'Numpad5': 'b', 'Digit5': 'b', '5': 'b',
         'KeyJ': 'b', 'KeyC': 'b',
-        'KeyI': 'x', 'KeyV': 'x',
+
+        // Touche X : Numpad 9, Chiffre 9, I, V, O
+        'Numpad9': 'x', 'Digit9': 'x', '9': 'x',
+        'KeyI': 'x', 'KeyV': 'x', 'KeyO': 'x',
+
+        // Touche Y : Numpad 8, Chiffre 8, U, F
+        'Numpad8': 'y', 'Digit8': 'y', '8': 'y',
         'KeyU': 'y', 'KeyF': 'y',
+
+        // Gâchettes L / L2 : Numpad 7, Chiffre 7, E, ShiftLeft, Numpad 1, Chiffre 1
+        'Numpad7': 'l', 'Digit7': 'l', '7': 'l',
+        'KeyE': 'l', 'ShiftLeft': 'l',
+        'Numpad1': 'l2', 'Digit1': 'l2', '1': 'l2',
+
+        // Gâchettes R / R2 : Numpad 3, Chiffre 3, R, P, Numpad 2, Chiffre 2
+        'Numpad3': 'r', 'Digit3': 'r', '3': 'r',
+        'KeyR': 'r', 'KeyP': 'r',
+        'Numpad2': 'r2', 'Digit2': 'r2', '2': 'r2',
+
+        // Start & Select
         'Enter': 'start', 'NumpadEnter': 'start',
         'Space': 'select', 'Backspace': 'select', 'ShiftRight': 'select',
-        'KeyE': 'r', 'KeyO': 'r', 'ShiftLeft': 'l'
+        'Numpad0': 'select', 'Digit0': 'select', '0': 'select'
       };
 
       const onKeyDown = (e) => {
         if (["INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
-        const btn = KEY_TO_BUTTON[e.code];
+        const btn = KEY_TO_BUTTON[e.code] || KEY_TO_BUTTON[e.key];
         this.sendInput(btn || e.code, true, 2, {
           code: e.code,
           key: e.key,
@@ -513,7 +538,7 @@
 
       const onKeyUp = (e) => {
         if (["INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
-        const btn = KEY_TO_BUTTON[e.code];
+        const btn = KEY_TO_BUTTON[e.code] || KEY_TO_BUTTON[e.key];
         this.sendInput(btn || e.code, false, 2, {
           code: e.code,
           key: e.key,
@@ -585,141 +610,284 @@
     // =========================================================================
     // MODAL UNIFIÉ DARK SANCTUARY (POUR TOUTES LES CONSOLES & PAGES DÉDIÉES)
     // =========================================================================
+    static injectStyles() {
+      if (document.getElementById("sanct-lan-styles")) return;
+      const s = document.createElement("style");
+      s.id = "sanct-lan-styles";
+      s.textContent = `
+        #sanct-lan-modal {
+          position: fixed; inset: 0;
+          z-index: 10000005 !important;
+          display: flex; align-items: center; justify-content: center;
+          padding: 16px; box-sizing: border-box;
+        }
+        .sanct-lan-backdrop {
+          position: absolute; inset: 0;
+          background: rgba(4, 8, 6, 0.88);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+        }
+        .sanct-lan-dialog {
+          position: relative;
+          background: #09140e;
+          border: 1px solid rgba(212, 175, 55, 0.45);
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(212, 175, 55, 0.18);
+          border-radius: 8px;
+          width: 100%; max-width: 540px;
+          padding: 24px; box-sizing: border-box;
+          color: #e2e8f0;
+          font-family: var(--font-body, 'Outfit', sans-serif);
+          z-index: 1;
+        }
+        .sanct-lan-header {
+          display: flex; align-items: center; justify-content: space-between;
+          border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+          padding-bottom: 14px; margin-bottom: 18px;
+        }
+        .sanct-lan-title-wrap {
+          display: flex; align-items: center; gap: 12px;
+        }
+        .sanct-lan-sigil {
+          font-size: 1.8rem;
+          filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.5));
+        }
+        .sanct-lan-title {
+          font-family: var(--font-heading, 'Cinzel', serif);
+          font-size: 1.25rem; color: #d4af37; margin: 0;
+        }
+        .sanct-lan-subtitle {
+          font-size: 0.8rem; color: #a8b8ad;
+        }
+        .sanct-lan-close {
+          background: none; border: none; color: #a8b8ad;
+          font-size: 1.2rem; cursor: pointer; padding: 4px;
+          transition: color 0.15s ease;
+        }
+        .sanct-lan-close:hover { color: #f87171; }
+        .sanct-lan-tabs {
+          display: flex; gap: 8px; margin-bottom: 16px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          padding-bottom: 8px;
+        }
+        .sanct-lan-tab {
+          background: rgba(20, 40, 28, 0.6);
+          border: 1px solid rgba(212, 175, 55, 0.2);
+          color: #a8b8ad; padding: 6px 14px;
+          font-size: 0.82rem; font-family: var(--font-heading, 'Cinzel', serif);
+          cursor: pointer; border-radius: 4px; transition: all 0.2s ease;
+        }
+        .sanct-lan-tab.active {
+          background: #14281c; border-color: #d4af37; color: #d4af37;
+          box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+        }
+        .sanct-lan-status-box {
+          background: rgba(5, 10, 7, 0.85);
+          border: 1px solid rgba(212, 175, 55, 0.25);
+          border-radius: 6px; padding: 12px 14px;
+          margin-bottom: 16px; font-size: 0.84rem;
+        }
+        .sanct-lan-code-badge {
+          display: inline-flex; align-items: center; gap: 8px;
+          font-family: monospace; font-size: 1.3rem; font-weight: 700;
+          color: #34d399; background: #040906;
+          border: 1px dashed #34d399; padding: 6px 16px;
+          border-radius: 4px; letter-spacing: 2px; margin: 8px 0;
+        }
+        .sanct-lan-btn {
+          background: linear-gradient(135deg, #14281c 0%, #0e1d14 100%);
+          border: 1px solid rgba(212, 175, 55, 0.4);
+          color: #d4af37; padding: 6px 14px; font-weight: 600;
+          border-radius: 4px; cursor: pointer; transition: all 0.2s ease;
+          font-size: 0.8rem; font-family: var(--font-heading, 'Cinzel', serif);
+          display: inline-flex; align-items: center; gap: 6px;
+        }
+        .sanct-lan-btn:hover {
+          border-color: #d4af37; background: #1c3827;
+          box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+        }
+        .sanct-lan-btn-gold {
+          background: linear-gradient(135deg, #d4af37 0%, #b89326 100%) !important;
+          color: #050a07 !important; border-color: #d4af37 !important;
+          font-weight: 700 !important;
+        }
+        .sanct-lan-btn-gold:hover {
+          box-shadow: 0 0 14px rgba(212, 175, 55, 0.6) !important;
+        }
+
+        /* STAGE PLEIN ÉCRAN INVITÉ & EFFET CATHODIQUE CRT */
+        .sanct-lan-video-overlay {
+          position: fixed; inset: 0;
+          background: #050a07;
+          z-index: 10000003 !important;
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: center;
+          overflow: hidden;
+          user-select: none; -webkit-user-select: none;
+        }
+        .sanct-guest-stage {
+          position: relative;
+          width: 100%; height: 100%;
+          display: flex; align-items: center; justify-content: center;
+          background: #000;
+          overflow: hidden;
+        }
+        .sanct-guest-stage video {
+          width: 100%; height: 100%;
+          object-fit: contain;
+          background: #000;
+        }
+        .sanct-crt-overlay {
+          position: absolute; inset: 0;
+          background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
+                      linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+          background-size: 100% 3px, 6px 100%;
+          pointer-events: none;
+          z-index: 5;
+          transition: opacity 0.2s ease;
+        }
+        .sanct-crt-overlay.disabled {
+          display: none !important;
+        }
+
+        /* BANDEAU HUD INVITÉ SUPÉRIEUR */
+        .sanct-lan-guest-hud {
+          position: fixed; top: 12px; left: 50%;
+          transform: translateX(-50%);
+          background: rgba(5, 10, 7, 0.92);
+          border: 1px solid rgba(212, 175, 55, 0.45);
+          border-radius: 20px; padding: 6px 14px;
+          display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+          font-size: 0.8rem; color: #d4af37;
+          z-index: 10000004 !important;
+          backdrop-filter: blur(10px);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.85);
+        }
+        .sanct-lan-guest-hud span {
+          white-space: nowrap;
+        }
+
+        /* MANETTE VIRTUELLE TACTILE (GAUCHE & DROITE) */
+        .sanct-guest-gamepad {
+          position: absolute; bottom: 18px; left: 0; right: 0;
+          display: flex; justify-content: space-between; align-items: flex-end;
+          padding: 0 32px;
+          pointer-events: none;
+          z-index: 20;
+          box-sizing: border-box;
+          transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+        .sanct-guest-gamepad.disabled {
+          display: none !important;
+        }
+        @media (max-width: 768px) {
+          .sanct-guest-gamepad { padding: 0 10px; bottom: 10px; }
+          .sanct-lan-guest-hud { padding: 4px 10px; font-size: 0.75rem; gap: 6px; }
+        }
+        .sanct-pad-wing {
+          pointer-events: auto;
+          display: flex; flex-direction: column; align-items: center; gap: 8px;
+          background: rgba(9, 19, 13, 0.88);
+          border: 1px solid rgba(212, 175, 55, 0.45);
+          border-radius: 12px; padding: 10px 14px;
+          backdrop-filter: blur(10px);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.85);
+          touch-action: none;
+          user-select: none; -webkit-user-select: none;
+        }
+        .sanct-pad-shoulder-row {
+          display: flex; gap: 8px; width: 100%; justify-content: center;
+        }
+        .sanct-pad-btn {
+          background: #14281c;
+          border: 1px solid rgba(212, 175, 55, 0.4);
+          color: #d4af37;
+          font-family: var(--font-heading, 'Cinzel', serif);
+          font-weight: 700;
+          border-radius: 4px;
+          cursor: pointer;
+          touch-action: none;
+          user-select: none; -webkit-user-select: none;
+          transition: all 0.08s ease;
+          display: inline-flex; align-items: center; justify-content: center;
+        }
+        .sanct-pad-btn:active, .sanct-pad-btn.pressed {
+          background: #d4af37 !important;
+          color: #050a07 !important;
+          box-shadow: 0 0 14px rgba(212, 175, 55, 0.8) !important;
+          transform: scale(0.94);
+        }
+        .sanct-pad-shoulder {
+          font-size: 0.78rem; padding: 5px 12px; min-width: 50px;
+        }
+        .sanct-pad-menu-row {
+          display: flex; justify-content: center; width: 100%;
+        }
+        .sanct-pad-pill {
+          background: #0e1d14; border: 1px solid rgba(255, 255, 255, 0.2);
+          color: #a8b8ad; font-size: 0.72rem; font-weight: 700;
+          padding: 4px 16px; border-radius: 14px;
+        }
+
+        /* D-PAD DIRECTIONNEL (GAUCHE) */
+        .sanct-dpad {
+          display: grid;
+          grid-template-columns: 42px 42px 42px;
+          grid-template-rows: 42px 42px 42px;
+          grid-template-areas:
+            ".    up    ."
+            "left core  right"
+            ".    down  .";
+          width: 126px; height: 126px;
+          box-sizing: border-box;
+        }
+        .sanct-dpad-u { grid-area: up; border-radius: 8px 8px 0 0; }
+        .sanct-dpad-d { grid-area: down; border-radius: 0 0 8px 8px; }
+        .sanct-dpad-l { grid-area: left; border-radius: 8px 0 0 8px; }
+        .sanct-dpad-r { grid-area: right; border-radius: 0 8px 8px 0; }
+        .sanct-dpad-core { grid-area: core; background: #0e1d14; border: none; }
+
+        /* ACTIONS EN LOSANGE (DROITE) */
+        .sanct-actions {
+          display: grid;
+          grid-template-columns: 42px 42px 42px;
+          grid-template-rows: 42px 42px 42px;
+          grid-template-areas:
+            ".    top   ."
+            "left .     right"
+            ".    bottom .";
+          width: 126px; height: 126px;
+          box-sizing: border-box;
+        }
+        .sanct-act-btn {
+          border-radius: 50% !important;
+          width: 40px !important; height: 40px !important;
+          font-size: 1rem !important; font-weight: 800 !important;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+        }
+        .sanct-act-x { grid-area: top; color: #38bdf8; border-color: rgba(56, 189, 248, 0.6) !important; }
+        .sanct-act-y { grid-area: left; color: #fbbf24; border-color: rgba(251, 191, 36, 0.6) !important; }
+        .sanct-act-a { grid-area: right; color: #34d399; border-color: rgba(52, 211, 153, 0.6) !important; }
+        .sanct-act-b { grid-area: bottom; color: #f87171; border-color: rgba(248, 113, 113, 0.6) !important; }
+
+        .sanct-act-a:active, .sanct-act-a.pressed { background: #34d399 !important; color: #050a07 !important; }
+        .sanct-act-b:active, .sanct-act-b.pressed { background: #f87171 !important; color: #050a07 !important; }
+        .sanct-act-x:active, .sanct-act-x.pressed { background: #38bdf8 !important; color: #050a07 !important; }
+        .sanct-act-y:active, .sanct-act-y.pressed { background: #fbbf24 !important; color: #050a07 !important; }
+
+        @keyframes sanctSpin {
+          to { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(s);
+    }
+
     static openModal(options = {}) {
       const title = options.title || "Sanctuaire LAN — Multijoueur P2P";
       const getCanvas = options.getCanvas || (() => document.querySelector("canvas"));
       const onInput = options.onInput || (() => {});
       const initialTab = options.initialTab || "host";
 
-      // 1. Injection des styles universels
-      if (!document.getElementById("sanct-lan-styles")) {
-        const s = document.createElement("style");
-        s.id = "sanct-lan-styles";
-        s.textContent = `
-          #sanct-lan-modal {
-            position: fixed; inset: 0;
-            z-index: 10000005 !important;
-            display: flex; align-items: center; justify-content: center;
-            padding: 16px; box-sizing: border-box;
-          }
-          .sanct-lan-backdrop {
-            position: absolute; inset: 0;
-            background: rgba(4, 8, 6, 0.88);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-          }
-          .sanct-lan-dialog {
-            position: relative;
-            background: #09140e;
-            border: 1px solid rgba(212, 175, 55, 0.45);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(212, 175, 55, 0.18);
-            border-radius: 8px;
-            width: 100%; max-width: 540px;
-            padding: 24px; box-sizing: border-box;
-            color: #e2e8f0;
-            font-family: var(--font-body, 'Outfit', sans-serif);
-            z-index: 1;
-          }
-          .sanct-lan-header {
-            display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-            padding-bottom: 14px; margin-bottom: 18px;
-          }
-          .sanct-lan-title-wrap {
-            display: flex; align-items: center; gap: 12px;
-          }
-          .sanct-lan-sigil {
-            font-size: 1.8rem;
-            filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.5));
-          }
-          .sanct-lan-title {
-            font-family: var(--font-heading, 'Cinzel', serif);
-            font-size: 1.25rem; color: #d4af37; margin: 0;
-          }
-          .sanct-lan-subtitle {
-            font-size: 0.8rem; color: #a8b8ad;
-          }
-          .sanct-lan-close {
-            background: none; border: none; color: #a8b8ad;
-            font-size: 1.2rem; cursor: pointer; padding: 4px;
-            transition: color 0.15s ease;
-          }
-          .sanct-lan-close:hover { color: #f87171; }
-          .sanct-lan-tabs {
-            display: flex; gap: 8px; margin-bottom: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            padding-bottom: 8px;
-          }
-          .sanct-lan-tab {
-            background: rgba(20, 40, 28, 0.6);
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            color: #a8b8ad; padding: 6px 14px;
-            font-size: 0.82rem; font-family: var(--font-heading, 'Cinzel', serif);
-            cursor: pointer; border-radius: 4px; transition: all 0.2s ease;
-          }
-          .sanct-lan-tab.active {
-            background: #14281c; border-color: #d4af37; color: #d4af37;
-            box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
-          }
-          .sanct-lan-status-box {
-            background: rgba(5, 10, 7, 0.85);
-            border: 1px solid rgba(212, 175, 55, 0.25);
-            border-radius: 6px; padding: 12px 14px;
-            margin-bottom: 16px; font-size: 0.84rem;
-          }
-          .sanct-lan-code-badge {
-            display: inline-flex; align-items: center; gap: 8px;
-            font-family: monospace; font-size: 1.3rem; font-weight: 700;
-            color: #34d399; background: #040906;
-            border: 1px dashed #34d399; padding: 6px 16px;
-            border-radius: 4px; letter-spacing: 2px; margin: 8px 0;
-          }
-          .sanct-lan-btn {
-            background: linear-gradient(135deg, #14281c 0%, #0e1d14 100%);
-            border: 1px solid rgba(212, 175, 55, 0.4);
-            color: #d4af37; padding: 8px 16px; font-weight: 600;
-            border-radius: 4px; cursor: pointer; transition: all 0.2s ease;
-            font-size: 0.85rem; font-family: var(--font-heading, 'Cinzel', serif);
-          }
-          .sanct-lan-btn:hover {
-            border-color: #d4af37; background: #1c3827;
-            box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
-          }
-          .sanct-lan-btn-gold {
-            background: linear-gradient(135deg, #d4af37 0%, #b89326 100%) !important;
-            color: #050a07 !important; border-color: #d4af37 !important;
-            font-weight: 700 !important;
-          }
-          .sanct-lan-btn-gold:hover {
-            box-shadow: 0 0 14px rgba(212, 175, 55, 0.6) !important;
-          }
-          .sanct-lan-guest-hud {
-            position: fixed; top: 12px; left: 50%;
-            transform: translateX(-50%);
-            background: rgba(5, 10, 7, 0.9);
-            border: 1px solid rgba(212, 175, 55, 0.45);
-            border-radius: 20px; padding: 6px 16px;
-            display: flex; align-items: center; gap: 12px;
-            font-size: 0.82rem; color: #d4af37;
-            z-index: 10000004 !important;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
-          }
-          .sanct-lan-video-overlay {
-            position: fixed; inset: 0;
-            background: #000;
-            z-index: 10000003 !important;
-            display: flex; align-items: center; justify-content: center;
-          }
-          .sanct-lan-video-overlay video {
-            width: 100%; height: 100%; object-fit: contain;
-          }
-          @keyframes sanctSpin {
-            to { transform: rotate(360deg); }
-          }
-        `;
-        document.head.appendChild(s);
-      }
+      SanctuaireLAN.injectStyles();
 
       // 2. Gestion de l'instance SanctuaireLAN
       if (!SanctuaireLAN.activeSession) {
@@ -945,17 +1113,27 @@
       }
     }
 
-    // Montage de l'affichage vidéo plein écran pour l'invité
+    // Montage de l'affichage vidéo plein écran pour l'invité (avec CRT & Manette Virtuelle)
     static mountGuestView(session, roomCode) {
       SanctuaireLAN.unmountGuestView();
+      SanctuaireLAN.injectStyles();
 
       const overlay = document.createElement("div");
       overlay.id = "sanct-lan-guest-overlay";
       overlay.className = "sanct-lan-video-overlay";
 
+      // Stage conteneur vidéo avec overlay cathodique CRT
+      const stage = document.createElement("div");
+      stage.id = "sanct-guest-stage";
+      stage.className = "sanct-guest-stage";
+
+      const crtOverlay = document.createElement("div");
+      crtOverlay.id = "sanct-guest-crt";
+      crtOverlay.className = "sanct-crt-overlay";
+
       const loadingBox = document.createElement("div");
       loadingBox.id = "sanct-guest-loading";
-      loadingBox.style.cssText = "display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #d4af37; font-family: var(--font-heading, 'Cinzel', serif); text-align: center; padding: 24px; z-index: 10;";
+      loadingBox.style.cssText = "position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #d4af37; font-family: var(--font-heading, 'Cinzel', serif); text-align: center; padding: 24px; z-index: 10;";
       loadingBox.innerHTML = `
         <div style="width: 46px; height: 46px; border: 3px solid rgba(212,175,55,0.25); border-top-color: #d4af37; border-radius: 50%; animation: sanctSpin 0.9s linear infinite;"></div>
         <div style="font-size: 1.2rem; font-weight: 700; letter-spacing: 1px;">⚔️ Connexion au Sanctuaire...</div>
@@ -969,6 +1147,54 @@
       video.muted = true; // Démarrer en sourdine pour contourner le blocage autoplay des navigateurs
       video.style.cssText = "display: none; width: 100%; height: 100%; object-fit: contain; background: #000;";
 
+      stage.appendChild(crtOverlay);
+      stage.appendChild(loadingBox);
+      stage.appendChild(video);
+      overlay.appendChild(stage);
+
+      // Manette virtuelle tactile (D-Pad, Actions X/Y/B/A, L1/L2, R1/R2, Start, Select)
+      const gamepad = document.createElement("div");
+      gamepad.id = "sanct-guest-gamepad";
+      gamepad.className = "sanct-guest-gamepad";
+      gamepad.innerHTML = `
+        <!-- Aile Gauche : L1/L2, D-Pad, Select -->
+        <div class="sanct-pad-wing sanct-pad-left">
+          <div class="sanct-pad-shoulder-row">
+            <button type="button" class="sanct-pad-btn sanct-pad-shoulder" data-btn="l">L1</button>
+            <button type="button" class="sanct-pad-btn sanct-pad-shoulder" data-btn="l2">L2</button>
+          </div>
+          <div class="sanct-dpad">
+            <button type="button" class="sanct-pad-btn sanct-dpad-u" data-btn="up" aria-label="Haut">▲</button>
+            <button type="button" class="sanct-pad-btn sanct-dpad-l" data-btn="left" aria-label="Gauche">◀</button>
+            <div class="sanct-dpad-core"></div>
+            <button type="button" class="sanct-pad-btn sanct-dpad-r" data-btn="right" aria-label="Droite">▶</button>
+            <button type="button" class="sanct-pad-btn sanct-dpad-d" data-btn="down" aria-label="Bas">▼</button>
+          </div>
+          <div class="sanct-pad-menu-row">
+            <button type="button" class="sanct-pad-btn sanct-pad-pill" data-btn="select">SELECT</button>
+          </div>
+        </div>
+
+        <!-- Aile Droite : R1/R2, Actions X/Y/A/B, Start -->
+        <div class="sanct-pad-wing sanct-pad-right">
+          <div class="sanct-pad-shoulder-row">
+            <button type="button" class="sanct-pad-btn sanct-pad-shoulder" data-btn="r">R1</button>
+            <button type="button" class="sanct-pad-btn sanct-pad-shoulder" data-btn="r2">R2</button>
+          </div>
+          <div class="sanct-actions">
+            <button type="button" class="sanct-pad-btn sanct-act-btn sanct-act-x" data-btn="x" aria-label="Touche X">X</button>
+            <button type="button" class="sanct-pad-btn sanct-act-btn sanct-act-y" data-btn="y" aria-label="Touche Y">Y</button>
+            <button type="button" class="sanct-pad-btn sanct-act-btn sanct-act-a" data-btn="a" aria-label="Touche A">A</button>
+            <button type="button" class="sanct-pad-btn sanct-act-btn sanct-act-b" data-btn="b" aria-label="Touche B">B</button>
+          </div>
+          <div class="sanct-pad-menu-row">
+            <button type="button" class="sanct-pad-btn sanct-pad-pill" data-btn="start">START</button>
+          </div>
+        </div>
+      `;
+      overlay.appendChild(gamepad);
+
+      // Bandeau d'options supérieur HUD
       const hud = document.createElement("div");
       hud.className = "sanct-lan-guest-hud";
       hud.innerHTML = `
@@ -977,14 +1203,70 @@
         <span>🎮 Joueur 2</span>
         <span style="color: #a8b8ad;">|</span>
         <span id="sanct-guest-ping">🟢 Ping : -- ms</span>
-        <button type="button" class="sanct-lan-btn" id="sanct-guest-unmute" style="font-size: 0.72rem; padding: 3px 10px;">🔊 Activer le Son</button>
-        <button type="button" class="sanct-lan-btn" id="sanct-guest-leave" style="font-size: 0.72rem; padding: 3px 10px; color: #f87171;">✕ Quitter</button>
+        <button type="button" class="sanct-lan-btn" id="sanct-guest-crt-btn" title="Activer ou désactiver l'effet cathodique CRT">📺 CRT : ON</button>
+        <button type="button" class="sanct-lan-btn" id="sanct-guest-pad-btn" title="Afficher ou masquer la manette virtuelle tactile">📱 Manette : ON</button>
+        <button type="button" class="sanct-lan-btn" id="sanct-guest-unmute" title="Activer ou couper le son">🔊 Activer le Son</button>
+        <button type="button" class="sanct-lan-btn" id="sanct-guest-fullscreen" title="Basculer en plein écran">⛶ Plein Écran</button>
+        <button type="button" class="sanct-lan-btn" id="sanct-guest-leave" style="color: #f87171;" title="Quitter la partie">✕ Quitter</button>
       `;
 
-      overlay.appendChild(loadingBox);
-      overlay.appendChild(video);
       document.body.appendChild(overlay);
       document.body.appendChild(hud);
+
+      // Écouteurs de la manette tactile (Multi-touch et souris sans blocage)
+      gamepad.querySelectorAll(".sanct-pad-btn[data-btn]").forEach((btnEl) => {
+        const btnName = btnEl.getAttribute("data-btn");
+        if (!btnName) return;
+
+        const onDown = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          btnEl.classList.add("pressed");
+          session.sendInput(btnName, true, 2);
+        };
+
+        const onUp = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          btnEl.classList.remove("pressed");
+          session.sendInput(btnName, false, 2);
+        };
+
+        btnEl.addEventListener("pointerdown", onDown);
+        btnEl.addEventListener("pointerup", onUp);
+        btnEl.addEventListener("pointercancel", onUp);
+        btnEl.addEventListener("pointerleave", onUp);
+      });
+
+      // Contrôle de l'effet CRT
+      const btnCrt = document.getElementById("sanct-guest-crt-btn");
+      if (btnCrt) {
+        btnCrt.onclick = () => {
+          crtOverlay.classList.toggle("disabled");
+          btnCrt.textContent = crtOverlay.classList.contains("disabled") ? "📺 CRT : OFF" : "📺 CRT : ON";
+        };
+      }
+
+      // Contrôle de la Manette Virtuelle
+      const btnPad = document.getElementById("sanct-guest-pad-btn");
+      if (btnPad) {
+        btnPad.onclick = () => {
+          gamepad.classList.toggle("disabled");
+          btnPad.textContent = gamepad.classList.contains("disabled") ? "📱 Manette : OFF" : "📱 Manette : ON";
+        };
+      }
+
+      // Plein Écran
+      const btnFs = document.getElementById("sanct-guest-fullscreen");
+      if (btnFs) {
+        btnFs.onclick = () => {
+          if (!document.fullscreenElement) {
+            overlay.requestFullscreen?.().catch(() => {});
+          } else {
+            document.exitFullscreen?.().catch(() => {});
+          }
+        };
+      }
 
       const btnUnmute = document.getElementById("sanct-guest-unmute");
       if (btnUnmute) {
