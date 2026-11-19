@@ -5,6 +5,9 @@ Options -Indexes
   RewriteEngine On
   RewriteBase /
 
+  # Redirection transparente pour l'API LAN de Dolphin Web
+  RewriteRule ^lan-api/(.*)$ api/lan.php?dolphin_action=$1 [QSA,L]
+
   # Redirection HTTPS 301 stricte (compatible Cloudflare & hébergement direct)
   RewriteCond %{HTTPS} off
   RewriteCond %{HTTP:X-Forwarded-Proto} !https

@@ -139,6 +139,14 @@
       this.isSavingSram = false;
       this.lastSramHash = {};
 
+      // Sanctuaire LAN / Netplay P2P Céleste
+      this.lanRelay = null;
+      this.isLanHostMode = false;
+      this.isLanGuestMode = false;
+      this.lanRoomId = null;
+      this.lanInviteUrl = null;
+      this.lanPing = 0;
+
       // Sauvegarde réflexe lors de la fermeture ou du rafraîchissement d'onglet
       window.addEventListener("beforeunload", () => {
         if (this.partieEnCours && this.jeuEnCoursNom) {
@@ -1595,6 +1603,396 @@
     closeOptionsModal() {
       const modal = document.getElementById("rv-options-modal");
       if (modal) modal.remove();
+    }
+
+    // =========================================================================
+    // SANCTUAIRE LAN / NETPLAY P2P CÉLESTE (JEU COOP LOCAL EN LIGNE)
+    // =========================================================================
+    async ensureLanRelayLoaded() {
+      if (typeof window.SanctuaireLAN !== "undefined") return;
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = "js/lan-relay.js?v=1.0";
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    openLanModal(initialTab = "host") {
+      let modal = document.getElementById("rv-lan-modal");
+      if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "rv-lan-modal";
+        document.body.appendChild(modal);
+      }
+
+      const isHosting = this.isLanHostMode && this.lanRoomId;
+      const isGuest = this.isLanGuestMode && this.lanRoomId;
+      const hasGame = Boolean(this.partieEnCours);
+
+      modal.innerHTML = `
+        <div class="rv-lan-backdrop" id="rv-lan-backdrop"></div>
+        <div class="rv-lan-dialog">
+          <div class="rv-lan-header">
+            <div class="rv-lan-title-wrap">
+              <span class="rv-lan-sigil">⚔️</span>
+              <div>
+                <h3 class="rv-lan-title">Sanctuaire LAN — Multijoueur P2P</h3>
+                <div class="rv-lan-subtitle">Jouer en ligne aux jeux coop local (WebRTC Direct)</div>
+              </div>
+            </div>
+            <button class="rv-cloud-close" id="rv-lan-close-btn" title="Fermer">✖</button>
+          </div>
+
+          <div class="rv-lan-tabs">
+            <button type="button" class="rv-lan-tab ${initialTab === 'host' ? 'active' : ''}" id="rv-lan-tab-host">👑 Héberger (Joueur 1)</button>
+            <button type="button" class="rv-lan-tab ${initialTab === 'join' ? 'active' : ''}" id="rv-lan-tab-join">🎮 Rejoindre (Joueur 2)</button>
+          </div>
+
+          <div class="rv-lan-body">
+            <!-- ONGLET HÉBERGER -->
+            <div id="rv-lan-view-host" style="display: ${initialTab === 'host' ? 'block' : 'none'};">
+              ${isHosting ? `
+                <div class="rv-lan-status-box">
+                  <div style="color: #34d399; font-weight: 700; font-size: 0.95rem; margin-bottom: 6px;">
+                    🟢 Salon Coop Ouvert — En direct
+                  </div>
+                  <div style="font-size: 0.82rem; color: #a8b8ad;">Code du salon à partager :</div>
+                  <div class="rv-lan-code-badge">${this.lanRoomId}</div>
+                  <div style="font-size: 0.82rem; color: #a8b8ad; margin-top: 6px;">
+                    Partagez ce code ou ce lien avec votre ami pour qu'il prenne la manette du <strong>Joueur 2</strong> :
+                  </div>
+                  <div style="display: flex; gap: 8px; margin-top: 10px;">
+                    <input type="text" readonly value="${this.lanInviteUrl || ('https://quentinbeaud.com/?lan=' + this.lanRoomId)}" style="flex: 1; background: #050a07; border: 1px solid rgba(212,175,55,0.3); border-radius: 4px; padding: 6px 10px; color: #d4af37; font-size: 0.78rem;" id="rv-lan-invite-input">
+                    <button type="button" class="rv-btn rv-btn-gold" id="rv-lan-btn-copy-link">📋 Copier le lien</button>
+                  </div>
+                  <div id="rv-lan-host-peer-status" style="margin-top: 10px; font-size: 0.8rem; color: #34d399;">
+                    ${this.lanRelay?.isConnected ? `⚡ Joueur 2 connecté ! Ping: ${this.lanPing || 20} ms` : `⏳ En attente de l'ami invité...`}
+                  </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                  <button type="button" class="rv-btn" id="rv-lan-btn-stop-host" style="color: #f87171; border-color: rgba(248,113,113,0.4);">Fermer le salon</button>
+                </div>
+              ` : `
+                <p style="font-size: 0.85rem; color: #c4d4c8; line-height: 1.5; margin-bottom: 14px;">
+                  Lancez une partie locale (ex: <em>Street Fighter II</em>, <em>TMNT</em>, <em>Super Mario Kart</em>, <em>Streets of Rage</em>), puis ouvrez un salon pour inviter un ami à contrôler le <strong>Joueur 2</strong> en direct.
+                </p>
+                ${hasGame ? `
+                  <div class="rv-lan-status-box">
+                    <div style="color: #d4af37; font-weight: 600;">Jeu actif : ${this.jeuEnCoursNom || "Jeu en cours"}</div>
+                    <div style="font-size: 0.78rem; color: #a8b8ad; margin-top: 4px;">Le flux vidéo 60 FPS et le son seront streamés en P2P vers votre ami sans aucun décalage.</div>
+                  </div>
+                  <button type="button" class="rv-btn rv-btn-gold" id="rv-lan-btn-start-host" style="width: 100%; padding: 10px; font-size: 0.9rem;">
+                    ⚔️ Créer le Salon Coop (Joueur 1)
+                  </button>
+                ` : `
+                  <div style="background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 6px; padding: 12px; font-size: 0.82rem; color: #fca5a5; margin-bottom: 12px;">
+                    ⚠️ Aucun jeu n'est lancé actuellement. Insérez une ROM ou choisissez une relique dans le Sanctuaire pour pouvoir héberger.
+                  </div>
+                `}
+              `}
+            </div>
+
+            <!-- ONGLET REJOINDRE -->
+            <div id="rv-lan-view-join" style="display: ${initialTab === 'join' ? 'block' : 'none'};">
+              ${isGuest ? `
+                <div class="rv-lan-status-box">
+                  <div style="color: #34d399; font-weight: 700;">🟢 Connecté en tant que Joueur 2</div>
+                  <div style="font-size: 0.8rem; color: #a8b8ad; margin-top: 4px;">Salon : <strong>${this.lanRoomId}</strong> | Ping: ${this.lanPing || 20} ms</div>
+                  <div style="font-size: 0.78rem; color: #c4d4c8; margin-top: 6px;">Votre manette ou clavier contrôle directement le Joueur 2 sur la partie de l'hôte.</div>
+                </div>
+                <button type="button" class="rv-btn" id="rv-lan-btn-leave-guest" style="color: #f87171; border-color: rgba(248,113,113,0.4); width: 100%;">Quitter la partie</button>
+              ` : `
+                <p style="font-size: 0.85rem; color: #c4d4c8; line-height: 1.5; margin-bottom: 14px;">
+                  Entrez le code à 6 lettres fourni par l'hôte pour rejoindre sa partie en direct et prendre la manette du <strong>Joueur 2</strong>.
+                </p>
+                <div style="margin-bottom: 14px;">
+                  <label style="display: block; font-size: 0.78rem; color: #d4af37; margin-bottom: 6px; font-weight: 600;">Code du Salon :</label>
+                  <input type="text" id="rv-lan-join-code-input" placeholder="Ex: SANCT-42" maxlength="12" style="width: 100%; box-sizing: border-box; background: #050a07; border: 1px solid rgba(212,175,55,0.4); border-radius: 4px; padding: 10px 12px; color: #34d399; font-size: 1.1rem; font-family: monospace; letter-spacing: 2px; text-transform: uppercase;">
+                </div>
+                <div id="rv-lan-join-feedback" style="font-size: 0.8rem; min-height: 20px; margin-bottom: 10px;"></div>
+                <button type="button" class="rv-btn rv-btn-gold" id="rv-lan-btn-start-join" style="width: 100%; padding: 10px; font-size: 0.9rem;">
+                  🎮 Rejoindre la Partie
+                </button>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Listeners
+      const closeBtn = document.getElementById("rv-lan-close-btn");
+      const backdrop = document.getElementById("rv-lan-backdrop");
+      const close = () => { if (modal) modal.remove(); };
+      if (closeBtn) closeBtn.onclick = close;
+      if (backdrop) backdrop.onclick = close;
+
+      const tabHost = document.getElementById("rv-lan-tab-host");
+      const tabJoin = document.getElementById("rv-lan-tab-join");
+      const viewHost = document.getElementById("rv-lan-view-host");
+      const viewJoin = document.getElementById("rv-lan-view-join");
+
+      if (tabHost && tabJoin && viewHost && viewJoin) {
+        tabHost.onclick = () => {
+          tabHost.classList.add("active");
+          tabJoin.classList.remove("active");
+          viewHost.style.display = "block";
+          viewJoin.style.display = "none";
+        };
+        tabJoin.onclick = () => {
+          tabJoin.classList.add("active");
+          tabHost.classList.remove("active");
+          viewJoin.style.display = "block";
+          viewHost.style.display = "none";
+        };
+      }
+
+      // Actions Hôte
+      const btnStartHost = document.getElementById("rv-lan-btn-start-host");
+      if (btnStartHost) {
+        btnStartHost.onclick = async () => {
+          btnStartHost.disabled = true;
+          btnStartHost.textContent = "⏳ Création du salon...";
+          try {
+            await this.startLanHost();
+            this.openLanModal("host");
+          } catch(err) {
+            alert("Erreur lors de la création du salon : " + err.message);
+            btnStartHost.disabled = false;
+            btnStartHost.textContent = "⚔️ Créer le Salon Coop (Joueur 1)";
+          }
+        };
+      }
+
+      const btnCopy = document.getElementById("rv-lan-btn-copy-link");
+      if (btnCopy) {
+        btnCopy.onclick = () => {
+          const inp = document.getElementById("rv-lan-invite-input");
+          if (inp) {
+            inp.select();
+            navigator.clipboard.writeText(inp.value).then(() => {
+              btnCopy.textContent = "✅ Copié !";
+              setTimeout(() => { btnCopy.textContent = "📋 Copier le lien"; }, 2000);
+            });
+          }
+        };
+      }
+
+      const btnStopHost = document.getElementById("rv-lan-btn-stop-host");
+      if (btnStopHost) {
+        btnStopHost.onclick = () => {
+          this.closeLan();
+          this.openLanModal("host");
+        };
+      }
+
+      // Actions Invité
+      const btnStartJoin = document.getElementById("rv-lan-btn-start-join");
+      if (btnStartJoin) {
+        btnStartJoin.onclick = async () => {
+          const codeInp = document.getElementById("rv-lan-join-code-input");
+          const fb = document.getElementById("rv-lan-join-feedback");
+          const code = (codeInp?.value || "").trim().toUpperCase();
+          if (!code) {
+            if (fb) { fb.textContent = "⚠️ Veuillez renseigner un code de salon."; fb.style.color = "#f87171"; }
+            return;
+          }
+          btnStartJoin.disabled = true;
+          btnStartJoin.textContent = "⏳ Connexion à l'Hôte...";
+          if (fb) { fb.textContent = "Recherche du salon et négociation P2P..."; fb.style.color = "#d4af37"; }
+          try {
+            await this.startLanJoin(code);
+            close();
+          } catch (err) {
+            if (fb) { fb.textContent = `❌ ${err.message}`; fb.style.color = "#ef4444"; }
+            btnStartJoin.disabled = false;
+            btnStartJoin.textContent = "🎮 Rejoindre la Partie";
+          }
+        };
+      }
+
+      const btnLeaveGuest = document.getElementById("rv-lan-btn-leave-guest");
+      if (btnLeaveGuest) {
+        btnLeaveGuest.onclick = () => {
+          this.closeLan();
+          this.openLanModal("join");
+        };
+      }
+    }
+
+    async startLanHost() {
+      await this.ensureLanRelayLoaded();
+      const canvasEl = document.getElementById("rv-canvas");
+      if (!canvasEl) throw new Error("Canvas de jeu introuvable.");
+
+      if (this.lanRelay) this.lanRelay.disconnect();
+
+      this.lanRelay = new SanctuaireLAN({
+        onStatus: (msg) => {
+          this.setStatus(`[LAN Hôte] ${msg}`);
+          const peerStatus = document.getElementById("rv-lan-host-peer-status");
+          if (peerStatus) peerStatus.textContent = msg;
+        },
+        onConnected: () => {
+          this.setStatus("⚔️ Joueur 2 connecté en P2P ! Le coop est actif.", "#34d399");
+          const peerStatus = document.getElementById("rv-lan-host-peer-status");
+          if (peerStatus) peerStatus.textContent = "⚡ Joueur 2 connecté en direct !";
+        },
+        onDisconnected: () => {
+          this.setStatus("Le Joueur 2 s'est déconnecté.", "#f87171");
+          const peerStatus = document.getElementById("rv-lan-host-peer-status");
+          if (peerStatus) peerStatus.textContent = "⏳ En attente de l'ami invité...";
+        },
+        onPing: (rtt) => {
+          this.lanPing = rtt;
+          const peerStatus = document.getElementById("rv-lan-host-peer-status");
+          if (peerStatus) peerStatus.textContent = `⚡ Joueur 2 connecté en direct ! (Ping: ${rtt} ms)`;
+        },
+        onInput: (packet) => {
+          if (!this.partieEnCours) return;
+          const btn = packet.b;
+          const player = packet.p || 2;
+          try {
+            if (packet.d) {
+              if (typeof this.partieEnCours.pressDown === "function") {
+                this.partieEnCours.pressDown({ button: btn, player: player });
+              }
+            } else {
+              if (typeof this.partieEnCours.pressUp === "function") {
+                this.partieEnCours.pressUp({ button: btn, player: player });
+              }
+            }
+          } catch(err) {}
+        }
+      });
+
+      const res = await this.lanRelay.hostGame(canvasEl, {
+        name: `Coop - ${this.jeuEnCoursNom || "Jeu Rétro"}`
+      });
+
+      this.isLanHostMode = true;
+      this.isLanGuestMode = false;
+      this.lanRoomId = res.room;
+      this.lanInviteUrl = res.invite;
+      return res;
+    }
+
+    async startLanJoin(roomCode) {
+      await this.ensureLanRelayLoaded();
+
+      if (this.partieEnCours) {
+        try { await this.arreterPartie(); } catch(e) {}
+      }
+
+      if (this.lanRelay) this.lanRelay.disconnect();
+
+      const gameContainer = document.getElementById("rv-game-container");
+      const canvasEl = document.getElementById("rv-canvas");
+      if (canvasEl) canvasEl.style.display = "none";
+
+      let videoEl = document.getElementById("rv-lan-video");
+      if (!videoEl) {
+        videoEl = document.createElement("video");
+        videoEl.id = "rv-lan-video";
+        videoEl.className = "rv-lan-video";
+        videoEl.autoplay = true;
+        videoEl.playsInline = true;
+        videoEl.muted = false;
+        gameContainer.appendChild(videoEl);
+      } else {
+        videoEl.style.display = "block";
+      }
+
+      // Bandeau HUD Invité
+      let guestHud = document.getElementById("rv-lan-guest-hud");
+      if (!guestHud) {
+        guestHud = document.createElement("div");
+        guestHud.id = "rv-lan-guest-hud";
+        guestHud.className = "rv-lan-guest-hud";
+        guestHud.innerHTML = `
+          <span>⚔️ SALON : <strong id="rv-lan-hud-code" style="color: #34d399;">${roomCode}</strong></span>
+          <span style="color: #a8b8ad;">|</span>
+          <span>🎮 Joueur 2</span>
+          <span style="color: #a8b8ad;">|</span>
+          <span id="rv-lan-hud-ping">🟢 Ping : -- ms</span>
+          <button type="button" class="rv-btn" id="rv-lan-hud-unmute" style="font-size: 0.72rem; padding: 2px 6px;">🔊 Son</button>
+          <button type="button" class="rv-btn" id="rv-lan-hud-leave" style="font-size: 0.72rem; padding: 2px 6px; color: #f87171;">✕ Quitter</button>
+        `;
+        gameContainer.appendChild(guestHud);
+
+        const btnUnmute = document.getElementById("rv-lan-hud-unmute");
+        if (btnUnmute) {
+          btnUnmute.onclick = () => {
+            if (videoEl) {
+              videoEl.muted = !videoEl.muted;
+              btnUnmute.textContent = videoEl.muted ? "🔇 Muet" : "🔊 Son";
+              videoEl.play().catch(() => {});
+            }
+          };
+        }
+        const btnLeave = document.getElementById("rv-lan-hud-leave");
+        if (btnLeave) {
+          btnLeave.onclick = () => this.closeLan();
+        }
+      } else {
+        guestHud.style.display = "flex";
+        const codeEl = document.getElementById("rv-lan-hud-code");
+        if (codeEl) codeEl.textContent = roomCode;
+      }
+
+      this.lanRelay = new SanctuaireLAN({
+        onStatus: (msg) => this.setStatus(`[LAN Invité] ${msg}`),
+        onConnected: () => this.setStatus("⚔️ Connecté à l'Hôte ! Vous contrôlez le Joueur 2.", "#34d399"),
+        onDisconnected: () => {
+          this.setStatus("Connexion avec l'Hôte interrompue.", "#f87171");
+          this.closeLan();
+        },
+        onPing: (rtt) => {
+          this.lanPing = rtt;
+          const pingEl = document.getElementById("rv-lan-hud-ping");
+          if (pingEl) pingEl.textContent = `🟢 Ping : ${rtt} ms`;
+        },
+        onTrack: (stream) => {
+          if (videoEl) {
+            videoEl.srcObject = stream;
+            videoEl.play().catch(() => {
+              videoEl.muted = true;
+              videoEl.play();
+            });
+          }
+        }
+      });
+
+      this.isLanHostMode = false;
+      this.isLanGuestMode = true;
+      this.lanRoomId = roomCode;
+
+      const res = await this.lanRelay.joinGame(roomCode);
+      this.setStatus(`Rejoint le salon ${roomCode}. Manette Joueur 2 active !`, "#34d399");
+      return res;
+    }
+
+    closeLan() {
+      if (this.lanRelay) {
+        this.lanRelay.disconnect();
+        this.lanRelay = null;
+      }
+      this.isLanHostMode = false;
+      this.isLanGuestMode = false;
+      this.lanRoomId = null;
+      this.lanInviteUrl = null;
+
+      const videoEl = document.getElementById("rv-lan-video");
+      if (videoEl) videoEl.remove();
+
+      const guestHud = document.getElementById("rv-lan-guest-hud");
+      if (guestHud) guestHud.remove();
+
+      const canvasEl = document.getElementById("rv-canvas");
+      if (canvasEl) canvasEl.style.display = "block";
+
+      this.setStatus("Salon Coop fermé.");
     }
 
     changerVitesse(nouvelleVitesse) {
@@ -3959,6 +4357,145 @@
           max-height: calc(100vh - 32px) !important;
           max-height: calc(100dvh - 32px) !important;
         }
+
+        /* ========================================================
+           SANCTUAIRE LAN / NETPLAY COOP P2P
+           ======================================================== */
+        #rv-lan-modal {
+          position: fixed;
+          inset: 0;
+          z-index: 100000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+        }
+        .rv-lan-backdrop {
+          position: absolute;
+          inset: 0;
+          background: rgba(4, 8, 6, 0.85);
+          backdrop-filter: blur(8px);
+        }
+        .rv-lan-dialog {
+          position: relative;
+          background: #09140e;
+          border: 1px solid rgba(212, 175, 55, 0.45);
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(212, 175, 55, 0.15);
+          border-radius: 8px;
+          width: 100%;
+          max-width: 540px;
+          padding: 24px;
+          color: #e2e8f0;
+          font-family: var(--font-body, 'Outfit', sans-serif);
+          z-index: 1;
+        }
+        .rv-lan-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+          padding-bottom: 14px;
+          margin-bottom: 18px;
+        }
+        .rv-lan-title-wrap {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .rv-lan-sigil {
+          font-size: 1.8rem;
+          filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.5));
+        }
+        .rv-lan-title {
+          font-family: var(--font-heading, 'Cinzel', serif);
+          font-size: 1.25rem;
+          color: #d4af37;
+          margin: 0;
+        }
+        .rv-lan-subtitle {
+          font-size: 0.8rem;
+          color: #a8b8ad;
+        }
+        .rv-lan-tabs {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 16px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          padding-bottom: 8px;
+        }
+        .rv-lan-tab {
+          background: rgba(20, 40, 28, 0.6);
+          border: 1px solid rgba(212, 175, 55, 0.2);
+          color: #a8b8ad;
+          padding: 6px 14px;
+          font-size: 0.82rem;
+          font-family: var(--font-heading, 'Cinzel', serif);
+          cursor: pointer;
+          border-radius: 4px;
+          transition: all 0.2s ease;
+        }
+        .rv-lan-tab.active {
+          background: #14281c;
+          border-color: #d4af37;
+          color: #d4af37;
+          box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+        }
+        .rv-lan-status-box {
+          background: rgba(5, 10, 7, 0.8);
+          border: 1px solid rgba(212, 175, 55, 0.25);
+          border-radius: 6px;
+          padding: 12px 14px;
+          margin-bottom: 16px;
+          font-size: 0.84rem;
+        }
+        .rv-lan-code-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-family: var(--font-mono, 'JetBrains Mono', monospace);
+          font-size: 1.3rem;
+          font-weight: 700;
+          color: #34d399;
+          background: #040906;
+          border: 1px dashed #34d399;
+          padding: 6px 16px;
+          border-radius: 4px;
+          letter-spacing: 2px;
+          margin: 8px 0;
+        }
+        .rv-lan-video {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          background: #000;
+          display: block;
+        }
+        .rv-lan-guest-hud {
+          position: absolute;
+          top: 8px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(5, 10, 7, 0.88);
+          border: 1px solid rgba(212, 175, 55, 0.4);
+          border-radius: 20px;
+          padding: 4px 14px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 0.78rem;
+          color: #d4af37;
+          z-index: 50;
+          backdrop-filter: blur(6px);
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+        }
+        .rv-btn-lan {
+          border-color: rgba(52, 211, 153, 0.45) !important;
+          color: #34d399 !important;
+        }
+        .rv-btn-lan:hover {
+          background: rgba(52, 211, 153, 0.15) !important;
+          box-shadow: 0 0 10px rgba(52, 211, 153, 0.35) !important;
+        }
       `;
       document.head.appendChild(styles);
 
@@ -4024,6 +4561,7 @@
                   <span class="rv-land-status" id="rv-land-status">Sanctuaire</span>
                 </div>
                 <div class="rv-land-tools">
+                  <button class="rv-land-btn" id="rv-land-btn-lan" title="Salon Coop LAN en ligne">⚔️</button>
                   <button class="rv-land-btn" id="rv-land-btn-save" title="Sauvegarder l'état">💾</button>
                   <button class="rv-land-btn" id="rv-land-btn-load" title="Charger l'état">📂</button>
                   <button class="rv-land-btn" id="rv-land-btn-speed" title="Changer la vitesse (Actuelle: 1x)">⚡ 1x</button>
@@ -4056,6 +4594,7 @@
                   <div class="rv-tool-group">
                     <button class="rv-btn rv-btn-account" id="rv-btn-account" style="display: none;" title="Mon Compte">🟢 Mon Compte</button>
                     <button class="rv-btn rv-btn-hub-nav" id="rv-btn-hub-nav" style="display: none;" title="Revenir au choix des jeux">📚 Changer de jeu</button>
+                    <button class="rv-btn rv-btn-lan" id="rv-btn-lan" title="Salon Coop LAN / Netplay Céleste (Multijoueur en ligne)">⚔️ Coop LAN</button>
                     <button class="rv-btn" id="rv-btn-options" title="Options d'émulation (Vitesse, Cheat codes, FPS...)">⚙️ Options</button>
                     <button class="rv-btn" id="rv-btn-speed" title="Changer la vitesse de jeu (1x, 1.5x, 2x, 4x)">⚡ 1x</button>
                     <button class="rv-btn" id="rv-btn-fps" title="Afficher ou masquer les FPS et la performance">📊 FPS : OFF</button>
@@ -4191,6 +4730,14 @@
       const triggerKey = (btnName, code, key, isDown) => {
         if (isDown && navigator.vibrate) {
           try { navigator.vibrate(12); } catch (e) {}
+        }
+
+        // Si en mode Invité LAN Coop (Joueur 2)
+        if (this.isLanGuestMode && this.lanRelay) {
+          if (btnName) {
+            this.lanRelay.sendInput(btnName, isDown, 2);
+          }
+          return;
         }
 
         // Si le moteur Nintendo DS (Desmond via iframe) est actif
@@ -4896,6 +5443,12 @@
           }
         });
       }
+
+      // Bouton Salon Coop LAN / Netplay Céleste
+      const btnLan = document.getElementById("rv-btn-lan");
+      if (btnLan) btnLan.addEventListener("click", () => this.openLanModal());
+      const landBtnLan = document.getElementById("rv-land-btn-lan");
+      if (landBtnLan) landBtnLan.addEventListener("click", () => this.openLanModal());
 
       // Bouton Options & Sortilèges
       const btnOptions = document.getElementById("rv-btn-options");
@@ -5808,6 +6361,25 @@
           input_player1_analog_dpad_mode: "1",
           input_player1_start: "b",
           input_player1_select: "v",
+          // Configuration Joueur 2 (Coop LAN / Netplay Céleste)
+          input_player2_up: "up",
+          input_player2_down: "down",
+          input_player2_left: "left",
+          input_player2_right: "right",
+          input_player2_b: "keypad_5",
+          input_player2_a: "keypad_6",
+          input_player2_y: "keypad_8",
+          input_player2_x: "keypad_9",
+          input_player2_l: "keypad_7",
+          input_player2_r: "keypad_3",
+          input_player2_l2: "keypad_1",
+          input_player2_r2: "keypad_2",
+          input_player2_start: "enter",
+          input_player2_select: "rshift",
+          input_libretro_device_p2: cType === "ps1" ? "5" : "1",
+          input_player2_analog_dpad_mode: "1",
+          input_libretro_device_p3: "1",
+          input_libretro_device_p4: "1",
           input_load_state_key: "nul",
           input_save_state_key: "nul",
           input_load_state_btn: "nul",
@@ -6294,7 +6866,7 @@
     // --- Pont Clavier Intelligent (ZSQD, 8546, Flèches, Chiffres portables) ---
     bridgeClavier(e) {
       if (!this.modal || !this.modal.classList.contains("active")) return;
-      if (!this.partieEnCours && this.jeuEnCoursType !== "nds") return;
+      if (!this.partieEnCours && this.jeuEnCoursType !== "nds" && !this.isLanGuestMode) return;
       if (e._isRvBridge) return;
 
       // Détection secrète Cloud Archiviste pendant la partie
@@ -6366,6 +6938,12 @@
         }
 
         const isDown = e.type === "keydown";
+
+        // Si en mode Invité LAN Coop (Joueur 2)
+        if (this.isLanGuestMode && this.lanRelay) {
+          this.lanRelay.sendInput(btn, isDown, 2);
+          return;
+        }
 
         // Si console Nintendo DS (dans l'iframe Desmond)
         if (this.jeuEnCoursType === "nds") {
@@ -6516,6 +7094,19 @@
         this.syncVPSCloud({ silent: true }).catch(() => {});
       }
 
+      // Détection automatique du mode invité LAN par URL (?lan=...)
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const lanCode = urlParams.get("lan");
+        if (lanCode) {
+          setTimeout(() => {
+            this.openLanModal("join");
+            const codeInp = document.getElementById("rv-lan-join-code-input");
+            if (codeInp) codeInp.value = lanCode.toUpperCase();
+          }, 400);
+        }
+      } catch (e) {}
+
       if (bootFile) {
         this.tousLesJeux.unshift({
           nom: bootFile.name,
@@ -6553,6 +7144,9 @@
       this.arreterGamepadLoop();
       this.arreterMesurePerf();
       this.closeOptionsModal();
+      if (this.lanRelay) {
+        this.closeLan();
+      }
       if (this.modal) {
         this.modal.classList.remove("rv-mobile-landscape-fullscreen");
       }

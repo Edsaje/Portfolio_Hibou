@@ -33,7 +33,17 @@
       this.bindTouchSecrets();
       this.bindCartridgeDrop();
       this.checkUrlHashSecret();
+      this.checkLanUrlParam();
       this.logConsoleHint();
+    }
+
+    checkLanUrlParam() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("lan")) {
+          setTimeout(() => this.openRetroVault(), 300);
+        }
+      } catch (e) {}
     }
 
     checkUrlHashSecret() {
@@ -248,7 +258,8 @@
         });
 
       loadScript("nostalgist-script", "https://cdn.jsdelivr.net/npm/nostalgist/dist/nostalgist.umd.js")
-        .then(() => loadScript("retro-vault-script", "js/retro-vault.js?v=9.0&t=" + Date.now()))
+        .then(() => loadScript("lan-relay-script", "js/lan-relay.js?v=1.0"))
+        .then(() => loadScript("retro-vault-script", "js/retro-vault.js?v=9.5&t=" + Date.now()))
         .then(() => {
           if (window.RetroVaultEngine) {
             window.RetroVaultEngine.open(bootFile);
