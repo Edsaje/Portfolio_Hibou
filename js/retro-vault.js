@@ -1620,8 +1620,8 @@
     }
 
     traiterInputLan(packet) {
-      if (!packet) return;
-      const rawBtn = String(packet.b || "").trim();
+      if (!packet || !this.partieEnCours) return;
+      const rawBtn = String(packet.b || "").trim().toLowerCase();
       const MAP = {
         'numpad6': 'a', 'digit6': 'a', '6': 'a', 'keyl': 'a', 'keyk': 'a', 'keyx': 'a', 'a': 'a',
         'numpad5': 'b', 'digit5': 'b', '5': 'b', 'keyj': 'b', 'keyc': 'b', 'b': 'b',
@@ -1638,56 +1638,18 @@
         'enter': 'start', 'numpadenter': 'start', 'start': 'start',
         'space': 'select', 'shiftright': 'select', 'backspace': 'select', 'numpad0': 'select', 'digit0': 'select', '0': 'select', 'select': 'select'
       };
-      const btn = MAP[rawBtn.toLowerCase()] || rawBtn.toLowerCase();
+      const btn = MAP[rawBtn] || rawBtn;
       const player = packet.p || 2;
       const isDown = Boolean(packet.d);
 
       // 1. Émulateur Nostalgist (SNES, NES, GBA, MD, PS1, Arcade)
-      if (this.partieEnCours) {
-        // A. Appel officiel Nostalgist pressDown(button, player) / pressUp(button, player)
-        try {
-          if (isDown) {
-            if (typeof this.partieEnCours.pressDown === "function") {
-              this.partieEnCours.pressDown(btn, player);
-            }
-          } else {
-            if (typeof this.partieEnCours.pressUp === "function") {
-              this.partieEnCours.pressUp(btn, player);
-            }
-          }
-        } catch (err) {}
-
-        // B. Injection directe des codes clavier (Numpad + Digit + Lettres) vers Emscripten JSEvents
-        const CODES_MAP = {
-          'a': ['Numpad6', 'Digit6', 'KeyK', 'KeyX', 'KeyL'],
-          'b': ['Numpad5', 'Digit5', 'KeyJ', 'KeyC'],
-          'x': ['Numpad9', 'Digit9', 'KeyI', 'KeyV', 'KeyO'],
-          'y': ['Numpad8', 'Digit8', 'KeyU', 'KeyF'],
-          'l': ['Numpad7', 'Digit7', 'KeyE', 'ShiftLeft'],
-          'r': ['Numpad3', 'Digit3', 'KeyR', 'KeyP'],
-          'l2': ['Numpad1', 'Digit1'],
-          'r2': ['Numpad2', 'Digit2'],
-          'up': ['ArrowUp', 'KeyW', 'KeyZ'],
-          'down': ['ArrowDown', 'KeyS'],
-          'left': ['ArrowLeft', 'KeyA', 'KeyQ'],
-          'right': ['ArrowRight', 'KeyD'],
-          'start': ['Enter', 'NumpadEnter'],
-          'select': ['ShiftRight', 'Space', 'Backspace', 'Numpad0', 'Digit0']
-        };
-
-        const codesToSend = CODES_MAP[btn] || (packet.code ? [packet.code] : []);
-        if (codesToSend.length > 0) {
-          for (const c of codesToSend) {
-            try {
-              if (isDown) {
-                if (typeof this.partieEnCours.keyboardDown === "function") this.partieEnCours.keyboardDown(c);
-              } else {
-                if (typeof this.partieEnCours.keyboardUp === "function") this.partieEnCours.keyboardUp(c);
-              }
-            } catch (err) {}
-          }
+      try {
+        if (isDown) {
+          this.partieEnCours.pressDown({ button: btn, player: player });
+        } else {
+          this.partieEnCours.pressUp({ button: btn, player: player });
         }
-      }
+      } catch (err) {}
 
       // 2. Émulateur Nintendo DS (Desmond via iframe)
       if (this.jeuEnCoursType === "nds") {
@@ -1704,28 +1666,6 @@
           } catch (err) {}
         }
       }
-
-      // 3. Diffusion d'événements clavier synthétiques sur le Canvas et la Fenêtre (pour tous moteurs web)
-      const canvas = document.getElementById("rv-canvas") || document.querySelector("canvas");
-      const CODES_FALLBACK = {
-        'a': 'Numpad6', 'b': 'Numpad5', 'x': 'Numpad9', 'y': 'Numpad8',
-        'l': 'Numpad7', 'r': 'Numpad3', 'l2': 'Numpad1', 'r2': 'Numpad2',
-        'up': 'ArrowUp', 'down': 'ArrowDown', 'left': 'ArrowLeft', 'right': 'ArrowRight',
-        'start': 'Enter', 'select': 'ShiftRight'
-      };
-      const primaryCode = packet.code || CODES_FALLBACK[btn] || btn;
-      const evtType = isDown ? "keydown" : "keyup";
-      try {
-        const synth = new KeyboardEvent(evtType, {
-          code: primaryCode,
-          key: packet.key || primaryCode,
-          bubbles: true,
-          cancelable: true
-        });
-        synth._isRvBridge = true;
-        if (canvas) canvas.dispatchEvent(synth);
-        window.dispatchEvent(synth);
-      } catch (err) {}
     }
 
     async openLanModal(initialTab = "host", prefillCode = "") {
@@ -6300,10 +6240,10 @@
           input_player1_l_x_minus: "a",
           input_player1_l_y_plus: "s",
           input_player1_l_y_minus: "w",
-          input_player1_r_x_plus: "right",
-          input_player1_r_x_minus: "left",
-          input_player1_r_y_plus: "down",
-          input_player1_r_y_minus: "up",
+          input_player1_r_x_plus: cType === "ps1" ? "l" : "nul",
+          input_player1_r_x_minus: cType === "ps1" ? "j" : "nul",
+          input_player1_r_y_plus: cType === "ps1" ? "k" : "nul",
+          input_player1_r_y_minus: cType === "ps1" ? "i" : "nul",
           input_libretro_device_p1: cType === "ps1" ? "5" : "1",
           input_player1_analog_dpad_mode: "1",
           input_player1_start: "b",
@@ -6313,14 +6253,14 @@
           input_player2_down: "down",
           input_player2_left: "left",
           input_player2_right: "right",
-          input_player2_b: "num5",
-          input_player2_a: "num6",
-          input_player2_y: "num8",
-          input_player2_x: "num9",
-          input_player2_l: "num7",
-          input_player2_r: "num3",
-          input_player2_l2: "num1",
-          input_player2_r2: "num2",
+          input_player2_b: "x",
+          input_player2_a: "c",
+          input_player2_y: "z",
+          input_player2_x: "f",
+          input_player2_l: "e",
+          input_player2_r: "r",
+          input_player2_l2: "t",
+          input_player2_r2: "g",
           input_player2_start: "enter",
           input_player2_select: "rshift",
           input_libretro_device_p2: cType === "ps1" ? "5" : "1",

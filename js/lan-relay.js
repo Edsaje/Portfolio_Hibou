@@ -749,18 +749,33 @@
           display: none !important;
         }
 
-        /* BANDEAU HUD INVITÉ SUPÉRIEUR */
+        /* BANDEAU HUD INVITÉ SUPÉRIEUR (DISCRET & ESCAMOTABLE) */
         .sanct-lan-guest-hud {
-          position: fixed; top: 12px; left: 50%;
-          transform: translateX(-50%);
-          background: rgba(5, 10, 7, 0.92);
+          position: fixed; top: 10px; right: 14px;
+          background: rgba(5, 10, 7, 0.90);
           border: 1px solid rgba(212, 175, 55, 0.45);
-          border-radius: 20px; padding: 6px 14px;
-          display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-          font-size: 0.8rem; color: #d4af37;
+          border-radius: 20px; padding: 4px 10px;
+          display: flex; align-items: center; gap: 8px;
+          font-size: 0.78rem; color: #d4af37;
           z-index: 10000004 !important;
           backdrop-filter: blur(10px);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.85);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.85);
+          transition: all 0.25s ease;
+          max-width: 95vw;
+          user-select: none;
+        }
+        .sanct-hud-mini {
+          display: flex; align-items: center; gap: 8px; cursor: pointer;
+        }
+        .sanct-hud-full {
+          display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        }
+        .sanct-lan-guest-hud.collapsed .sanct-hud-full {
+          display: none !important;
+        }
+        .sanct-lan-guest-hud.collapsed {
+          padding: 4px 12px;
+          background: rgba(5, 10, 7, 0.75);
         }
         .sanct-lan-guest-hud span {
           white-space: nowrap;
@@ -884,43 +899,7 @@
     static openModal(options = {}) {
       const title = options.title || "Sanctuaire LAN — Multijoueur P2P";
       const getCanvas = options.getCanvas || (() => document.querySelector("canvas"));
-      const onInput = options.onInput || ((packet) => {
-        if (!packet) return;
-        const btn = String(packet.b || "").toLowerCase();
-        const isDown = Boolean(packet.d);
-        const CODES_MAP = {
-          'a': ['Numpad6', 'Digit6', 'KeyK', 'KeyX', 'KeyL'],
-          'b': ['Numpad5', 'Digit5', 'KeyJ', 'KeyC'],
-          'x': ['Numpad9', 'Digit9', 'KeyI', 'KeyV', 'KeyO'],
-          'y': ['Numpad8', 'Digit8', 'KeyU', 'KeyF'],
-          'l': ['Numpad7', 'Digit7', 'KeyE', 'ShiftLeft'],
-          'r': ['Numpad3', 'Digit3', 'KeyR', 'KeyP'],
-          'l2': ['Numpad1', 'Digit1'],
-          'r2': ['Numpad2', 'Digit2'],
-          'up': ['ArrowUp', 'KeyW', 'KeyZ'],
-          'down': ['ArrowDown', 'KeyS'],
-          'left': ['ArrowLeft', 'KeyA', 'KeyQ'],
-          'right': ['ArrowRight', 'KeyD'],
-          'start': ['Enter', 'NumpadEnter'],
-          'select': ['ShiftRight', 'Space', 'Backspace', 'Numpad0', 'Digit0']
-        };
-        const codes = CODES_MAP[btn] || (packet.code ? [packet.code] : []);
-        const evtType = isDown ? "keydown" : "keyup";
-        const canvas = (typeof getCanvas === 'function' ? getCanvas() : null) || document.querySelector("canvas");
-        for (const code of codes) {
-          try {
-            const synth = new KeyboardEvent(evtType, {
-              code: code,
-              key: packet.key || code,
-              bubbles: true,
-              cancelable: true
-            });
-            synth._isRvBridge = true;
-            if (canvas) canvas.dispatchEvent(synth);
-            window.dispatchEvent(synth);
-          } catch(e) {}
-        }
-      });
+      const onInput = options.onInput || (() => {});
       const initialTab = options.initialTab || "host";
 
       SanctuaireLAN.injectStyles();
@@ -1230,24 +1209,60 @@
       `;
       overlay.appendChild(gamepad);
 
-      // Bandeau d'options supérieur HUD
+      // Bandeau d'options supérieur HUD (discret & escamotable)
       const hud = document.createElement("div");
       hud.className = "sanct-lan-guest-hud";
       hud.innerHTML = `
-        <span>⚔️ SALON : <strong style="color: #34d399;">${roomCode}</strong></span>
-        <span style="color: #a8b8ad;">|</span>
-        <span>🎮 Joueur 2</span>
-        <span style="color: #a8b8ad;">|</span>
-        <span id="sanct-guest-ping">🟢 Ping : -- ms</span>
-        <button type="button" class="sanct-lan-btn" id="sanct-guest-crt-btn" title="Activer ou désactiver l'effet cathodique CRT">📺 CRT : ON</button>
-        <button type="button" class="sanct-lan-btn" id="sanct-guest-pad-btn" title="Afficher ou masquer la manette virtuelle tactile">📱 Manette : ON</button>
-        <button type="button" class="sanct-lan-btn" id="sanct-guest-unmute" title="Activer ou couper le son">🔊 Activer le Son</button>
-        <button type="button" class="sanct-lan-btn" id="sanct-guest-fullscreen" title="Basculer en plein écran">⛶ Plein Écran</button>
-        <button type="button" class="sanct-lan-btn" id="sanct-guest-leave" style="color: #f87171;" title="Quitter la partie">✕ Quitter</button>
+        <div class="sanct-hud-mini" id="sanct-hud-toggle-btn" title="Cliquer pour afficher ou masquer les options de session">
+          <span>⚙️ <strong style="color: #34d399;">${roomCode}</strong></span>
+          <span id="sanct-guest-ping">🟢 -- ms</span>
+          <span style="font-size: 0.65rem; color: #a8b8ad;">▼</span>
+        </div>
+        <div class="sanct-hud-full" id="sanct-hud-full-bar">
+          <span style="color: #a8b8ad;">|</span>
+          <span style="color: #34d399; font-weight: 700;">🎮 Joueur 2</span>
+          <button type="button" class="sanct-lan-btn" id="sanct-guest-crt-btn" title="Activer ou désactiver l'effet cathodique CRT">📺 CRT : ON</button>
+          <button type="button" class="sanct-lan-btn" id="sanct-guest-pad-btn" title="Afficher ou masquer la manette virtuelle tactile">📱 Manette : ON</button>
+          <button type="button" class="sanct-lan-btn" id="sanct-guest-unmute" title="Activer ou couper le son">🔊 Son</button>
+          <button type="button" class="sanct-lan-btn" id="sanct-guest-fullscreen" title="Basculer en plein écran">⛶ Plein Écran</button>
+          <button type="button" class="sanct-lan-btn" id="sanct-guest-leave" style="color: #f87171;" title="Quitter la partie">✕ Quitter</button>
+          <button type="button" class="sanct-lan-btn" id="sanct-guest-minimize" title="Réduire le bandeau" style="padding: 2px 7px;">▲</button>
+        </div>
       `;
 
       document.body.appendChild(overlay);
       document.body.appendChild(hud);
+
+      // Gestion escamotable automatique du HUD
+      let hideHudTimer = null;
+      const resetHudTimer = () => {
+        clearTimeout(hideHudTimer);
+        hideHudTimer = setTimeout(() => {
+          hud.classList.add("collapsed");
+        }, 5000);
+      };
+
+      const toggleHud = document.getElementById("sanct-hud-toggle-btn");
+      if (toggleHud) {
+        toggleHud.onclick = () => {
+          hud.classList.toggle("collapsed");
+          resetHudTimer();
+        };
+      }
+      const minBtn = document.getElementById("sanct-guest-minimize");
+      if (minBtn) {
+        minBtn.onclick = () => {
+          hud.classList.add("collapsed");
+        };
+      }
+      hud.onmouseenter = () => {
+        clearTimeout(hideHudTimer);
+        hud.classList.remove("collapsed");
+      };
+      hud.onmouseleave = () => {
+        resetHudTimer();
+      };
+      resetHudTimer();
 
       // Écouteurs de la manette tactile (Multi-touch et souris sans blocage)
       gamepad.querySelectorAll(".sanct-pad-btn[data-btn]").forEach((btnEl) => {
@@ -1257,7 +1272,6 @@
         const onDown = (e) => {
           e.preventDefault();
           e.stopPropagation();
-          try { if (e.pointerId !== undefined) btnEl.setPointerCapture(e.pointerId); } catch(err) {}
           btnEl.classList.add("pressed");
           session.sendInput(btnName, true, 2);
         };
@@ -1265,7 +1279,6 @@
         const onUp = (e) => {
           e.preventDefault();
           e.stopPropagation();
-          try { if (e.pointerId !== undefined) btnEl.releasePointerCapture(e.pointerId); } catch(err) {}
           btnEl.classList.remove("pressed");
           session.sendInput(btnName, false, 2);
         };
@@ -1273,7 +1286,7 @@
         btnEl.addEventListener("pointerdown", onDown);
         btnEl.addEventListener("pointerup", onUp);
         btnEl.addEventListener("pointercancel", onUp);
-        btnEl.addEventListener("pointerleave", onUp);
+        btnEl.addEventListener("contextmenu", (e) => e.preventDefault());
       });
 
       // Contrôle de l'effet CRT
