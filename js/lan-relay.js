@@ -358,6 +358,27 @@
       };
     }
 
+    // Mise à jour dynamique de la source canvas sans couper la liaison WebRTC
+    updateCanvasStream(canvasElement) {
+      if (!this.peerConnection || !canvasElement || typeof canvasElement.captureStream !== 'function') return;
+      try {
+        const newStream = canvasElement.captureStream(60);
+        const newTrack = newStream.getVideoTracks()[0];
+        if (!newTrack) return;
+
+        const senders = this.peerConnection.getSenders ? this.peerConnection.getSenders() : [];
+        const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+        if (videoSender && typeof videoSender.replaceTrack === 'function') {
+          videoSender.replaceTrack(newTrack);
+          console.log('[Sanctuaire LAN] Piste vidéo remplacée avec succès sur le nouveau canvas.');
+        } else {
+          this.peerConnection.addTrack(newTrack, newStream);
+        }
+      } catch (e) {
+        console.warn('[Sanctuaire LAN] updateCanvasStream error:', e);
+      }
+    }
+
     _wireDataChannel(dc) {
       dc.binaryType = 'arraybuffer';
       dc.onopen = () => {

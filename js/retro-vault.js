@@ -6161,14 +6161,25 @@
 
         container.classList.remove("rv-is-nds");
         container.classList.remove("rv-is-psp");
-        container.innerHTML = `
-          <div class="rv-perf-hud" id="rv-perf-hud">
-            <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
-            <span class="rv-perf-text" id="rv-perf-text">60 FPS</span>
-          </div>
-          <div class="rv-crt-overlay" id="rv-crt"></div>
-          <canvas id="rv-canvas"></canvas>
-        `;
+        let activeCanvas = document.getElementById("rv-canvas");
+        if (!activeCanvas) {
+          container.innerHTML = `
+            <div class="rv-perf-hud" id="rv-perf-hud">
+              <span class="rv-perf-dot" id="rv-perf-dot">🟢</span>
+              <span class="rv-perf-text" id="rv-perf-text">60 FPS</span>
+            </div>
+            <div class="rv-crt-overlay" id="rv-crt"></div>
+            <canvas id="rv-canvas"></canvas>
+          `;
+          activeCanvas = document.getElementById("rv-canvas");
+        } else {
+          activeCanvas.style.display = "block";
+        }
+
+        // Si une session hôte LAN est déjà ouverte, rafraîchir la piste vidéo avec le canvas de jeu actif
+        if (window.SanctuaireLAN && window.SanctuaireLAN.activeSession && window.SanctuaireLAN.activeSession.isHost) {
+          window.SanctuaireLAN.activeSession.updateCanvasStream(activeCanvas);
+        }
 
         this.jeuEnCoursNom = nomFichier;
 

@@ -238,14 +238,23 @@ if ($action === 'join') {
     }
 
     $peers = $room['peers'] ?? [];
-    $guestRole = 'guest';
-    if (isset($peers['guest'])) {
-        if (isset($peers['guest_2'])) {
-            http_response_code(409);
-            echo json_encode(['error' => 'Ce salon est déjà complet (maximum atteint).', 'ok' => false]);
-            exit;
+    $maxPlayers = intval($room['max_players'] ?? 2);
+
+    // Pour les salons à 2 joueurs, tout nouvel invité ou reconnexion reprend le rôle 'guest'
+    if ($maxPlayers <= 2) {
+        $guestRole = 'guest';
+        unset($room['peers']['guest_2']);
+        if (isset($room['events']['guest_2'])) unset($room['events']['guest_2']);
+    } else {
+        $guestRole = 'guest';
+        if (isset($peers['guest'])) {
+            if (isset($peers['guest_2'])) {
+                http_response_code(409);
+                echo json_encode(['error' => 'Ce salon est déjà complet (maximum atteint).', 'ok' => false]);
+                exit;
+            }
+            $guestRole = 'guest_2';
         }
-        $guestRole = 'guest_2';
     }
 
     $guestToken = !empty($token) ? $token : generateToken();
@@ -253,8 +262,13 @@ if ($action === 'join') {
         'token' => $guestToken,
         'joined_at' => time()
     ];
-    if (!isset($room['events'][$guestRole])) {
-        $room['events'][$guestRole] = [];
+    $room['events'][$guestRole] = [];
+
+    // Purger les signaux obsolètes de l'hôte pour repartir sur une négociation P2P propre
+    if (isset($room['events']['host'])) {
+        $room['events']['host'] = array_values(array_filter($room['events']['host'], function($e) {
+            return ($e['type'] ?? '') !== 'signal';
+        }));
     }
 
     // Avertir l'hôte qu'un pair a rejoint
@@ -299,19 +313,34 @@ if ($action === 'signal') {
     }
 
     $description = $jsonBody['description'] ?? $jsonBody['signal'] ?? $jsonBody;
-    $targetRole = ($role === 'host') ? 'guest' : 'host';
 
-    // Déposer l'événement pour l'autre participant
-    if (!isset($room['events'][$targetRole])) {
-        $room['events'][$targetRole] = [];
+    if ($role === 'host') {
+        // L'hôte envoie ses signaux (Offer / ICE) à TOUS les invités enregistrés
+        foreach ($room['peers'] as $peerRole => $peerInfo) {
+            if ($peerRole !== 'host') {
+                if (!isset($room['events'][$peerRole])) {
+                    $room['events'][$peerRole] = [];
+                }
+                $room['events'][$peerRole][] = [
+                    'type' => 'signal',
+                    'from' => 'host',
+                    'description' => $description,
+                    'timestamp' => time()
+                ];
+            }
+        }
+    } else {
+        // L'invité transmet sa réponse ou candidat ICE à l'hôte
+        if (!isset($room['events']['host'])) {
+            $room['events']['host'] = [];
+        }
+        $room['events']['host'][] = [
+            'type' => 'signal',
+            'from' => $role,
+            'description' => $description,
+            'timestamp' => time()
+        ];
     }
-
-    $room['events'][$targetRole][] = [
-        'type' => 'signal',
-        'from' => $role,
-        'description' => $description,
-        'timestamp' => time()
-    ];
 
     saveRoom($storageDir, $roomId, $room);
 
