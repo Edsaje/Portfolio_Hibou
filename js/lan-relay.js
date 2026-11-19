@@ -884,7 +884,43 @@
     static openModal(options = {}) {
       const title = options.title || "Sanctuaire LAN — Multijoueur P2P";
       const getCanvas = options.getCanvas || (() => document.querySelector("canvas"));
-      const onInput = options.onInput || (() => {});
+      const onInput = options.onInput || ((packet) => {
+        if (!packet) return;
+        const btn = String(packet.b || "").toLowerCase();
+        const isDown = Boolean(packet.d);
+        const CODES_MAP = {
+          'a': ['Numpad6', 'Digit6', 'KeyK', 'KeyX', 'KeyL'],
+          'b': ['Numpad5', 'Digit5', 'KeyJ', 'KeyC'],
+          'x': ['Numpad9', 'Digit9', 'KeyI', 'KeyV', 'KeyO'],
+          'y': ['Numpad8', 'Digit8', 'KeyU', 'KeyF'],
+          'l': ['Numpad7', 'Digit7', 'KeyE', 'ShiftLeft'],
+          'r': ['Numpad3', 'Digit3', 'KeyR', 'KeyP'],
+          'l2': ['Numpad1', 'Digit1'],
+          'r2': ['Numpad2', 'Digit2'],
+          'up': ['ArrowUp', 'KeyW', 'KeyZ'],
+          'down': ['ArrowDown', 'KeyS'],
+          'left': ['ArrowLeft', 'KeyA', 'KeyQ'],
+          'right': ['ArrowRight', 'KeyD'],
+          'start': ['Enter', 'NumpadEnter'],
+          'select': ['ShiftRight', 'Space', 'Backspace', 'Numpad0', 'Digit0']
+        };
+        const codes = CODES_MAP[btn] || (packet.code ? [packet.code] : []);
+        const evtType = isDown ? "keydown" : "keyup";
+        const canvas = (typeof getCanvas === 'function' ? getCanvas() : null) || document.querySelector("canvas");
+        for (const code of codes) {
+          try {
+            const synth = new KeyboardEvent(evtType, {
+              code: code,
+              key: packet.key || code,
+              bubbles: true,
+              cancelable: true
+            });
+            synth._isRvBridge = true;
+            if (canvas) canvas.dispatchEvent(synth);
+            window.dispatchEvent(synth);
+          } catch(e) {}
+        }
+      });
       const initialTab = options.initialTab || "host";
 
       SanctuaireLAN.injectStyles();
@@ -1221,6 +1257,7 @@
         const onDown = (e) => {
           e.preventDefault();
           e.stopPropagation();
+          try { if (e.pointerId !== undefined) btnEl.setPointerCapture(e.pointerId); } catch(err) {}
           btnEl.classList.add("pressed");
           session.sendInput(btnName, true, 2);
         };
@@ -1228,6 +1265,7 @@
         const onUp = (e) => {
           e.preventDefault();
           e.stopPropagation();
+          try { if (e.pointerId !== undefined) btnEl.releasePointerCapture(e.pointerId); } catch(err) {}
           btnEl.classList.remove("pressed");
           session.sendInput(btnName, false, 2);
         };

@@ -1619,6 +1619,115 @@
       });
     }
 
+    traiterInputLan(packet) {
+      if (!packet) return;
+      const rawBtn = String(packet.b || "").trim();
+      const MAP = {
+        'numpad6': 'a', 'digit6': 'a', '6': 'a', 'keyl': 'a', 'keyk': 'a', 'keyx': 'a', 'a': 'a',
+        'numpad5': 'b', 'digit5': 'b', '5': 'b', 'keyj': 'b', 'keyc': 'b', 'b': 'b',
+        'numpad9': 'x', 'digit9': 'x', '9': 'x', 'keyo': 'x', 'keyi': 'x', 'keyv': 'x', 'x': 'x',
+        'numpad8': 'y', 'digit8': 'y', '8': 'y', 'keyu': 'y', 'keyf': 'y', 'y': 'y',
+        'numpad7': 'l', 'digit7': 'l', '7': 'l', 'shiftleft': 'l', 'l': 'l', 'l1': 'l',
+        'numpad3': 'r', 'digit3': 'r', '3': 'r', 'keyp': 'r', 'keye': 'r', 'r': 'r', 'r1': 'r',
+        'numpad1': 'l2', 'digit1': 'l2', '1': 'l2', 'l2': 'l2',
+        'numpad2': 'r2', 'digit2': 'r2', '2': 'r2', 'r2': 'r2',
+        'arrowup': 'up', 'keyw': 'up', 'keyz': 'up', 'up': 'up',
+        'arrowdown': 'down', 'keys': 'down', 'down': 'down',
+        'arrowleft': 'left', 'keya': 'left', 'keyq': 'left', 'left': 'left',
+        'arrowright': 'right', 'keyd': 'right', 'right': 'right',
+        'enter': 'start', 'numpadenter': 'start', 'start': 'start',
+        'space': 'select', 'shiftright': 'select', 'backspace': 'select', 'numpad0': 'select', 'digit0': 'select', '0': 'select', 'select': 'select'
+      };
+      const btn = MAP[rawBtn.toLowerCase()] || rawBtn.toLowerCase();
+      const player = packet.p || 2;
+      const isDown = Boolean(packet.d);
+
+      // 1. Émulateur Nostalgist (SNES, NES, GBA, MD, PS1, Arcade)
+      if (this.partieEnCours) {
+        // A. Appel officiel Nostalgist pressDown(button, player) / pressUp(button, player)
+        try {
+          if (isDown) {
+            if (typeof this.partieEnCours.pressDown === "function") {
+              this.partieEnCours.pressDown(btn, player);
+            }
+          } else {
+            if (typeof this.partieEnCours.pressUp === "function") {
+              this.partieEnCours.pressUp(btn, player);
+            }
+          }
+        } catch (err) {}
+
+        // B. Injection directe des codes clavier (Numpad + Digit + Lettres) vers Emscripten JSEvents
+        const CODES_MAP = {
+          'a': ['Numpad6', 'Digit6', 'KeyK', 'KeyX', 'KeyL'],
+          'b': ['Numpad5', 'Digit5', 'KeyJ', 'KeyC'],
+          'x': ['Numpad9', 'Digit9', 'KeyI', 'KeyV', 'KeyO'],
+          'y': ['Numpad8', 'Digit8', 'KeyU', 'KeyF'],
+          'l': ['Numpad7', 'Digit7', 'KeyE', 'ShiftLeft'],
+          'r': ['Numpad3', 'Digit3', 'KeyR', 'KeyP'],
+          'l2': ['Numpad1', 'Digit1'],
+          'r2': ['Numpad2', 'Digit2'],
+          'up': ['ArrowUp', 'KeyW', 'KeyZ'],
+          'down': ['ArrowDown', 'KeyS'],
+          'left': ['ArrowLeft', 'KeyA', 'KeyQ'],
+          'right': ['ArrowRight', 'KeyD'],
+          'start': ['Enter', 'NumpadEnter'],
+          'select': ['ShiftRight', 'Space', 'Backspace', 'Numpad0', 'Digit0']
+        };
+
+        const codesToSend = CODES_MAP[btn] || (packet.code ? [packet.code] : []);
+        if (codesToSend.length > 0) {
+          for (const c of codesToSend) {
+            try {
+              if (isDown) {
+                if (typeof this.partieEnCours.keyboardDown === "function") this.partieEnCours.keyboardDown(c);
+              } else {
+                if (typeof this.partieEnCours.keyboardUp === "function") this.partieEnCours.keyboardUp(c);
+              }
+            } catch (err) {}
+          }
+        }
+      }
+
+      // 2. Émulateur Nintendo DS (Desmond via iframe)
+      if (this.jeuEnCoursType === "nds") {
+        const frame = document.getElementById("rv-nds-frame");
+        if (frame && frame.contentWindow) {
+          try {
+            frame.contentWindow.postMessage({
+              type: "KEY_STATE",
+              btn: btn,
+              code: packet.code || btn,
+              keyCode: packet.keyCode || 0,
+              isDown: isDown
+            }, "*");
+          } catch (err) {}
+        }
+      }
+
+      // 3. Diffusion d'événements clavier synthétiques sur le Canvas et la Fenêtre (pour tous moteurs web)
+      const canvas = document.getElementById("rv-canvas") || document.querySelector("canvas");
+      const CODES_FALLBACK = {
+        'a': 'Numpad6', 'b': 'Numpad5', 'x': 'Numpad9', 'y': 'Numpad8',
+        'l': 'Numpad7', 'r': 'Numpad3', 'l2': 'Numpad1', 'r2': 'Numpad2',
+        'up': 'ArrowUp', 'down': 'ArrowDown', 'left': 'ArrowLeft', 'right': 'ArrowRight',
+        'start': 'Enter', 'select': 'ShiftRight'
+      };
+      const primaryCode = packet.code || CODES_FALLBACK[btn] || btn;
+      const evtType = isDown ? "keydown" : "keyup";
+      try {
+        const synth = new KeyboardEvent(evtType, {
+          code: primaryCode,
+          key: packet.key || primaryCode,
+          bubbles: true,
+          cancelable: true
+        });
+        synth._isRvBridge = true;
+        if (canvas) canvas.dispatchEvent(synth);
+        window.dispatchEvent(synth);
+      } catch (err) {}
+    }
+
     async openLanModal(initialTab = "host", prefillCode = "") {
       await this.ensureLanRelayLoaded();
       const urlParams = new URLSearchParams(window.location.search);
@@ -1643,39 +1752,7 @@
           }
           return document.getElementById("rv-canvas") || document.querySelector("canvas");
         },
-        onInput: (packet) => {
-          if (!this.partieEnCours) return;
-          const rawBtn = String(packet.b || "").trim();
-          const MAP = {
-            'numpad6': 'a', '6': 'a', 'keyl': 'a', 'keyk': 'a', 'keyx': 'a', 'a': 'a',
-            'numpad5': 'b', '5': 'b', 'keyj': 'b', 'keyc': 'b', 'b': 'b',
-            'numpad9': 'x', '9': 'x', 'keyo': 'x', 'keyi': 'x', 'keyv': 'x', 'x': 'x',
-            'numpad8': 'y', '8': 'y', 'keyu': 'y', 'keyf': 'y', 'y': 'y',
-            'numpad7': 'l', '7': 'l', 'shiftleft': 'l', 'l': 'l', 'l1': 'l',
-            'numpad3': 'r', '3': 'r', 'keyp': 'r', 'keye': 'r', 'r': 'r', 'r1': 'r',
-            'numpad1': 'l2', '1': 'l2', 'l2': 'l2',
-            'numpad2': 'r2', '2': 'r2', 'r2': 'r2',
-            'arrowup': 'up', 'keyw': 'up', 'keyz': 'up', 'up': 'up',
-            'arrowdown': 'down', 'keys': 'down', 'down': 'down',
-            'arrowleft': 'left', 'keya': 'left', 'keyq': 'left', 'left': 'left',
-            'arrowright': 'right', 'keyd': 'right', 'right': 'right',
-            'enter': 'start', 'numpadenter': 'start', 'start': 'start',
-            'space': 'select', 'shiftright': 'select', 'backspace': 'select', 'numpad0': 'select', 'select': 'select'
-          };
-          const btn = MAP[rawBtn.toLowerCase()] || rawBtn.toLowerCase();
-          const player = packet.p || 2;
-          try {
-            if (packet.d) {
-              if (typeof this.partieEnCours.pressDown === "function") {
-                this.partieEnCours.pressDown({ button: btn, player: player });
-              }
-            } else {
-              if (typeof this.partieEnCours.pressUp === "function") {
-                this.partieEnCours.pressUp({ button: btn, player: player });
-              }
-            }
-          } catch(err) {}
-        }
+        onInput: (packet) => this.traiterInputLan(packet)
       });
     }
 
@@ -1723,39 +1800,7 @@
           const peerStatus = document.getElementById("rv-lan-host-peer-status");
           if (peerStatus) peerStatus.textContent = `⚡ Joueur 2 connecté en direct ! (Ping: ${rtt} ms)`;
         },
-        onInput: (packet) => {
-          if (!this.partieEnCours) return;
-          const rawBtn = String(packet.b || "").trim();
-          const MAP = {
-            'numpad6': 'a', '6': 'a', 'keyl': 'a', 'keyk': 'a', 'keyx': 'a', 'a': 'a',
-            'numpad5': 'b', '5': 'b', 'keyj': 'b', 'keyc': 'b', 'b': 'b',
-            'numpad9': 'x', '9': 'x', 'keyo': 'x', 'keyi': 'x', 'keyv': 'x', 'x': 'x',
-            'numpad8': 'y', '8': 'y', 'keyu': 'y', 'keyf': 'y', 'y': 'y',
-            'numpad7': 'l', '7': 'l', 'shiftleft': 'l', 'l': 'l', 'l1': 'l',
-            'numpad3': 'r', '3': 'r', 'keyp': 'r', 'keye': 'r', 'r': 'r', 'r1': 'r',
-            'numpad1': 'l2', '1': 'l2', 'l2': 'l2',
-            'numpad2': 'r2', '2': 'r2', 'r2': 'r2',
-            'arrowup': 'up', 'keyw': 'up', 'keyz': 'up', 'up': 'up',
-            'arrowdown': 'down', 'keys': 'down', 'down': 'down',
-            'arrowleft': 'left', 'keya': 'left', 'keyq': 'left', 'left': 'left',
-            'arrowright': 'right', 'keyd': 'right', 'right': 'right',
-            'enter': 'start', 'numpadenter': 'start', 'start': 'start',
-            'space': 'select', 'shiftright': 'select', 'backspace': 'select', 'numpad0': 'select', 'select': 'select'
-          };
-          const btn = MAP[rawBtn.toLowerCase()] || rawBtn.toLowerCase();
-          const player = packet.p || 2;
-          try {
-            if (packet.d) {
-              if (typeof this.partieEnCours.pressDown === "function") {
-                this.partieEnCours.pressDown({ button: btn, player: player });
-              }
-            } else {
-              if (typeof this.partieEnCours.pressUp === "function") {
-                this.partieEnCours.pressUp({ button: btn, player: player });
-              }
-            }
-          } catch(err) {}
-        }
+        onInput: (packet) => this.traiterInputLan(packet)
       });
 
       const res = await this.lanRelay.hostGame(canvasEl, {
@@ -6268,14 +6313,14 @@
           input_player2_down: "down",
           input_player2_left: "left",
           input_player2_right: "right",
-          input_player2_b: "keypad_5",
-          input_player2_a: "keypad_6",
-          input_player2_y: "keypad_8",
-          input_player2_x: "keypad_9",
-          input_player2_l: "keypad_7",
-          input_player2_r: "keypad_3",
-          input_player2_l2: "keypad_1",
-          input_player2_r2: "keypad_2",
+          input_player2_b: "num5",
+          input_player2_a: "num6",
+          input_player2_y: "num8",
+          input_player2_x: "num9",
+          input_player2_l: "num7",
+          input_player2_r: "num3",
+          input_player2_l2: "num1",
+          input_player2_r2: "num2",
           input_player2_start: "enter",
           input_player2_select: "rshift",
           input_libretro_device_p2: cType === "ps1" ? "5" : "1",
