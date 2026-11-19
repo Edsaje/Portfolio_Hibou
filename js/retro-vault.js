@@ -1635,6 +1635,12 @@
               if (dsCanvas) return dsCanvas;
             } catch(e) {}
           }
+          if (this.partieEnCours && typeof this.partieEnCours.getCanvas === "function") {
+            try {
+              const nc = this.partieEnCours.getCanvas();
+              if (nc) return nc;
+            } catch(e) {}
+          }
           return document.getElementById("rv-canvas") || document.querySelector("canvas");
         },
         onInput: (packet) => {
@@ -1665,6 +1671,12 @@
           const dsCanvas = dsFrame.contentDocument.getElementById("top") || dsFrame.contentDocument.querySelector("canvas");
           if (dsCanvas) canvasEl = dsCanvas;
         } catch (e) {}
+      }
+      if (this.partieEnCours && typeof this.partieEnCours.getCanvas === "function") {
+        try {
+          const nc = this.partieEnCours.getCanvas();
+          if (nc) canvasEl = nc;
+        } catch(e) {}
       }
       if (!canvasEl) {
         canvasEl = document.querySelector("canvas");
@@ -6246,6 +6258,7 @@
           savestate_auto_load: false,
           autosave_interval: 5,
           fast_forward_ratio: 2.0,
+          pause_nonactive: "false",
           audio_volume: String(this.volumeActuel === 0 ? -80 : Math.max(-80, Math.min(12, Math.round(20 * Math.log10(this.volumeActuel)))))
         };
 
@@ -6294,6 +6307,16 @@
         }
         if (this.afficherPerfFps) {
           this.demarrerMesurePerf();
+        }
+
+        // Rafraîchir la piste WebRTC avec le canvas Nostalgist actif
+        if (window.SanctuaireLAN && window.SanctuaireLAN.activeSession && window.SanctuaireLAN.activeSession.isHost) {
+          const gameCanvas = (this.partieEnCours && typeof this.partieEnCours.getCanvas === "function")
+            ? this.partieEnCours.getCanvas()
+            : activeCanvas;
+          if (gameCanvas) {
+            window.SanctuaireLAN.activeSession.updateCanvasStream(gameCanvas);
+          }
         }
 
         const hasSram = !!(existingSave && existingSave.sram);

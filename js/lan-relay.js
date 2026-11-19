@@ -1003,26 +1003,38 @@
         };
       }
 
-      // Flux média composite unique recevant vidéo et audio
-      let remoteStream = new MediaStream();
-      video.srcObject = remoteStream;
-
+      // Configuration de la réception des flux vidéo et audio
       session.callbacks.onTrack = (stream, track) => {
-        if (track) {
-          if (!remoteStream.getTracks().some(t => t.id === track.id)) {
-            remoteStream.addTrack(track);
+        const incomingStream = stream || (track ? new MediaStream([track]) : null);
+        if (!incomingStream) return;
+
+        if (!video.srcObject) {
+          video.srcObject = incomingStream;
+        } else {
+          const currentStream = video.srcObject;
+          const hasVideo = currentStream.getVideoTracks().length > 0;
+          const incomingHasVideo = incomingStream.getVideoTracks().length > 0;
+
+          if (!hasVideo && incomingHasVideo) {
+            video.srcObject = new MediaStream([...currentStream.getTracks(), ...incomingStream.getVideoTracks()]);
+          } else {
+            incomingStream.getTracks().forEach(t => {
+              if (!currentStream.getTracks().some(existing => existing.id === t.id)) {
+                currentStream.addTrack(t);
+              }
+            });
           }
-        } else if (stream) {
-          stream.getTracks().forEach(t => {
-            if (!remoteStream.getTracks().some(existing => existing.id === t.id)) {
-              remoteStream.addTrack(t);
-            }
-          });
         }
 
         loadingBox.style.display = "none";
         video.style.display = "block";
         video.play().catch(e => console.warn("[Sanctuaire LAN] Video play:", e));
+      };
+
+      video.onloadedmetadata = () => {
+        loadingBox.style.display = "none";
+        video.style.display = "block";
+        video.play().catch(() => {});
       };
 
       session.callbacks.onConnected = () => {
