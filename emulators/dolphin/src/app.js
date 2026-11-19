@@ -1563,6 +1563,93 @@ function writeU32BE(bytes, offset, value) {
 
 initLibrary({ mountFile, bootProgress }).then(() => import("./widget-layout.js")).catch(error => console.error("Library:", error));
 
+// Démarrage automatique depuis les paramètres d'URL (?game=...&token=...)
+const urlParams = new URLSearchParams(window.location.search);
+const autoGame = urlParams.get("game");
+const autoToken = urlParams.get("token") || (window.localStorage ? localStorage.getItem("rv_vps_token") : null);
+
+if (autoGame) {
+  (async () => {
+    try {
+      const cleanTitle = autoGame.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+      bootProgress.begin(cleanTitle);
+
+      const tokenQuery = autoToken ? `?token=${encodeURIComponent(autoToken)}` : "";
+      const streamUrl = `/assets/vault/${encodeURIComponent(autoGame)}${tokenQuery}`;
+
+      let opfsDir = null;
+      try {
+        if (navigator.storage && navigator.storage.getDirectory) {
+          opfsDir = await navigator.storage.getDirectory();
+        }
+      } catch (e) {}
+
+      // Vérifier si déjà présent en cache OPFS
+      if (opfsDir) {
+        try {
+          const existingHandle = await opfsDir.getFileHandle(autoGame);
+          const existingFile = await existingHandle.getFile();
+          if (existingFile && existingFile.size > 1024 * 1024) {
+            console.log(`[Dolphin Sanctuary] Relique trouvée dans le cache OPFS local (${(existingFile.size / (1024*1024)).toFixed(1)} Mo).`);
+            bootProgress.stage("read");
+            await mountFile(existingFile);
+            return;
+          }
+        } catch (noCached) {}
+      }
+
+      bootProgress.stage("download");
+      console.log(`[Dolphin Sanctuary] Téléchargement et amorçage de la relique : ${autoGame}`);
+      const headers = autoToken ? { "Authorization": `Bearer ${autoToken}` } : {};
+      const res = await fetch(streamUrl, { headers });
+      if (!res.ok) throw new Error(`Échec de récupération de la relique (${res.status})`);
+
+      const totalBytes = Number(res.headers.get("content-length") || 0);
+      let receivedBytes = 0;
+
+      const reader = res.body.getReader();
+
+      if (opfsDir && typeof FileSystemFileHandle !== "undefined") {
+        try {
+          const fileHandle = await opfsDir.getFileHandle(autoGame, { create: true });
+          if (fileHandle.createWritable) {
+            const writable = await fileHandle.createWritable();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              await writable.write(value);
+              receivedBytes += value.byteLength;
+              if (totalBytes > 0) bootProgress.download(receivedBytes, totalBytes);
+            }
+            await writable.close();
+            const opfsFile = await fileHandle.getFile();
+            await mountFile(opfsFile);
+            return;
+          }
+        } catch (opfsErr) {
+          console.warn("[Dolphin Sanctuary] Écriture directe OPFS indisponible, repli mémoire :", opfsErr);
+        }
+      }
+
+      // Repli Blob en mémoire si OPFS createWritable non supporté
+      const chunks = [];
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        receivedBytes += value.byteLength;
+        if (totalBytes > 0) bootProgress.download(receivedBytes, totalBytes);
+      }
+      const blob = new Blob(chunks, { type: "application/octet-stream" });
+      const file = new File([blob], autoGame, { type: "application/octet-stream" });
+      await mountFile(file);
+    } catch (err) {
+      console.error("[Dolphin Sanctuary] Erreur au lancement automatique :", err);
+      bootProgress.fail(err.message);
+    }
+  })();
+}
+
 // Release runtime packages carry their complete matching source archive.
 fetch(new URL("../backend-runtime.json",import.meta.url)).then(response=>response.json()).then(manifest=>{
  const link=document.querySelector("#sourceDownload");
