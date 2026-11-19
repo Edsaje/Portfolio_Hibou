@@ -204,7 +204,8 @@ if ($action === 'create') {
 
     saveRoom($storageDir, $roomId, $roomData);
 
-    $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'quentinbeaud.com');
+    $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https' || (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'quentinbeaud.com') !== false);
+    $baseUrl = ($isHttps ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'quentinbeaud.com');
     $inviteUrl = $baseUrl . '/?lan=' . $roomId;
 
     if ($isDolphin) {
