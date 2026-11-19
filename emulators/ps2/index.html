@@ -611,6 +611,9 @@
     </div>
 
     <div class="ps2-header-right">
+      <button class="ps2-btn" id="btn-ps2-lan" style="color: #34d399; border-color: rgba(52, 211, 153, 0.5); font-weight: 700;" title="Salon Coop LAN / Netplay P2P">
+        ⚔️ <span>Coop LAN</span>
+      </button>
       <button class="ps2-btn" id="btn-controls" title="Voir les contrôles Clavier & Manette">
         🎮 <span>Contrôles</span>
       </button>
@@ -1731,6 +1734,24 @@
       console.log(`[PS2 Sanctuary] Démarrage automatique de la relique : ${gameParam}`);
       bootRemoteGame(streamUrl, gameParam, tokenParam);
     }
+  </script>
+  <script src="../../js/lan-relay.js"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const btnPs2Lan = document.getElementById("btn-ps2-lan");
+      if (btnPs2Lan && window.SanctuaireLAN) {
+        btnPs2Lan.onclick = () => {
+          SanctuaireLAN.openModal({
+            title: "Sanctuaire PlayStation 2 — Coop LAN",
+            getCanvas: () => document.getElementById("outputCanvas") || document.querySelector("canvas")
+          });
+        };
+        SanctuaireLAN.checkAutoJoin({
+          title: "Sanctuaire PlayStation 2 — Coop LAN",
+          getCanvas: () => document.getElementById("outputCanvas") || document.querySelector("canvas")
+        });
+      }
+    });
   </script>
 </body>
 </html>

@@ -505,6 +505,7 @@
       <span class="dc-badge">Flycast WASM 60 FPS (SH4 JIT)</span>
     </div>
     <div class="dc-actions">
+      <button class="dc-btn-icon" id="dc-btn-lan" style="color: #34d399; font-weight: 700;" title="Rejoindre ou héberger une session Coop LAN P2P">⚔️ Coop LAN</button>
       <button class="dc-btn-icon" id="dc-btn-controls" title="Guide des touches clavier et manettes">⌨️ Touches</button>
       <button class="dc-btn-icon" id="dc-btn-pad" title="Afficher ou masquer la manette virtuelle tactile">📱 Manette</button>
       <button class="dc-btn-icon" id="dc-btn-crt" title="Activer les scanlines CRT rétro">📺 CRT</button>
@@ -1233,6 +1234,39 @@
 
       // Signaler que le runner est prêt
       window.parent.postMessage({ type: "DC_RUNNER_READY" }, "*");
+    })();
+  </script>
+  <script src="../../js/lan-relay.js"></script>
+  <script>
+    (function() {
+      const btnLan = document.getElementById("dc-btn-lan");
+      if (btnLan && window.SanctuaireLAN) {
+        btnLan.addEventListener("click", () => {
+          SanctuaireLAN.openModal({
+            title: "Sega Dreamcast — Coop LAN P2P",
+            getCanvas: () => document.getElementById("canvas"),
+            onInput: (data) => {
+              if (data.type === "keydown" || data.type === "keyup") {
+                const ev = new KeyboardEvent(data.type, {
+                  code: data.code,
+                  key: data.key,
+                  keyCode: data.keyCode,
+                  which: data.keyCode,
+                  bubbles: true,
+                  cancelable: true
+                });
+                window.dispatchEvent(ev);
+                const cv = document.getElementById("canvas");
+                if (cv) cv.dispatchEvent(ev);
+              }
+            }
+          });
+        });
+        SanctuaireLAN.checkAutoJoin({
+          title: "Sega Dreamcast — Coop LAN P2P",
+          getCanvas: () => document.getElementById("canvas")
+        });
+      }
     })();
   </script>
 </body>

@@ -399,6 +399,7 @@
           <option value="5">🇪🇸 Español</option>
         </select>
       </div>
+      <button class="ds-btn ds-btn-secondary" id="btn-ds-lan" style="color: #34d399; font-weight: 700;" title="Rejoindre ou héberger une session Coop LAN P2P">⚔️ Coop LAN</button>
       <button class="ds-btn ds-btn-secondary ds-btn-active" id="btn-toggle-analog" title="Activer / Désactiver le stick analogique 360° (Pour Super Mario 64 DS en Mode Tactile)">🕹️ 360° : ACTIF</button>
       <button class="ds-btn ds-btn-secondary" id="btn-toggle-layout" title="Changer la disposition des deux écrans (Côte à côte / Superposé)">↔️ Côte à côte</button>
       <button class="ds-btn" id="btn-open-rom">📁 Insérer ROM</button>
@@ -1648,6 +1649,67 @@
           window.parent.postMessage({ type: "NDS_READY" }, "*");
         }
       } catch (err) {}
+    })();
+  </script>
+  <script src="../../js/lan-relay.js"></script>
+  <script>
+    (function() {
+      const btnLan = document.getElementById("btn-ds-lan");
+      const player = document.querySelector("desmond-player");
+
+      const getDsCanvas = () => {
+        const root = player?.shadowRoot;
+        if (!root) return null;
+        const canvases = root.querySelectorAll("canvas");
+        if (!canvases || canvases.length === 0) return null;
+        if (canvases.length === 1) return canvases[0];
+
+        // Rendu composite des deux écrans empilés (256x384)
+        if (!window._dsCompositeCanvas) {
+          const c = document.createElement("canvas");
+          c.width = 256;
+          c.height = 384;
+          window._dsCompositeCanvas = c;
+          const ctx = c.getContext("2d");
+          function renderComposite() {
+            if (canvases[0] && canvases[1]) {
+              try {
+                ctx.drawImage(canvases[0], 0, 0);
+                ctx.drawImage(canvases[1], 0, 192);
+              } catch(e){}
+            }
+            requestAnimationFrame(renderComposite);
+          }
+          requestAnimationFrame(renderComposite);
+        }
+        return window._dsCompositeCanvas || canvases[0];
+      };
+
+      if (btnLan && window.SanctuaireLAN) {
+        btnLan.addEventListener("click", () => {
+          SanctuaireLAN.openModal({
+            title: "Nintendo DS — Coop LAN P2P",
+            getCanvas: getDsCanvas,
+            onInput: (data) => {
+              if (data.type === "keydown" || data.type === "keyup") {
+                const ev = new KeyboardEvent(data.type, {
+                  code: data.code,
+                  key: data.key,
+                  keyCode: data.keyCode,
+                  which: data.keyCode,
+                  bubbles: true,
+                  cancelable: true
+                });
+                window.dispatchEvent(ev);
+              }
+            }
+          });
+        });
+        SanctuaireLAN.checkAutoJoin({
+          title: "Nintendo DS — Coop LAN P2P",
+          getCanvas: getDsCanvas
+        });
+      }
     })();
   </script>
 </body>

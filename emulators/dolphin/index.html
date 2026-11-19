@@ -23,6 +23,7 @@
         </div>
         <div class="topbar-actions">
           <span class="status-pill" id="statusPill">Booting</span>
+          <button class="icon-button tip" id="btn-dolphin-lan" type="button" title="Salon Coop LAN / Netplay" style="color: #34d399; border-color: rgba(52, 211, 153, 0.5); font-weight: 700;">⚔️ LAN</button>
           <button class="icon-button" id="overlayToggle" type="button" title="Toggle FPS overlay" aria-pressed="true">FPS</button>
           <button class="icon-button" id="debugToggle" type="button" title="Toggle diagnostics" aria-expanded="false" aria-controls="debugPanel">DBG</button>
           <button class="icon-button tip" id="panelToggle" type="button"
@@ -517,5 +518,27 @@
                             </div>
 
                             <script type="module" src="./src/pages-bootstrap.js"></script>
+                            <script src="../../js/lan-relay.js"></script>
+                            <script>
+                              window.addEventListener("DOMContentLoaded", () => {
+                                const btnLan = document.getElementById("btn-dolphin-lan");
+                                if (btnLan) {
+                                  btnLan.onclick = () => {
+                                    if (window.SanctuaireLAN) {
+                                      SanctuaireLAN.openModal({
+                                        title: "Sanctuaire Dolphin — GameCube & Wii",
+                                        getCanvas: () => document.getElementById("screen") || document.querySelector("canvas")
+                                      });
+                                    }
+                                  };
+                                }
+                                if (window.SanctuaireLAN) {
+                                  SanctuaireLAN.checkAutoJoin({
+                                    title: "Sanctuaire Dolphin — GameCube & Wii",
+                                    getCanvas: () => document.getElementById("screen") || document.querySelector("canvas")
+                                  });
+                                }
+                              });
+                            </script>
                             </body>
                             </html>

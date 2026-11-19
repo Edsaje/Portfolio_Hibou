@@ -637,6 +637,7 @@
       <span class="psp-status-bar" id="psp-status-bar">En attente de relique...</span>
     </div>
     <div class="psp-actions">
+      <button class="psp-btn-icon" id="btn-psp-lan" style="color: #34d399; font-weight: 700;" title="Rejoindre ou héberger une session Coop LAN P2P">⚔️ Coop LAN</button>
       <button class="psp-btn-icon" id="psp-btn-controls" title="Guide des touches clavier et manettes">⌨️ Touches</button>
       <button class="psp-btn-icon" id="psp-btn-pad" title="Afficher ou masquer la manette virtuelle tactile">📱 Manette</button>
       <button class="psp-btn-icon" id="psp-btn-fps" title="Afficher ou masquer le compteur FPS">🟢 FPS</button>
@@ -1618,6 +1619,40 @@ FastForward = 1-61
         }
       } catch(e) {}
 
+    })();
+  </script>
+  <script src="../../js/lan-relay.js"></script>
+  <script>
+    (function() {
+      const btnLan = document.getElementById("btn-psp-lan");
+      if (btnLan && window.SanctuaireLAN) {
+        btnLan.addEventListener("click", () => {
+          SanctuaireLAN.openModal({
+            title: "PlayStation Portable — Coop LAN P2P",
+            getCanvas: () => document.getElementById("canvas"),
+            onInput: (data) => {
+              if (data.type === "keydown" || data.type === "keyup") {
+                const ev = new KeyboardEvent(data.type, {
+                  code: data.code,
+                  key: data.key,
+                  keyCode: data.keyCode,
+                  which: data.keyCode,
+                  bubbles: true,
+                  cancelable: true
+                });
+                window.dispatchEvent(ev);
+                document.dispatchEvent(ev);
+                const cv = document.getElementById("canvas");
+                if (cv) cv.dispatchEvent(ev);
+              }
+            }
+          });
+        });
+        SanctuaireLAN.checkAutoJoin({
+          title: "PlayStation Portable — Coop LAN P2P",
+          getCanvas: () => document.getElementById("canvas")
+        });
+      }
     })();
   </script>
 </body>
