@@ -1625,8 +1625,8 @@
       const MAP = {
         'numpad6': 'a', 'digit6': 'a', '6': 'a', 'keyl': 'a', 'keyk': 'a', 'keyx': 'a', 'a': 'a',
         'numpad5': 'b', 'digit5': 'b', '5': 'b', 'keyj': 'b', 'keyc': 'b', 'b': 'b',
-        'numpad9': 'x', 'digit9': 'x', '9': 'x', 'keyo': 'x', 'keyi': 'x', 'keyv': 'x', 'x': 'x',
-        'numpad8': 'y', 'digit8': 'y', '8': 'y', 'keyu': 'y', 'keyf': 'y', 'y': 'y',
+        'numpad4': 'y', 'digit4': 'y', '4': 'y', 'keyi': 'y', 'keyu': 'y', 'keyf': 'y', 'y': 'y',
+        'numpad8': 'x', 'digit8': 'x', '8': 'x', 'numpad9': 'x', 'digit9': 'x', '9': 'x', 'keyo': 'x', 'keyv': 'x', 'x': 'x',
         'numpad7': 'l', 'digit7': 'l', '7': 'l', 'shiftleft': 'l', 'l': 'l', 'l1': 'l',
         'numpad3': 'r', 'digit3': 'r', '3': 'r', 'keyp': 'r', 'keye': 'r', 'r': 'r', 'r1': 'r',
         'numpad1': 'l2', 'digit1': 'l2', '1': 'l2', 'l2': 'l2',
@@ -1635,8 +1635,9 @@
         'arrowdown': 'down', 'keys': 'down', 'down': 'down',
         'arrowleft': 'left', 'keya': 'left', 'keyq': 'left', 'left': 'left',
         'arrowright': 'right', 'keyd': 'right', 'right': 'right',
-        'enter': 'start', 'numpadenter': 'start', 'start': 'start',
-        'space': 'select', 'shiftright': 'select', 'backspace': 'select', 'numpad0': 'select', 'digit0': 'select', '0': 'select', 'select': 'select'
+        'enter': 'start', 'numpadenter': 'start', 'numpadadd': 'start', 'start': 'start',
+        'space': 'select', 'shiftright': 'select', 'backspace': 'select', 'numpad0': 'select', 'digit0': 'select', '0': 'select',
+        'numpaddecimal': 'select', 'period': 'select', 'numpadsubtract': 'select', 'select': 'select'
       };
       const btn = MAP[rawBtn] || rawBtn;
       const player = packet.p || 2;

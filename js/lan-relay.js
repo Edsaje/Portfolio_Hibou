@@ -492,21 +492,22 @@
         'ArrowLeft': 'left', 'KeyA': 'left', 'KeyQ': 'left',
         'ArrowRight': 'right', 'KeyD': 'right',
 
-        // Touche A (Validation / Saut) : Numpad 6, Chiffre 6, K, X, L
+        // Touche A (Validation / Saut vrillé) : Numpad 6, Chiffre 6, K, X, L
         'Numpad6': 'a', 'Digit6': 'a', '6': 'a',
         'KeyK': 'a', 'KeyX': 'a', 'KeyL': 'a',
 
-        // Touche B (Course / Action secondaire) : Numpad 5, Chiffre 5, J, C
+        // Touche B (Saut classique / Action secondaire) : Numpad 5, Chiffre 5, J, C
         'Numpad5': 'b', 'Digit5': 'b', '5': 'b',
         'KeyJ': 'b', 'KeyC': 'b',
 
-        // Touche X : Numpad 9, Chiffre 9, I, V, O
-        'Numpad9': 'x', 'Digit9': 'x', '9': 'x',
-        'KeyI': 'x', 'KeyV': 'x', 'KeyO': 'x',
+        // Touche Y (Course / Prise d'objet / Accélération) : Numpad 4, Chiffre 4, 4, U, F, I
+        'Numpad4': 'y', 'Digit4': 'y', '4': 'y',
+        'KeyU': 'y', 'KeyF': 'y', 'KeyI': 'y',
 
-        // Touche Y : Numpad 8, Chiffre 8, U, F
-        'Numpad8': 'y', 'Digit8': 'y', '8': 'y',
-        'KeyU': 'y', 'KeyF': 'y',
+        // Touche X (Action haute / Course alternative) : Numpad 8, Chiffre 8, 8, Numpad 9, Chiffre 9, 9, O, V
+        'Numpad8': 'x', 'Digit8': 'x', '8': 'x',
+        'Numpad9': 'x', 'Digit9': 'x', '9': 'x',
+        'KeyO': 'x', 'KeyV': 'x',
 
         // Gâchettes L / L2 : Numpad 7, Chiffre 7, E, ShiftLeft, Numpad 1, Chiffre 1
         'Numpad7': 'l', 'Digit7': 'l', '7': 'l',
@@ -519,9 +520,10 @@
         'Numpad2': 'r2', 'Digit2': 'r2', '2': 'r2',
 
         // Start & Select
-        'Enter': 'start', 'NumpadEnter': 'start',
+        'Enter': 'start', 'NumpadEnter': 'start', 'NumpadAdd': 'start',
         'Space': 'select', 'Backspace': 'select', 'ShiftRight': 'select',
-        'Numpad0': 'select', 'Digit0': 'select', '0': 'select'
+        'Numpad0': 'select', 'Digit0': 'select', '0': 'select',
+        'NumpadDecimal': 'select', 'Period': 'select', 'NumpadSubtract': 'select'
       };
 
       const onKeyDown = (e) => {
